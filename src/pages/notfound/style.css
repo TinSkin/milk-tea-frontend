@@ -1,0 +1,106 @@
+/* Wrapper chính */
+.custom-warning-wrapper {
+	width: 100%;
+	min-height: 100vh;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-direction: column;
+	font-family: 'Poppins', sans-serif;
+	background-image: linear-gradient(
+		45deg,
+		#e59c36 25%,
+		#0b3042 25%,
+		#0b3042 50%,
+		#e59c36 50%,
+		#e59c36 75%,
+		#0b3042 75%,
+		#0b3042 100%
+	);
+	overflow: hidden;
+}
+
+/* Tiêu đề chính */
+.custom-warning-title {
+	text-transform: uppercase;
+	background: repeating-linear-gradient(
+		45deg,
+		#e59c36,
+		#e59c36 10px,
+		#0b3042 10px,
+		#0b3042 20px
+	);
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	font-size: 384px;
+	margin: 0;
+	line-height: 0.7;
+	position: relative;
+}
+
+/* Background cảnh báo */
+.custom-warning-title::before {
+	content: "";
+	padding: 70px 130px;
+	background: repeating-linear-gradient(
+		45deg,
+		#e59c36,
+		#e59c36 10px,
+		#0b3042 10px,
+		#0b3042 20px
+	);
+	box-shadow: 0px 0px 10px #0b3042;
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%) rotate(20deg);
+}
+
+/* Text label "Caution" */
+.custom-warning-title::after {
+	content: "Caution";
+	background-color: #e59c36;
+	color: #0b3042;
+	border-radius: 10px;
+	font-size: 35px;
+	position: absolute;
+	padding: 31px;
+	text-transform: uppercase;
+	font-weight: bold;
+	-webkit-text-fill-color: #0b3042;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%) rotate(20deg);
+}
+
+/* Chấm tròn bên trái */
+.custom-warning-title span::before {
+	content: "";
+	width: 8px;
+	height: 8px;
+	background: #757575;
+	color: #757575;
+	border-radius: 50%;
+	position: absolute;
+	top: -44%;
+	left: 37%;
+	transform: rotate(22deg);
+	z-index: 3;
+	box-shadow: 0px 60px 0 0px;
+}
+
+/* Chấm tròn bên phải */
+.custom-warning-title span::after {
+	content: "";
+	width: 8px;
+	height: 8px;
+	background: #757575;
+	color: #757575;
+	border-radius: 50%;
+	position: absolute;
+	top: 3%;
+	right: 34%;
+	transform: rotate(22deg);
+	z-index: 3;
+	box-shadow: 0px 60px 0 0px;
+}
