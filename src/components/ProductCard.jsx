@@ -1,3 +1,4 @@
+import { useCartStore } from "../store/cartStore";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -36,190 +37,8 @@ function ProductCard(props) {
     ? Math.min(...props.sizeOptions.map((opt) => Number(opt.price) || 0))
     : 0;
 
-  // Hàm handleAddProduct: Thêm sản phẩm mới
-  // const handleAddProduct = async (values) => {
-  //   setIsLoading(true); // Bật trạng thái loading
-
-  //   const image = values.image
-  //   // Trim các trường chuỗi
-  //   const id = values.id.trim();
-  //   const name = values.name.trim();
-  //   const basePrice = values.basePrice;
-  //   const description = values.description;
-  //   const category = values.category;
-
-  //   // Tách URL ảnh thành mảng
-  //   const trimmedImages = image.split(",").map((s) => s.trim()).filter((s) => s);
-
-  //   // Chuyển sizeOptions mảng thành object với parseInt giá
-  //   const sizeOptions = values.sizeOptions.map(({ size, price }) => ({
-  //     size: size.trim(),
-  //     price: parseInt(price) || 0,
-  //   }));
-
-  //   // Xử lý toppings
-  //   const toppings = values.toppings.map((topping) => {
-  //     const found = availableToppings.find((t) => t.name === topping.name);
-  //     return found || { name: topping.name, extraPrice: 0 };
-  //   });
-
-  //   // New Product
-  //   const newProduct = {
-  //     // Tạo object sản phẩm mới
-  //     id,
-  //     name,
-  //     description,
-  //     category,
-  //     price: parseInt(basePrice) || 0,
-  //     currency: "VNĐ",
-  //     sizeOptions,
-  //     toppings,
-  //     status: "available",
-  //     date: new Date().toLocaleDateString("vi-VN", {
-  //       // Tạo ngày hiện tại theo định dạng tiếng Việt
-  //       day: "2-digit",
-  //       month: "short",
-  //       year: "numeric",
-  //     }),
-  //     image: trimmedImages,
-  //   };
-
-  //   try {
-  //     // Lấy danh sách sản phẩm hiện tại từ server
-  //     const currentResult = await fetchProducts();
-  //     let currentProducts = [];
-  //     if (Array.isArray(currentResult)) {
-  //       currentResult.forEach((item) => {
-  //         if (item && item.data && Array.isArray(item.data)) {
-  //           const validProducts = item.data.filter(
-  //             (product) =>
-  //               product &&
-  //               typeof product === "object" &&
-  //               product.id &&
-  //               product.name
-  //           );
-  //           currentProducts = [...currentProducts, ...validProducts];
-  //         }
-  //       });
-  //     }
-
-  //     // Loại bỏ sản phẩm trùng lặp
-  //     const uniqueCurrentProducts = Array.from(
-  //       new Map(currentProducts.map((item) => [item.id, item])).values()
-  //     );
-
-  //     // Kiểm tra nếu ID đã tồn tại
-  //     const isIdExists = uniqueCurrentProducts.some(
-  //       (product) => product.id === id
-  //     );
-
-  //     if (isIdExists) {
-  //       Notification.error("Mã sản phẩm đã tồn tại.", "Vui lòng chọn mã khác.");
-  //       setIsLoading(false);
-  //       return;
-  //     }
-
-  //     // Thêm sản phẩm mới vào danh sách
-  //     const updatedProducts = [...uniqueCurrentProducts, newProduct];
-
-  //     // Gửi yêu cầu thêm sản phẩm lên server POST, dùng toast.promise để báo trạng thái khi POST
-  //     const postPromise = await fetch(
-  //       // Gửi yêu cầu thêm sản phẩm lên server
-  //       "https://mindx-mockup-server.vercel.app/api/resources/products_drink?apiKey=67fe686cc590d6933cc1248b",
-  //       {
-  //         method: "POST",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //         },
-  //         body: JSON.stringify({ data: updatedProducts }),
-  //       }
-  //     );
-
-  //     // Hiển thị trạng thái bằng toast
-  //     Notification.promise(postPromise, {
-  //       loading: "Đang thêm sản phẩm...",
-  //       success: "Thêm sản phẩm thành công!",
-  //       error: "Không thể thêm sản phẩm. Vui lòng thử lại.",
-  //     });
-
-  //     // Đợi kết quả thực sự từ server
-  //     const response = await postPromise;
-
-  //     if (!response.ok) {
-  //       const errorText = await response.text();
-  //       throw new Error(`Lỗi từ server: ${response.statusText} - ${errorText}`);
-  //     }
-
-  //     const result = await response.json();
-  //     console.log("Server response after adding product:", result);
-
-  //     // Tải lại danh sách sản phẩm
-  //     await loadProducts();
-
-  //     const addedProduct = newProduct;
-  //     console.log("Added product:", addedProduct);
-
-  //     setShowAddModal(false); // Đóng modal
-  //     setImagePreviews([]); // Reset preview ảnh
-  //   } catch (error) {
-  //     Notification.error("Thêm sản phẩm thất bại", error.message);
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
-
   //! Handle add product to cart
-  const addToCart = (values) => {
-    // if (!values.id) return;
-    // Lấy cart hiện tại
-    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-    console.log("Current cart:", cart);
-
-    const isSameToppings = (a, b) => {
-      if (a.length !== b.length) return false;
-      const namesA = a.map((t) => t.name).sort();
-      const namesB = b.map((t) => t.name).sort();
-      return JSON.stringify(namesA) === JSON.stringify(namesB);
-    };
-
-    // Tìm item trong cart dựa trên productId + sizeOption + toppings (để phân biệt các lựa chọn khác nhau)
-    const existingItem = cart.find(
-      (item) =>
-        item.productId === values.id &&
-        item.sizeOption === values.sizeOption &&
-        isSameToppings(item.toppings, values.toppings) &&
-        item.sugarLevel === values.sugarLevel &&
-        item.iceOption === values.iceOption
-    );
-    console.log("Found existing item:", existingItem);
-
-    if (existingItem) {
-      // Nếu đã có thì tăng quantity
-      existingItem.quantity += values.quantity;
-    } else {
-      console.log(values.images[0])
-      // Thêm item mới (đảm bảo copy đầy đủ trường của values, thêm productName, image, ...)
-      cart.push({
-        productName: values.name,
-        images: values.images[0],
-        sizeOption: values.sizeOption,
-        toppings: values.toppings,
-        quantity: values.quantity,
-        sugarLevel: values.sugarLevel,
-        iceOption: values.iceOption,
-        price: values.price,
-      });
-    }
-    // Lưu lại localStorage
-    localStorage.setItem("cart", JSON.stringify(cart)); // Lưu vào localStorage
-    // Thêm dòng này để phát event
-    window.dispatchEvent(new Event("cartUpdated"));
-    Notification.success(
-      "Đã thêm vào giỏ hàng",
-      `${values.name} (${values.sizeOption})`
-    );
-    setShowAddModal(false);
-  };
+  const addToCart = useCartStore((state) => state.addToCart);
 
   //! Handle add product click
   const handleAddClick = () => {
@@ -287,9 +106,30 @@ function ProductCard(props) {
             }}
             validationSchema={addOrderSchema}
             onSubmit={(values) => {
-              console.log("Submitting Testing: ", values);
-              addToCart(values);
+              // Lấy thông tin size đã chọn
+              const selectedSize = props.sizeOptions.find(
+                (opt) => opt.size === values.sizeOption
+              );
+            
+              // Tạo object sản phẩm đúng format cho store
+              const newProduct = {
+                _id: props._id, // cần props._id từ backend
+                name: props.name,
+                images: props.image, // hoặc props.images nếu bạn dùng
+                price: values.price, // total hoặc base price
+                sizeOption: values.sizeOption,
+                sizeOptionPrice: selectedSize ? selectedSize.price : 0,
+                sugarLevel: values.sugarLevel,
+                iceOption: values.iceOption,
+                toppings: values.toppings,
+                quantity: values.quantity,
+              };
+            
+              console.log("Adding to cart:", newProduct);
+              addToCart(newProduct); // gọi store
+              setShowAddModal(false); // đóng modal
             }}
+            
           >
             {({ values, setFieldValue }) => {
               useEffect(() => {
