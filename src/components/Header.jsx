@@ -34,7 +34,7 @@ function Header() {
   //! Loading state for checking authentication
   if (isCheckingAuth) {
     return (
-      <header className="bg-dark_blue shadow-md py-4 px-6 sticky top-0 z-50 border-b-8 border-camel">
+      <header className="bg-[#25344f] shadow-md py-4 px-6 sticky top-0 z-50 border-b-8 border-camel">
         <div className="max-w-7xl mx-auto flex justify-between items-center px-4">
           <Link
             to="/"
@@ -52,12 +52,12 @@ function Header() {
     location.pathname === path ? "border-b-2 border-camel" : "hover:text-camel";
 
   return (
-    <header className="bg-dark_blue shadow-md py-4 px-6 sticky top-0 z-50 border-b-8 border-camel">
+    <header className="bg-[#0c1321] shadow-md py-4 px-6 sticky top-0 z-50 border-b-8 border-camel">
       <div className="max-w-7xl mx-auto flex justify-between items-center px-4">
         {/* Logo */}
         <Link
           to={"/"}
-          className="font-bold text-camel text-lg focus:outline-none"
+          className="font-bold text-[#f8d794] text-lg focus:outline-none"
         >
           <img src={logo} alt="Logo" className="w-full h-[130px]" />
         </Link>
@@ -147,7 +147,7 @@ function Header() {
           ) : (
             <button
               type="button"
-              className="bg-camel text-white px-4 py-2 rounded hover:bg-logo_color transition font-semibold"
+              className="bg-[#D5BB93] text-[#6F4D38] px-4 py-2 rounded hover:bg-logo_color transition font-semibold"
               onClick={handleLoginClick}
             >
               Đăng nhập
