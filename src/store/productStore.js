@@ -1,17 +1,9 @@
 //! 1. Import necessary libraries and modules
 import { create } from "zustand"; // Zustand create store to manage global state
-import axios from "axios"; // Axios for making API requests
+import api from "../api/axios"; // Shared axios instance with interceptor
 
-const API_URL =
-  import.meta.env.MODE === "development"
-    ? "http://localhost:5000/api/products"
-    : "https://milk-tea-backend-s4s2.onrender.com/api/products";
-
-//! 3. Set up axios to always send cookies when making requests (useful for session authentication)
-const api = axios.create({
-    baseURL: API_URL,
-    withCredentials: true // For cookies
-});
+//! 2. API endpoint for products
+const API_ENDPOINT = "/products";
 
 //! Create zustand store to manage product categories
 export const useProductStore = create((set, get) => ({
@@ -55,7 +47,7 @@ export const useProductStore = create((set, get) => ({
                 sortOrder: params.sortOrder || "desc"
             });
 
-            const response = await api.get(`?${queryParams}`);
+            const response = await api.get(`${API_ENDPOINT}?${queryParams}`);
 
             if (response.data.success) {
                 set({
@@ -85,7 +77,7 @@ export const useProductStore = create((set, get) => ({
         set({ isLoading: true, error: null });
         try {
             // Send request to fetch categories from the backend
-            const response = await api.get("/categories");
+            const response = await api.get(`${API_ENDPOINT}/categories`);
             set({ categories: response.data, isLoading: false });
             return response.data; // Return fetched categories
         } catch (error) {
@@ -99,7 +91,7 @@ export const useProductStore = create((set, get) => ({
     createProduct: async (productData) => {
         set({ isLoading: true, error: null });
         try {
-            const response = await api.post("", productData);
+            const response = await api.post(API_ENDPOINT, productData);
             const newProduct = response.data.success ? response.data.product : response.data;
 
             // Update local state
@@ -121,7 +113,7 @@ export const useProductStore = create((set, get) => ({
     updateProduct: async (productId, productData) => {
         set({ isLoading: true, error: null });
         try {
-            const response = await api.put(`/${productId}`, productData);
+            const response = await api.put(`${API_ENDPOINT}/${productId}`, productData);
             const updatedProduct = response.data.success ? response.data.product : response.data;
 
             // Update local state
@@ -146,7 +138,7 @@ export const useProductStore = create((set, get) => ({
     softDeleteProduct: async (productId) => {
         set({ isLoading: true, error: null });
         try {
-            const response = await api.post(`/${productId}/soft-delete`);
+            const response = await api.post(`${API_ENDPOINT}/${productId}/soft-delete`);
             const updatedProduct = response.data.success ? response.data.product : response.data;
 
             // Update local state

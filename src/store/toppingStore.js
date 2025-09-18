@@ -1,14 +1,9 @@
 //! 1. Import necessary libraries and modules
 import { create } from "zustand"; // Zustand create store to manage global state
-import axios from "axios"; // Axios for making API requests
+import api from "../api/axios"; // Shared axios instance with interceptor
 
-const API_URL = import.meta.env.MODE === "development" ? "http://localhost:5000/api/toppings" : "/api/toppings";
-
-//! 3. Set up axios to always send cookies when making requests (useful for session authentication)
-const api = axios.create({
-    baseURL: API_URL,
-    withCredentials: true // For cookies
-});
+//! 2. API endpoint for toppings
+const API_ENDPOINT = "/toppings";
 
 //! Create zustand store to manage product categories
 export const useToppingStore = create((set, get) => ({
@@ -44,7 +39,7 @@ export const useToppingStore = create((set, get) => ({
                 sortOrder: params.sortOrder || "desc"
             });
 
-            const response = await api.get(`/?${queryParams}`);
+            const response = await api.get(`${API_ENDPOINT}?${queryParams}`);
 
             if (response.data.success) {
                 set({
@@ -75,7 +70,7 @@ export const useToppingStore = create((set, get) => ({
         try {
             console.log("Creating topping:", toppingData);
 
-            const response = await api.post("", toppingData);
+            const response = await api.post(API_ENDPOINT, toppingData);
             const newTopping = response.data.success ? response.data.topping : response.data;
 
             // Update local state
@@ -98,7 +93,7 @@ export const useToppingStore = create((set, get) => ({
         set({ isLoading: true, error: null });
         try {
             console.log("Updating topping:", toppingId, toppingData);
-            const response = await api.put(`/${toppingId}`, toppingData);
+            const response = await api.put(`${API_ENDPOINT}/${toppingId}`, toppingData);
             const updatedTopping = response.data.success ? response.data.topping : response.data;
 
             // Update local state

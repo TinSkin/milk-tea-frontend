@@ -25,18 +25,18 @@ const registerSchema = Yup.object({
     .trim()
     .matches(nameRegex, "Tên chỉ được chứa chữ cái và dấu cách")
     .matches(noOnlySpaces, "Tên không được chỉ là khoảng trắng")
-    .required("Vui lòng nhập họ tên"),
+    .required("Nhập họ tên"),
 
   phone: Yup.string()
     .trim()
     .matches(/^\d+$/, "Số điện thoại chỉ chứa số")
     .matches(phoneRegex, "Số điện thoại không hợp lệ (VD: 098xxxxxxx)")
-    .required("Vui lòng nhập số điện thoại"),
+    .required("Nhập số điện thoại"),
 
   email: Yup.string()
     .trim()
-    .email("Email không đúng định dạng")
-    .required("Vui lòng nhập email"),
+    .email("Sai định dạng")
+    .required("Nhập email"),
 
   password: Yup.string()
     .trim()
@@ -44,12 +44,12 @@ const registerSchema = Yup.object({
     .max(64, "Mật khẩu không được quá 64 ký tự")
     .matches(noOnlySpaces, "Mật khẩu không được chỉ chứa khoảng trắng")
     .matches(noSpaces, "Mật khẩu không được chứa khoảng trắng")
-    .required("Vui lòng nhập mật khẩu")
+    .required("Nhập mật khẩu")
     .matches(hasUpper, "Mật khẩu phải có ít nhất 1 chữ IN HOA (A–Z)")
     .matches(hasLower, "Mật khẩu phải có ít nhất 1 chữ thường (a–z)")
     .matches(hasNumber, "Mật khẩu phải có ít nhất 1 số (0–9)")
     .matches(hasSpecial, "Mật khẩu phải có ít nhất 1 ký tự đặc biệt (!@#$%^&*...)")
-    .test("not-common", "Mật khẩu quá phổ biến, vui lòng chọn mật khẩu khác", (value) =>
+    .test("not-common", "Mật khẩu quá phổ biến, chọn mật khẩu khác", (value) =>
       value ? !commonBadPasswords.has(value.toLowerCase()) : true
     )
     // (Tuỳ chọn) không chứa email/username
@@ -66,7 +66,7 @@ const registerSchema = Yup.object({
 
   confirmPassword: Yup.string()
     .oneOf([Yup.ref("password")], "Mật khẩu nhập lại không khớp")
-    .required("Vui lòng xác nhận mật khẩu"),
+    .required("Xác nhận mật khẩu"),
 });
 
 export default registerSchema;

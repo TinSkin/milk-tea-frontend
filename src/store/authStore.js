@@ -1,20 +1,13 @@
 //! 1. Import necessary libraries and modules
 import { create } from "zustand"; // Zustand create store to manage global state
-import axios from "axios"; // Axios for making API requests
+import api from "../api/axios"; // Shared axios instance with interceptor
+import Notification from "../components/Notification"; // Notification component for user feedback
 
-//! 2. Identify API URL based on environment (development OR production)
-// If mode is in development environment (development), API_URL will be "http://localhost:5000/api/auth"
-// If mode is in production environment (production), API_URL will be "/api/auth"
-const API_URL = import.meta.env.MODE === "development" ? "http://localhost:5000/api/auth" : "/api/auth";
-
-//! 3. Set up axios to always send cookies when making requests (useful for session authentication)
-const api = axios.create({
-    baseURL: API_URL,
-    withCredentials: true // For cookies
-});
+//! 2. API endpoint for auth
+const API_ENDPOINT = "/auth";
 
 //! 4. Create zustand store to manage authentication state
-export const useAuthStore = create((set) => ({
+export const useAuthStore = create((set, get) => ({
     // Initialize default states
     user: null, // Save user information after login
     isAuthenticated: false, // Verify if user is authenticated or not
@@ -28,7 +21,7 @@ export const useAuthStore = create((set) => ({
         set({ isLoading: true, error: null, message: null }); // Set loading state to true and reset error and message states
         try {
             // Send request POST to register endpoint with userData object
-            const response = await api.post("/register", userData);
+            const response = await api.post(`${API_ENDPOINT}/register`, userData);
             // If successful, don't login immediately - wait for email verification
             set({
                 user: { email: userData.email, isVerified: false }, // permit for verify flow
@@ -155,8 +148,8 @@ export const useAuthStore = create((set) => ({
     login: async (userData) => {
         set({ isLoading: true, error: null }); // Set state to loading is true and reset error
         try {
-            // Send request POST to login endpoint with email and password
-            const response = await api.post("/login", userData);
+            // Send request POST to login endpoint with email, password and rememberMe
+            const response = await api.post(`${API_ENDPOINT}/login`, userData);
 
             // If successful, update user state and set isAuthenticated to true
             set({
@@ -174,13 +167,53 @@ export const useAuthStore = create((set) => ({
         }
     },
 
+    //! Google Login function
+    loginWithGoogle: async (googleCredential) => {
+        set({ isLoading: true, error: null, message: null }); // Set loading state
+        try {
+            console.log("🔍 Sending Google credential to backend...");
+            
+            // Send Google credential token to backend
+            const response = await api.post(`${API_ENDPOINT}/google`, {
+                credential: googleCredential
+            });
+
+            console.log("✅ Google login successful:", response.data);
+
+            // If successful, update user state and set isAuthenticated to true
+            set({
+                user: response.data.user, // Save user information from the response
+                isAuthenticated: true, // Set isAuthenticated to true
+                error: null, // Reset error state
+                isLoading: false, // Set loading to false
+                message: response.data.message || "Đăng nhập Google thành công"
+            });
+            
+            return response.data; // Return response for further handling
+        } catch (error) {
+            console.error("❌ Google login error:", error);
+            // If there is an error, update the error with the message from the server or a default message
+            const errorMessage = error.response?.data?.message || "Lỗi đăng nhập Google";
+            set({ error: errorMessage, isLoading: false });
+            throw error; // Re-throw the error for further handling
+        }
+    },
+
     //! Check authentication function
     checkAuth: async () => {
         console.log("🔍 checkAuth started");
         set({ isCheckingAuth: true, error: null });
         try {
-            const { data } = await api.get("/check-auth"); // axios phải withCredentials: true
+            const { data } = await api.get(`${API_ENDPOINT}/check-auth`); // axios phải withCredentials: true
             const user = data?.user || null;
+            
+            const rememberMeCookie = document.cookie
+                .split('; ')
+                .find(row => row.startsWith('rememberMe='));
+            const rememberMeStatus = rememberMeCookie ? rememberMeCookie.split('=')[1] === 'true' : false;
+            
+            console.log("Remember Me Status:", rememberMeStatus);
+            
             set({
                 user,
                 isAuthenticated: !!user,
@@ -197,12 +230,25 @@ export const useAuthStore = create((set) => ({
         }
     },
 
+    //! Check token validity - useful for admin pages
+    checkTokenValidity: async () => {
+        console.log("🔍 Checking token validity...");
+        try {
+            await api.get(`${API_ENDPOINT}/check-auth`);
+            console.log("✅ Token is valid");
+            return true;
+        } catch (error) {
+            console.log("❌ Token validation failed:", error.response?.status);
+            return false;
+        }
+    },
+
     //! Logout function
     logout: async () => {
         set({ isLoading: true, error: null }); //Set state to loading is true and reset error
         try {
             // Send request POST method to logout endpoint
-            await api.post("/logout");
+            await api.post(`${API_ENDPOINT}/logout`);
             // If successful, reset user, isAuthenticated and set loading to false
             set({ user: null, isAuthenticated: false, isLoading: false });
         } catch (error) {
