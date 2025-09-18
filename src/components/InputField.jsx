@@ -1,14 +1,72 @@
 // Nhập hook `useField` từ Formik, hook này giúp quản lý các trường biểu mẫu trong form Formik
-import { useField } from "formik";
+import { useField, useFormikContext } from "formik";
+import { useState, useEffect } from "react";
 
 // Định nghĩa component `InputField`, nhận prop `label` và các prop khác (dùng spread operator)
-const InputField = ({ icon, label, style, ...props }) => {
+const InputField = ({ icon, label, style, autoHideError = true, errorTimeout = 4000, ...props }) => {
   // Sử dụng hook `useField` để kết nối input này với trạng thái biểu mẫu của Formik
-  // Hook trả về một mảng gồm 3 phần tử:
-  // - `field`: chứa các prop của input như value, onChange, onBlur
-  // - `meta`: chứa trạng thái của trường như touched (đã tương tác chưa), error (lỗi xác thực)
-  // - `helpers`: các hàm hỗ trợ (không dùng ở đây)
   const [field, meta] = useField(props);
+  const { submitCount } = useFormikContext();
+  
+  // State để quản lý việc hiển thị error
+  const [showError, setShowError] = useState(false);
+  const [focusTimer, setFocusTimer] = useState(null);
+
+  // Custom onFocus handler để hiển thị error khi user click vào field
+  const handleFocus = (e) => {
+    // Clear timer cũ nếu có
+    if (focusTimer) {
+      clearTimeout(focusTimer);
+      setFocusTimer(null);
+    }
+    
+    // Nếu có error và đã touched, hiển thị lại
+    if (meta.touched && meta.error) {
+      setShowError(true);
+      
+      // Start timer nếu auto-hide được bật
+      if (autoHideError) {
+        const timer = setTimeout(() => {
+          setShowError(false);
+        }, errorTimeout);
+        setFocusTimer(timer);
+      }
+    }
+    
+    // Gọi onFocus gốc nếu có
+    if (field.onFocus) {
+      field.onFocus(e);
+    }
+  };
+
+  // Cleanup timer khi component unmount
+  useEffect(() => {
+    return () => {
+      if (focusTimer) {
+        clearTimeout(focusTimer);
+      }
+    };
+  }, [focusTimer]);
+
+  // Effect để tự động ẩn error sau một khoảng thời gian
+  useEffect(() => {
+    if (meta.touched && meta.error) {
+      // Luôn hiển thị error khi có touched + error
+      setShowError(true);
+      
+      // Chỉ auto-hide nếu được bật
+      if (autoHideError) {
+        const timer = setTimeout(() => {
+          setShowError(false);
+        }, errorTimeout);
+
+        return () => clearTimeout(timer);
+      }
+    } else if (!meta.error) {
+      // Nếu không có error, ẩn ngay
+      setShowError(false);
+    }
+  }, [meta.touched, meta.error, submitCount, autoHideError, errorTimeout]); // Thêm submitCount
 
   // Trả về JSX cho component trường nhập liệu
   return (
@@ -21,6 +79,7 @@ const InputField = ({ icon, label, style, ...props }) => {
       <input
         {...field}
         {...props}
+        onFocus={handleFocus}
         placeholder=""
         className="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
       />
@@ -30,12 +89,15 @@ const InputField = ({ icon, label, style, ...props }) => {
         {label}
       </label>
 
-      {/* Kiểm tra nếu trường đã được tương tác (touched) và có lỗi xác thực (error),
-         thì hiển thị thông báo lỗi */}
-      {meta.touched && meta.error ? (
-        // Hiển thị thông báo lỗi bằng chữ màu đỏ, cỡ chữ nhỏ
-        <div className="text-red-500 text-sm font-bold mt-1">{meta.error}</div>
-      ) : null}
+      {/* Tạo không gian cố định cho error message để tránh layout bị nhảy */}
+      <div className="h-6 mt-1">
+        {meta.touched && meta.error && showError ? (
+          // Hiển thị thông báo lỗi với regular weight, màu đỏ và animation subtle
+          <div className="text-red-600 text-xs transition-opacity duration-300 opacity-90">
+            {meta.error}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 };
