@@ -15,6 +15,7 @@ export const useAuthStore = create((set, get) => ({
     isLoading: false, // Loading data state, default is not loading (not making a request)
     isCheckingAuth: true, // This state is used to check if the user is authenticated when the app loads
     message: null, // Save messages from the server (e.g., successful registration message, successful email verification message, etc.)
+    pendingVerification: null, // Store info for pending Google verification { email, provider, reason }
 
     //! Register new account function 
     register: async (userData) => {
@@ -45,7 +46,7 @@ export const useAuthStore = create((set, get) => ({
         set({ isLoading: true, error: null, message: null });
         try {
             // Send request POST to verify email endpoint with code
-            const response = await api.post("/verify-otp", { code });
+            const response = await api.post(`${API_ENDPOINT}/verify-otp`, { code });
             // If successful, update user state and set isAuthenticated to true
             set({
                 user: response.data.user, // Save user information from the response
@@ -67,7 +68,7 @@ export const useAuthStore = create((set, get) => ({
         set({ isLoading: true, error: null, message: null });
         try {
             // Send request POST to resend verification OTP endpoint with email
-            const response = await api.post("/resend-otp", { email });
+            const response = await api.post(`${API_ENDPOINT}/resend-otp`, { email });
 
             // If successful, update message state
             set({
@@ -95,19 +96,21 @@ export const useAuthStore = create((set, get) => ({
         set({ isLoading: true, error: null, message: null });
 
         try {
-            const { data } = await api.post("/verify-email", { token });
-            try {
-                const me = await api.get("/check-auth");
+            const { data } = await api.post(`${API_ENDPOINT}/verify-email`, { token });
+            
+            // Use response directly from backend (no need for additional check-auth call)
+            if (data.isAuthenticated && data.user) {
                 set({
-                    user: me?.data?.user ? { ...me.data.user, isVerified: true } : null,
-                    isAuthenticated: !!me?.data?.user,
-                    message: data?.message || "Xác minh email thành công",
+                    user: { ...data.user, isVerified: true },
+                    isAuthenticated: true,
+                    message: null, // Don't store message to prevent double display
                     isLoading: false,
                     error: null,
+                    pendingVerification: null // Clear pending verification state
                 });
-            } catch {
+            } else {
                 set({
-                    message: data?.message || "Xác minh email thành công",
+                    message: null, // Don't store message to prevent double display
                     isLoading: false,
                     error: null,
                 });
@@ -127,7 +130,7 @@ export const useAuthStore = create((set, get) => ({
         set({ isLoading: true, error: null, message: null });
         try {
             // Send request POST to resend verification email endpoint with email
-            const response = await api.post("/resend-verification-email", { email });
+            const response = await api.post(`${API_ENDPOINT}/resend-verification-email`, { email });
 
             // If successful, update message state
             set({
@@ -171,27 +174,57 @@ export const useAuthStore = create((set, get) => ({
     loginWithGoogle: async (googleCredential) => {
         set({ isLoading: true, error: null, message: null }); // Set loading state
         try {
-            console.log("🔍 Sending Google credential to backend...");
+            console.log("Sending Google credential to backend...", api.defaults.baseURL + API_ENDPOINT + "/google");
             
             // Send Google credential token to backend
             const response = await api.post(`${API_ENDPOINT}/google`, {
                 credential: googleCredential
             });
 
-            console.log("✅ Google login successful:", response.data);
+            console.log("Google login response:", response.data);
 
-            // If successful, update user state and set isAuthenticated to true
+            // Check if verification is required
+            if (response.data.requiresVerification) {
+                console.log("Google user requires additional verification");
+                
+                // Set pending verification state
+                set({
+                    user: null,
+                    isAuthenticated: false,
+                    error: null,
+                    isLoading: false,
+                    message: response.data.message,
+                    pendingVerification: {
+                        email: response.data.user.email,
+                        provider: 'google',
+                        reason: response.data.verificationReason
+                    }
+                });
+                
+                return { 
+                    requiresVerification: true, 
+                    email: response.data.user.email,
+                    message: response.data.message,
+                    reason: response.data.verificationReason
+                };
+            }
+
+            // Normal login success - no verification required
             set({
                 user: response.data.user, // Save user information from the response
                 isAuthenticated: true, // Set isAuthenticated to true
                 error: null, // Reset error state
                 isLoading: false, // Set loading to false
-                message: response.data.message || "Đăng nhập Google thành công"
+                message: response.data.message || "Đăng nhập Google thành công",
+                pendingVerification: null // Clear any pending verification
             });
             
-            return response.data; // Return response for further handling
+            return { 
+                requiresVerification: false,
+                user: response.data.user 
+            };
         } catch (error) {
-            console.error("❌ Google login error:", error);
+            console.error("Google login error:", error);
             // If there is an error, update the error with the message from the server or a default message
             const errorMessage = error.response?.data?.message || "Lỗi đăng nhập Google";
             set({ error: errorMessage, isLoading: false });
@@ -201,7 +234,6 @@ export const useAuthStore = create((set, get) => ({
 
     //! Check authentication function
     checkAuth: async () => {
-        console.log("🔍 checkAuth started");
         set({ isCheckingAuth: true, error: null });
         try {
             const { data } = await api.get(`${API_ENDPOINT}/check-auth`); // axios phải withCredentials: true
@@ -221,6 +253,7 @@ export const useAuthStore = create((set, get) => ({
                 error: null,
             });
         } catch (_) {
+            // Silent fail - không log vì đây là behavior bình thường khi user chưa đăng nhập
             set({
                 user: null,
                 isAuthenticated: false,
@@ -232,13 +265,13 @@ export const useAuthStore = create((set, get) => ({
 
     //! Check token validity - useful for admin pages
     checkTokenValidity: async () => {
-        console.log("🔍 Checking token validity...");
+        console.log("Checking token validity...");
         try {
             await api.get(`${API_ENDPOINT}/check-auth`);
-            console.log("✅ Token is valid");
+            console.log("Token is valid");
             return true;
         } catch (error) {
-            console.log("❌ Token validation failed:", error.response?.status);
+            console.log("Token validation failed:", error.response?.status);
             return false;
         }
     },
@@ -264,7 +297,7 @@ export const useAuthStore = create((set, get) => ({
         set({ isLoading: true, error: null, message: null }); // Set loading state to true and reset error and message states
         try {
             // Send request POST to forgot password endpoint with email
-            const response = await api.post("/forgot-password", { email });
+            const response = await api.post(`${API_ENDPOINT}/forgot-password`, { email });
 
             // If successful, update message state
             set({
@@ -285,7 +318,7 @@ export const useAuthStore = create((set, get) => ({
         set({ isLoading: true, error: null }); // Set loading state to true and reset error
         try {
             // Send request POST to reset password endpoint with resetData
-            const response = await api.post(`/reset-password/${resetData.token}`, { password: resetData.password });
+            const response = await api.post(`${API_ENDPOINT}/reset-password/${resetData.token}`, { password: resetData.password });
 
             // If successful, update message state
             set({ message: response.data.message, isLoading: false });

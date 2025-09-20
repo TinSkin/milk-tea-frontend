@@ -14,7 +14,7 @@ const OTPVerification = () => {
   const [countdown, setCountdown] = useState(60);
 
   //! Extracted from auth store for email verification
-  const { isLoading, verifyOTP, resendVerificationOTP, logout } =
+  const { isLoading, verifyOTP, resendVerificationOTP, logout, isAuthenticated } =
     useAuthStore();
 
   const inputRefs = useRef([]);
@@ -81,7 +81,7 @@ const OTPVerification = () => {
     try {
       if (isAuthenticated) await logout(); // clear cookie + reset store
     } finally {
-      navigate("/login", { replace: true, state: { email } });
+      navigate("/login", { replace: true });
     }
   };
 
@@ -167,13 +167,14 @@ const OTPVerification = () => {
 
           <div className="flex justify-around items-center text-sm">
             <div className="text-center">
-              <Link
-                to="/verify-choice"
+              <button
+                type="button"
+                onClick={() => navigate("/verify-choice", { state: { email } })}
                 className="text-camel hover:text-camel/80 font-semibold flex items-center justify-center"
               >
                 <FontAwesomeIcon icon={faArrowLeft} className="mr-2" />
                 Chọn cách khác
-              </Link>
+              </button>
             </div>
             <div className="text-center">
               <button
@@ -191,7 +192,6 @@ const OTPVerification = () => {
             </div>
             <div className="text-center">
               <button
-                type="button"
                 onClick={backToLogin}
                 className="text-gray-500 font-semibold hover:text-dark_blue flex items-center justify-center"
               >

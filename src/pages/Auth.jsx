@@ -16,8 +16,6 @@ function Auth() {
   const handleLogInClick = () => {
     setIsSignUpActive(false);
   };
-
-  console.log("Auth render - isSignUpActive:", isSignUpActive);
   
   // Debug: Check if class is applied
   const containerClass = `container-slider bg-white rounded-md relative overflow-hidden ${

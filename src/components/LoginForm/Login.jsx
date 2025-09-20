@@ -50,7 +50,7 @@ const Login = ({ handleRegisterClick }) => {
         }
         // Verified -> navigate based on role
         const targetRoute = user.role === "admin" ? "/admin/products" : "/";
-        console.log("🟢 Navigating to:", targetRoute);
+        console.log("Navigating to:", targetRoute);
         return navigate(targetRoute, { replace: true });
       }
     } catch (error) {
@@ -113,8 +113,19 @@ const Login = ({ handleRegisterClick }) => {
       return;
     }
 
+    console.log("🔍 Login useEffect - user state:", { 
+      isVerified: user.isVerified, 
+      pendingVerification: user.pendingVerification 
+    });
+
     // Check user verification status
     if (!user.isVerified) {
+      // Don't navigate if already navigating to verification pages
+      if (location.pathname.includes('/verify')) {
+        console.log("🚫 Already on verification page, skipping redirect");
+        return;
+      }
+      
       navigate("/verify-choice", {
         replace: true,
         state: { email: user.email },
@@ -124,12 +135,12 @@ const Login = ({ handleRegisterClick }) => {
 
     // User is verified -> redirect page
     const targetRoute = user.role === "admin" ? "/admin/products" : "/";
-    console.log("🔴 useEffect redirecting to:", targetRoute);
+    console.log("useEffect redirecting to:", targetRoute);
 
     navigate(targetRoute, {
       replace: true,
     });
-  }, [isAuthenticated, user, navigate]);
+  }, [isAuthenticated, user, navigate, location.pathname]);
 
   return (
     <div className="form-box log-in-form-container absolute bg-white flex items-center h-full">

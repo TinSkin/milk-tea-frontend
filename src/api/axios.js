@@ -15,21 +15,30 @@ const api = axios.create({
 // Global response interceptor for auto-logout
 api.interceptors.response.use(
     (response) => {
-        console.log("✅ API Response success:", response.config.url);
+        // Chỉ log success khi không phải check-auth
+        if (!response.config.url?.includes('/check-auth')) {
+            console.log("API Response success:", response.config.url);
+        }
         return response;
     },
     (error) => {
-        console.log("❌ API Error:", error.response?.status, error.config?.url);
+        // Không log lỗi 401 cho check-auth vì đó là behavior bình thường
+        const isCheckAuth = error.config?.url?.includes('/check-auth');
+        const is401 = error.response?.status === 401;
         
-        // Auto logout on 401 (token expired)
-        if (error.response?.status === 401) {
-            console.log("🔴 Token expired, auto logout from shared axios interceptor");
+        if (!isCheckAuth || !is401) {
+            console.log("API Error:", error.response?.status, error.config?.url);
+        }
+        
+        // Auto logout on 401 (token expired) - nhưng bỏ qua check-auth
+        if (error.response?.status === 401 && !isCheckAuth) {
+            console.log("Token expired, auto logout from shared axios interceptor");
             
             // Show notification
             import("../components/Notification").then((module) => {
                 module.default.warning("Phiên đăng nhập hết hạn", "Vui lòng đăng nhập lại");
             }).catch(() => {
-                console.log("⚠️ Notification not available");
+                console.log("Notification not available");
             });
             
             // Clear auth store
@@ -39,7 +48,7 @@ api.interceptors.response.use(
                 error: "Phiên đăng nhập đã hết hạn"
             });
             
-            console.log("🔴 Store state cleared by shared interceptor");
+            console.log("Store state cleared by shared interceptor");
         }
         return Promise.reject(error);
     }
@@ -77,7 +86,7 @@ export const toppingAPI = axios.create({
         (response) => response,
         (error) => {
             if (error.response?.status === 401) {
-                console.log("🔴 Token expired, auto logout");
+                console.log("Token expired, auto logout");
                 useAuthStore.setState({
                     user: null,
                     isAuthenticated: false,

@@ -17,9 +17,6 @@ import {
 // Hook for navigation
 import { useNavigate } from "react-router-dom";
 
-// Call API to fetch accounts (fallback)
-import { fetchAccounts } from "../../api/accountAPI";
-
 // Import store for managing state
 import { useAuthStore } from "../../store/authStore";
 
@@ -33,7 +30,7 @@ const Register = ({ handleLogInClick }) => {
 
   const { register, error, isLoading, isAuthenticated, user } = useAuthStore();
 
-  //! Handle register logic with backend + fallback approach
+  //! Handle register logic with backend only
   const handleRegister = async (userData, { setErrors, setSubmitting }) => {
     try {
       // Call API to register
@@ -48,49 +45,20 @@ const Register = ({ handleLogInClick }) => {
         navigate("/verify-choice", { state: { email: userData.email } });
       }, 1500);
     } catch (error) {
-      console.log("Backend register failed, trying fallback...", error);
-
-      // Fallback to mock API
-      try {
-        const users = await fetchAccounts();
-        const emailExists = users.some((user) => user.email === userData.email);
-
-        if (emailExists) {
-          setErrors({ email: "Email đã tồn tại!" });
-          Notification.error(
-            "Email đã tồn tại",
-            "Vui lòng sử dụng email khác."
-          );
-          return;
-        }
-
-        const mockUser = {
-          fullName: userData.userName,
-          phone: userData.phoneNumber,
-          email: userData.email,
-          password: userData.password,
-          role: "user",
-          status: "available",
-        };
-
-        const mockResponse = await fetch(
-          "https://mindx-mockup-server.vercel.app/api/resources/accounts_user?apiKey=67fe686cc590d6933cc1248b",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(mockUser),
-          }
-        );
-
-        if (!mockResponse.ok) throw new Error("Mock API failed");
-
-        Notification.success("Đăng ký thành công!", "Đang chuyển hướng...");
-        setTimeout(() => handleLogInClick(), 1500);
-      } catch (fallbackError) {
-        Notification.error("Đăng ký thất bại", "Không thể kết nối đến server");
-      } finally {
-        setSubmitting(false);
+      console.error("Register failed:", error);
+      
+      // Handle specific errors from backend
+      const errorMessage = error.response?.data?.message || error.message || "Đăng ký thất bại";
+      
+      // Check if it's email already exists error
+      if (errorMessage.toLowerCase().includes("email") && errorMessage.toLowerCase().includes("exist")) {
+        setErrors({ email: "Email đã tồn tại!" });
+        Notification.error("Email đã tồn tại", "Vui lòng sử dụng email khác.");
+      } else {
+        Notification.error("Đăng ký thất bại", errorMessage);
       }
+    } finally {
+      setSubmitting(false);
     }
   };
 
