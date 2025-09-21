@@ -17,9 +17,6 @@ import {
 // Hook for navigation
 import { useNavigate } from "react-router-dom";
 
-// Call API to fetch accounts (fallback)
-import { fetchAccounts } from "../../api/accountAPI";
-
 // Import store for managing state
 import { useAuthStore } from "../../store/authStore";
 
@@ -33,7 +30,7 @@ const Register = ({ handleLogInClick }) => {
 
   const { register, error, isLoading, isAuthenticated, user } = useAuthStore();
 
-  //! Handle register logic with backend + fallback approach
+  //! Handle register logic with backend only
   const handleRegister = async (userData, { setErrors, setSubmitting }) => {
     try {
       // Call API to register
@@ -48,49 +45,20 @@ const Register = ({ handleLogInClick }) => {
         navigate("/verify-choice", { state: { email: userData.email } });
       }, 1500);
     } catch (error) {
-      console.log("Backend register failed, trying fallback...", error);
-
-      // Fallback to mock API
-      try {
-        const users = await fetchAccounts();
-        const emailExists = users.some((user) => user.email === userData.email);
-
-        if (emailExists) {
-          setErrors({ email: "Email đã tồn tại!" });
-          Notification.error(
-            "Email đã tồn tại",
-            "Vui lòng sử dụng email khác."
-          );
-          return;
-        }
-
-        const mockUser = {
-          fullName: userData.userName,
-          phone: userData.phoneNumber,
-          email: userData.email,
-          password: userData.password,
-          role: "user",
-          status: "available",
-        };
-
-        const mockResponse = await fetch(
-          "https://mindx-mockup-server.vercel.app/api/resources/accounts_user?apiKey=67fe686cc590d6933cc1248b",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(mockUser),
-          }
-        );
-
-        if (!mockResponse.ok) throw new Error("Mock API failed");
-
-        Notification.success("Đăng ký thành công!", "Đang chuyển hướng...");
-        setTimeout(() => handleLogInClick(), 1500);
-      } catch (fallbackError) {
-        Notification.error("Đăng ký thất bại", "Không thể kết nối đến server");
-      } finally {
-        setSubmitting(false);
+      console.error("Register failed:", error);
+      
+      // Handle specific errors from backend
+      const errorMessage = error.response?.data?.message || error.message || "Đăng ký thất bại";
+      
+      // Check if it's email already exists error
+      if (errorMessage.toLowerCase().includes("email") && errorMessage.toLowerCase().includes("exist")) {
+        setErrors({ email: "Email đã tồn tại!" });
+        Notification.error("Email đã tồn tại", "Vui lòng sử dụng email khác.");
+      } else {
+        Notification.error("Đăng ký thất bại", errorMessage);
       }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -131,100 +99,131 @@ const Register = ({ handleLogInClick }) => {
         }}
       >
         {({ isSubmitting }) => (
-          <Form action="#" id="sign-up-form" className="w-full">
+          <Form action="#" id="sign-up-form" className="w-full px-4">
+            {/* Header */}
+            <h1 className="text-xl text-dark_blue font-bold md:text-4xl">
+              Gia nhập Penny
+            </h1>
+            <p className="text-dark_blue md:text-xl">
+              Vui lòng nhập thông tin đăng ký
+            </p>
+
             {/* Username */}
-            <InputField
-              label="Họ và tên"
-              name="fullName"
-              type="text"
-              style="relative z-0 w-full mb-3 group field"
-              icon={
-                <FontAwesomeIcon icon={faUser} className="text-camel mr-3" />
-              }
-            />
+            <div className="mb-1">
+              <InputField
+                label="Họ và tên"
+                name="fullName"
+                type="text"
+                style="relative z-0 w-full group field"
+                icon={
+                  <FontAwesomeIcon icon={faUser} className="text-camel mr-3" />
+                }
+                errorTimeout={3000}  // Ẩn nhanh - field đơn giản
+              />
+            </div>
 
-            {/* Phone Number */}
-            <InputField
-              label="Số điện thoại"
-              name="phone"
-              type="text"
-              style="relative z-0 w-full mb-3 group field"
-              icon={
-                <FontAwesomeIcon icon={faPhone} className="text-camel mr-3" />
-              }
-            />
-
-            {/* Email */}
-            <InputField
-              label="Email"
-              name="email"
-              type="email"
-              style="relative z-0 w-full mb-3 group field"
-              icon={
-                <FontAwesomeIcon
-                  icon={faEnvelope}
-                  className="text-camel mr-3"
+            {/* Phone and Email Row */}
+            <div className="flex gap-3 mb-1">
+              {/* Phone Number */}
+              <div className="flex-1">
+                <InputField
+                  label="Số điện thoại"
+                  name="phone"
+                  type="text"
+                  style="relative z-0 w-full group field"
+                  icon={
+                    <FontAwesomeIcon icon={faPhone} className="text-camel mr-3" />
+                  }
+                  errorTimeout={5000}  // Format phức tạp, hiển thị lâu hơn
                 />
-              }
-            />
+              </div>
+
+              {/* Email */}
+              <div className="flex-1">
+                <InputField
+                  label="Email"
+                  name="email"
+                  type="email"
+                  style="relative z-0 w-full group field"
+                  icon={
+                    <FontAwesomeIcon
+                      icon={faEnvelope}
+                      className="text-camel mr-3"
+                    />
+                  }
+                  errorTimeout={5000}  // Format quan trọng, hiển thị lâu
+                />
+              </div>
+            </div>
 
             {/* Password */}
-            <InputField
-              label="Mật khẩu"
-              name="password"
-              type="password"
-              style="relative z-0 w-full mb-3 group field"
-              icon={
-                <FontAwesomeIcon icon={faLock} className="text-camel mr-3" />
-              }
-            />
+            <div className="mb-1">
+              <InputField
+                label="Mật khẩu"
+                name="password"
+                type="password"
+                style="relative z-0 w-full group field"
+                icon={
+                  <FontAwesomeIcon icon={faLock} className="text-camel mr-3" />
+                }
+                errorTimeout={7000}  // Bảo mật quan trọng, hiển thị lâu
+              />
+            </div>
 
-            <InputField
-              label="Nhập lại mật khẩu"
-              name="confirmPassword"
-              type="password"
-              style="relative z-0 w-full mb-3 group field"
-              icon={
-                <FontAwesomeIcon icon={faUnlock} className="text-camel mr-3" />
-              }
-            />
+            {/* Confirm Password */}
+            <div className="mb-1">
+              <InputField
+                label="Nhập lại mật khẩu"
+                name="confirmPassword"
+                type="password"
+                style="relative z-0 w-full group field"
+                icon={
+                  <FontAwesomeIcon icon={faUnlock} className="text-camel mr-3" />
+                }
+                autoHideError={false}  // Luôn hiển thị để so sánh với password
+              />
+            </div>
 
-            {/* Submit */}
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`font-semibold uppercase sign-up-action text-white focus:ring-camel tracking-wider hover:bg-camel rounded-lg text-sm px-5 py-6 text-center flex items-center me-2 mb-2 mt-5 ${
+              className={`w-full font-semibold uppercase text-white tracking-wider rounded-lg text-sm px-5 py-3 text-center mt-4 transition-colors duration-200 ${
                 isSubmitting
-                  ? "bg-green-600 hover:bg-green-700 cursor-not-allowed"
-                  : "bg-camel hover:bg-logo_color"
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-camel hover:bg-logo_color focus:ring-4 focus:ring-camel/30"
               }`}
             >
               {isSubmitting ? "Đang đăng ký..." : "Đăng ký"}
             </button>
 
-            <p className="text-sm font-semibold text-dark_blue mr-3 inline">
-              Bạn đã có tài khoản?{" "}
-              <button
-                type="button"
-                className="font-medium text-primary-600 text-dark_blue"
-                onClick={handleLogInClick}
-              >
-                Đăng nhập
-              </button>
-            </p>
+            {/* Login Link */}
+            <div className="text-center mt-3 mb-3">
+              <p className="text-sm text-gray-600">
+                Bạn đã có tài khoản?{" "}
+                <button
+                  type="button"
+                  className="font-semibold text-camel hover:text-logo_color hover:underline transition-colors duration-200"
+                  onClick={handleLogInClick}
+                >
+                  Đăng nhập
+                </button>
+              </p>
+            </div>
 
-            {/* SWITCH LOG IN FORM */}
-            <button
-              onClick={handleLogInClick}
-              type="button"
-              id="log-in-button"
-              className="font-semibold uppercase log-in-button sign-up-action tracking-wider text-white bg-dark_blue hover:bg-dark_blue/90 focus:ring-4 focus:outline-none focus:ring-dark_blue/50 rounded-lg text-sm px-5 py-3 text-center flex items-center dark:focus:ring-dark_blue/50 dark:hover:bg-dark_blue/30 me-2 mb-2"
-            >
-              Đăng Nhập
-            </button>
-            <p className="text-center font-semibold text-dark_blue">
-              hoặc đăng ký với mạng xã hội
-            </p>
+            {/* Divider */}
+            <div className="relative mb-3">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="px-2 bg-white text-gray-500">
+                  hoặc đăng ký với
+                </span>
+              </div>
+            </div>
+
+            {/* Social Login */}
             <SocialIcon />
           </Form>
         )}

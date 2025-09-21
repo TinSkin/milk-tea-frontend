@@ -143,21 +143,19 @@ export function useChatbot() {
     }
   }, [chatHistory]);
 
-  //! Fetch data 1 lần để lấy dữ liệu
+  //! Fetch data chỉ khi chatbot được mở lần đầu
   useEffect(() => {
-    getAllProducts();
-    getAllCategories();
-    getAllToppings();
-  }, []);
+    if (showChatbot && products.length === 0) {
+      getAllProducts();
+      getAllCategories();
+      getAllToppings();
+    }
+  }, [showChatbot, products.length]);
 
   useEffect(() => {
     if (products.length > 0) {
       setProductText(getProductText());
-      console.log("CompanyInfo:", typeof companyInfo);
-      console.log("ProductText:", typeof productText);
     }
-
-    console.log("Chat history:", chatHistory);
   }, [products]);
 
   return {

@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 
-
 // Import Components
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -23,6 +22,7 @@ function Home() {
     <div>
       <Header />
       <div className="bg-[#151d2d]">
+
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -71,54 +71,66 @@ function Home() {
 </div>
 
 
-  {/* Right side */}
-  <div className="relative lg:mt-0 flex justify-center items-center">
-    {/* Chữ nền (lớp dưới) */}
-    <div className="absolute inset-0 flex flex-col items-center justify-center z-0 space-y-4">
-      {/* Hàng trên: đầy - rỗng - đầy */}
-      <div className="flex space-x-6">
-        <div className="flex flex-col items-center space-y-3">
-          <span className="text-7xl md:text-[8rem] font-extrabold text-[#D5BB93] opacity-30">
-            TASTY
-          </span>
-          <span className="text-7xl md:text-[8rem] font-extrabold text-[#D5BB93] opacity-30">
-            TASTY
-          </span>
-        </div>
-        <span
-          className="text-7xl md:text-[8rem] font-extrabold mt-1"
-          style={{
-            color: 'transparent',
-            WebkitTextStroke: '3px #D5BB93',
-            fontWeight: '800',
-            opacity: 0.3,
-          }}
-        >
-          DRINK DRINK
-        </span>
-      </div>
+          {/* Right side */}
+          <div className="relative lg:mt-0 flex justify-center items-center">
+            {/* Chữ nền (lớp dưới) */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center z-0 space-y-4">
+              {/* Hàng trên: đầy - rỗng - đầy */}
+              <div className="flex space-x-6">
+                <div className="flex flex-col items-center space-y-3">
+                  <span className="text-7xl md:text-[8rem] font-extrabold text-[#D5BB93] opacity-30">
+                    TASTY
+                  </span>
+                  <span className="text-7xl md:text-[8rem] font-extrabold text-[#D5BB93] opacity-30">
+                    TASTY
+                  </span>
+                </div>
+                <span
+                  className="text-7xl md:text-[8rem] font-extrabold mt-1"
+                  style={{
+                    color: "transparent",
+                    WebkitTextStroke: "3px #D5BB93",
+                    fontWeight: "800",
+                    opacity: 0.3,
+                  }}
+                >
+                  DRINK DRINK
+                </span>
+              </div>
 
-      {/* Hàng dưới: rỗng - đầy - rỗng */}
-      <div className="flex space-x-6">
-        <span
-          className="text-7xl md:text-[8rem] font-extrabold mt-1"
-          style={{
-            color: 'transparent',
-            WebkitTextStroke: '3px #D5BB93',
-            fontWeight: '800',
-            opacity: 0.3,
-          }}
-        >
-          TASTY TASTY
-        </span>
-        <div className="flex flex-col items-center space-y-3">
-          <span className="text-7xl md:text-[8rem] font-extrabold text-[#D5BB93] opacity-30">
-            DRINK
-          </span>
-          <span className="text-7xl md:text-[8rem] font-extrabold text-[#D5BB93] opacity-30">
-            DRINK
-          </span>
+              {/* Hàng dưới: rỗng - đầy - rỗng */}
+              <div className="flex space-x-6">
+                <span
+                  className="text-7xl md:text-[8rem] font-extrabold mt-1"
+                  style={{
+                    color: "transparent",
+                    WebkitTextStroke: "3px #D5BB93",
+                    fontWeight: "800",
+                    opacity: 0.3,
+                  }}
+                >
+                  TASTY TASTY
+                </span>
+                <div className="flex flex-col items-center space-y-3">
+                  <span className="text-7xl md:text-[8rem] font-extrabold text-[#D5BB93] opacity-30">
+                    DRINK
+                  </span>
+                  <span className="text-7xl md:text-[8rem] font-extrabold text-[#D5BB93] opacity-30">
+                    DRINK
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Hình nằm trên chữ */}
+            <img
+              src="/src/img/menu1.png"
+              alt="Frappuccino"
+              className="w-80 lg:w-[500px] object-contain z-10"
+            />
+          </div>
         </div>
+
       </div>
     </div>
 
@@ -330,6 +342,7 @@ function Home() {
 
       <Footer />
     </div>
+
     </div>
   );
 }

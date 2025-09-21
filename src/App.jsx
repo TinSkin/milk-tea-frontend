@@ -25,8 +25,7 @@ import ForgotPassword from "./pages/forgot-password/ForgotPassword";
 import ResetPassword from "./pages/reset-password/ResetPassword";
 
 // Import AI Chat Components & Icons & Data
-import Chatbot from "./components/Chatbot";
-import { useChatbot } from "./hooks/useChatbot";
+import ChatbotWrapper from "./components/ChatbotWrapper";
 
 // Import Error Page
 import NotFound from "./pages/notfound/NotFound";
@@ -56,37 +55,20 @@ function App() {
   const isCheckingAuth = useAuthStore((s) => s.isCheckingAuth);
   const didInit = useRef(false);
   useEffect(() => {
-    console.log("🔍 App.jsx: Running checkAuth on mount");
     if (didInit.current) return;
     didInit.current = true;
     checkAuth(); // gọi đúng 1 lần lúc app mount
   }, [checkAuth]);
 
-  //! Chatbot
-  const {
-    chatBodyRef,
-    showChatbot,
-    setShowChatbot,
-    chatHistory,
-    setChatHistory,
-    generateBotResponse,
-  } = useChatbot();
+  //! Không gọi useChatbot ở đây nữa - sẽ move vào component riêng
 
   return (
     <Router>
       {/* Toaster should be rendered at the root of the app */}
       <Toaster richColors position="top-right" />
       {/* Chatbot component should be rendered conditionally based on user role */}
-      {user && user?.role === "user" && (
-        <Chatbot
-          showChatbot={showChatbot}
-          setShowChatbot={setShowChatbot}
-          chatBodyRef={chatBodyRef}
-          chatHistory={chatHistory}
-          setChatHistory={setChatHistory}
-          generateBotResponse={generateBotResponse}
-        />
-      )}
+      {console.log("User for chatbot:", user, "Role:", user?.role)}
+      {user && user?.role === "customer" && <ChatbotWrapper />}
       <Routes>
         {/* //* Public Route (Login is not required) */}
         <Route path="/" element={<Home />} />{" "}

@@ -1,17 +1,9 @@
 //! 1. Import necessary libraries and modules
 import { create } from "zustand"; // Zustand create store to manage global state
-import axios from "axios"; // Axios for making API requests
+import api from "../api/axios"; // Shared axios instance with interceptor
 
-//! 2. Identify API URL based on environment (development OR production)
-// If mode is in development environment (development), API_URL will be "http://localhost:5000/api/auth"
-// If mode is in production environment (production), API_URL will be "/api/auth"
-const API_URL = import.meta.env.MODE === "development" ? "http://localhost:5000/api/users" : "/api/users";
-
-//! 3. Set up axios to always send cookies when making requests (useful for session authentication)
-const api = axios.create({
-    baseURL: API_URL,
-    withCredentials: true // For cookies
-});
+//! 2. API endpoint for users
+const API_ENDPOINT = "/users";
 
 export const useUserStore = create((set) => ({
     // Initialize default states
@@ -48,7 +40,7 @@ export const useUserStore = create((set) => ({
                 isVerified: params.isVerified || "all"
             });
 
-            const response = await api.get(`/?${queryParams}`); // Make GET request to fetch user data
+            const response = await api.get(`${API_ENDPOINT}?${queryParams}`); // Make GET request to fetch user data
 
             // Handle different response structures
             if (response.data.success) {
