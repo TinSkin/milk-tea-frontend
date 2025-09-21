@@ -9,6 +9,9 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import Carousel from "../components/Carousel";
 
+import menu1 from "../img/menu1.png";
+import menu2 from "../img/menu2.png";
+
 function Home() {
   const images = [
     "https://katinat.vn/wp-content/uploads/2023/12/KAT_NEWBRANDING_COVERFB_3-scaled.jpg",
@@ -120,7 +123,7 @@ function Home() {
 
             {/* Hình nằm trên chữ */}
             <img
-              src="/src/img/menu1.png"
+            src={menu1}
               alt="Frappuccino"
               className="w-80 lg:w-[600px] object-contain z-10"
             />
@@ -218,7 +221,7 @@ function Home() {
           {/* Center Image */}
           <div className="col-span-2 flex justify-center">
             <img
-              src="/src/img/menu2.png"
+              src={menu2}
               alt="Coffee"
               className="w-[900px] object-cover "
             />
@@ -333,3 +336,4 @@ function Home() {
 }
 
 export default Home;
+ 
