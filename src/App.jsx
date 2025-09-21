@@ -15,6 +15,7 @@ import Menu from "./pages/Menu";
 import Cart from "./pages/Cart";
 import Promotion from "./pages/Promotion";
 import Checkout from "./pages/Checkout";
+import OrderTracking from "./pages/OrderTracking";
 
 // Verification Pages
 import VerificationChoice from "./pages/verification/VerificationChoice";
@@ -126,6 +127,8 @@ function App() {
           {/* Trang chi tiết sản phẩm với ID động */}
           <Route path="/checkout" element={<Checkout />} />{" "}
           {/* Trang thanh toán */}
+          <Route path="/ordertracking" element={<OrderTracking />} />{" "}
+{/* Trang theo dõi đơn hàng*/}
         </Route>
         {/* //* Private Route (Admin access is required) */}
         <Route element={<PrivateRoute permittedRole="admin" />}>
