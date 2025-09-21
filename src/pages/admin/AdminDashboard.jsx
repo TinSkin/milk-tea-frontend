@@ -2,6 +2,7 @@ import React from "react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchProducts } from "../../api/productAPI";
+import { useAuthStore } from "../../store/authStore";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination, Autoplay } from "swiper/modules";
 import "swiper/css";
@@ -12,8 +13,16 @@ const AdminDashboard = () => {
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [sortOption, setSortOption] = useState("default");
+  const { checkTokenValidity } = useAuthStore();
 
   useEffect(() => {
+    // Check token validity when component mounts
+    const checkToken = async () => {
+      console.log("🔍 AdminDashboard: Checking token on mount...");
+      await checkTokenValidity();
+    };
+    checkToken();
+
     const fetchData = async () => {
       try {
         setIsLoading(true);

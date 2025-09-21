@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams, useLocation, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -13,6 +13,8 @@ const EmailVerification = () => {
   const [isResending, setIsResending] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [countdown, setCountdown] = useState(60);
+  const [hasVerified, setHasVerified] = useState(false); // Add flag to prevent double verification
+  const verificationAttempted = useRef(false); // Add ref to prevent double verification
   const [params] = useSearchParams();
 
   const location = useLocation();
@@ -24,9 +26,22 @@ const EmailVerification = () => {
     user,
     isAuthenticated,
     logout,
+    pendingVerification,
   } = useAuthStore();
+
   const emailFromState = location.state?.email || "";
-  const email = emailFromState || user?.email || "";
+  const providerFromState = location.state?.provider || "";
+  const reasonFromState = location.state?.reason || "";
+
+  // Check if this is Google verification flow
+  const isGoogleVerification =
+    providerFromState === "google" ||
+    pendingVerification?.provider === "google";
+
+  const email =
+    emailFromState || pendingVerification?.email || user?.email || "";
+  const verificationReason =
+    reasonFromState || pendingVerification?.reason || "";
 
   //! Lấy token từ URL params
   const token = params.get("token");
@@ -57,15 +72,42 @@ const EmailVerification = () => {
 
   //! Verify email when token is present
   useEffect(() => {
-    if (!token) return;
+    if (!token || hasVerified || verificationAttempted.current) return; // Multiple checks
+
+    console.log("Starting verification for token:", token);
+    
+    // Prevent double verification
+    const verifiedKey = `verified_${token}`;
+    if (sessionStorage.getItem(verifiedKey)) {
+      console.log("Token already verified, navigating...");
+      // Already verified this token, just navigate
+      navigate("/", { replace: true });
+      return;
+    }
+
+    // Set flag immediately to prevent double execution
+    verificationAttempted.current = true;
+
     (async () => {
       try {
         setIsVerifying(true);
+        setHasVerified(true); // Set flag immediately to prevent double call
+        
+        console.log("Calling verifyEmail API...");
         await verifyEmail(token); // POST /verify-email
+        console.log("verifyEmail API completed");
+
+        // Mark as verified to prevent double verification
+        sessionStorage.setItem(verifiedKey, "true");
+
+        // Temporarily disable toast to debug
         toast.success("Xác minh email thành công!");
-        // If user is authenticated, if not redirect to login
-        navigate(isAuthenticated ? "/" : "/login", { replace: true });
+
+        navigate("/", { replace: true });
       } catch (e) {
+        console.log("verifyEmail API failed:", e);
+        setHasVerified(false); // Reset flag on error
+        verificationAttempted.current = false; // Reset ref on error
         if (e.status === 410) {
           toast.error("Liên kết đã hết hạn. Hãy yêu cầu gửi lại liên kết.");
         } else {
@@ -75,7 +117,7 @@ const EmailVerification = () => {
         setIsVerifying(false);
       }
     })();
-  }, [token, isAuthenticated, navigate, verifyEmail]);
+  }, [token, navigate]); // Remove verifyEmail from deps to prevent double call
 
   //! Back to login page
   const backToLogin = async () => {
@@ -139,12 +181,26 @@ const EmailVerification = () => {
             />
           </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Kiểm tra email
+            {isGoogleVerification ? "Xác thực bổ sung" : "Kiểm tra email"}
           </h2>
           <p className="text-sm text-gray-600 mb-2">
-            Chúng tôi đã gửi link xác thực đến
+            {isGoogleVerification
+              ? "Để bảo mật tài khoản Google, vui lòng xác nhận quyền sở hữu email"
+              : "Chúng tôi đã gửi link xác thực đến"}
           </p>
-          <p className="text-sm font-medium text-blue-600 mb-6">{email}</p>
+          <p className="text-sm font-medium text-blue-600 mb-2">{email}</p>
+          {isGoogleVerification && verificationReason && (
+            <p className="text-xs text-gray-500 mb-4">
+              Lý do:{" "}
+              {verificationReason === "New user account"
+                ? "Tài khoản mới"
+                : verificationReason === "Production environment"
+                ? "Môi trường production"
+                : verificationReason === "High-value order"
+                ? "Đơn hàng giá trị cao"
+                : verificationReason}
+            </p>
+          )}
         </div>
 
         {/* Instructions */}
@@ -166,7 +222,7 @@ const EmailVerification = () => {
                 <span className="text-white text-sm font-bold">2</span>
               </div>
               <p className="text-sm text-gray-700">
-                Tìm email từ <strong>Milk Tea Shop</strong>
+                Tìm email từ <strong>Penny Milk Tea</strong>
               </p>
             </div>
             <div className="flex items-start space-x-3">
@@ -174,10 +230,21 @@ const EmailVerification = () => {
                 <span className="text-white text-sm font-bold">3</span>
               </div>
               <p className="text-sm text-gray-700">
-                Click vào nút <strong>"Xác thực email"</strong>
+                {isGoogleVerification
+                  ? 'Click vào nút "Xác nhận tài khoản"'
+                  : 'Click vào nút "Xác thực email"'}
               </p>
             </div>
           </div>
+
+          {isGoogleVerification && (
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+              <p className="text-xs text-blue-700">
+                <strong>Lưu ý:</strong> Đây là bước xác thực bổ sung cho tài
+                khoản Google của bạn nhằm đảm bảo bảo mật cao hơn.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Success Message */}

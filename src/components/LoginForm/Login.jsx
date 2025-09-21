@@ -36,12 +36,6 @@ const Login = ({ handleRegisterClick }) => {
 
       Notification.success("Đăng nhập thành công!", "Chào mừng bạn quay lại.");
 
-      // Debug authStore state NGAY SAU login
-      console.log("=== AFTER LOGIN DEBUG ===");
-      console.log("Login response:", response);
-      console.log("AuthStore state:", useAuthStore.getState());
-      console.log("========================");
-
       const user =
         response?.data?.user || useAuthStore.getState()?.user || null;
 
@@ -56,7 +50,7 @@ const Login = ({ handleRegisterClick }) => {
         }
         // Verified -> navigate based on role
         const targetRoute = user.role === "admin" ? "/admin/products" : "/";
-        console.log("🟢 Navigating to:", targetRoute);
+        console.log("Navigating to:", targetRoute);
         return navigate(targetRoute, { replace: true });
       }
     } catch (error) {
@@ -116,13 +110,22 @@ const Login = ({ handleRegisterClick }) => {
 
     // If user is not in login page
     if (location.pathname !== "/login") {
-      console.log("🔵 Not on login page, skipping navigation");
       return;
     }
 
+    console.log("🔍 Login useEffect - user state:", { 
+      isVerified: user.isVerified, 
+      pendingVerification: user.pendingVerification 
+    });
+
     // Check user verification status
     if (!user.isVerified) {
-      console.log("🟠 User not verified, going to verify-choice");
+      // Don't navigate if already navigating to verification pages
+      if (location.pathname.includes('/verify')) {
+        console.log("🚫 Already on verification page, skipping redirect");
+        return;
+      }
+      
       navigate("/verify-choice", {
         replace: true,
         state: { email: user.email },
@@ -132,126 +135,134 @@ const Login = ({ handleRegisterClick }) => {
 
     // User is verified -> redirect page
     const targetRoute = user.role === "admin" ? "/admin/products" : "/";
-    console.log("🔴 useEffect redirecting to:", targetRoute);
+    console.log("useEffect redirecting to:", targetRoute);
 
     navigate(targetRoute, {
       replace: true,
     });
-  }, [isAuthenticated, user, navigate]);
+  }, [isAuthenticated, user, navigate, location.pathname]);
 
   return (
     <div className="form-box log-in-form-container absolute bg-white flex items-center h-full">
       <Formik
-        initialValues={{ email: "", password: "" }}
+        initialValues={{ email: "", password: "", rememberMe: false }}
         validationSchema={loginSchema}
         onSubmit={async (values, formikActions) => {
           const userData = {
             email: values.email.trim(),
             password: values.password.trim(),
+            rememberMe: values.rememberMe,
           };
 
           // Call login function
           await handleLogin(userData, formikActions);
         }}
       >
-        {({ isSubmitting }) => (
-          <Form action="#" id="log-in-form" className="w-full">
+        {({ isSubmitting, values, setFieldValue }) => (
+          <Form action="#" id="log-in-form" className="w-full px-4">
+            {/* Header */}
             <h1 className="text-xl text-dark_blue font-bold md:text-4xl">
               Chào mừng trở lại
             </h1>
-            <p className="text-dark_blue md:text-xl">
+            <p className="text-dark_blue md:text-xl mb-6">
               Vui lòng nhập thông tin đăng nhập
             </p>
 
             {/* Email */}
-            <InputField
-              label="Email"
-              name="email"
-              type="email"
-              style="relative mb-5 group field"
-              icon={
-                <FontAwesomeIcon
-                  icon={faEnvelope}
-                  className="text-camel mr-3"
-                />
-              }
-            />
+            <div className="mb-2">
+              <InputField
+                label="Email"
+                name="email"
+                type="email"
+                style="relative z-0 w-full group field"
+                icon={
+                  <FontAwesomeIcon
+                    icon={faEnvelope}
+                    className="text-camel mr-3"
+                  />
+                }
+                errorTimeout={5000}
+              />
+            </div>
 
             {/* Password */}
-            <InputField
-              label="Mật khẩu"
-              name="password"
-              type="password"
-              style="relative mb-5 group field"
-              icon={
-                <FontAwesomeIcon icon={faKey} className="text-camel mr-3" />
-              }
-            />
+            <div className="mb-2">
+              <InputField
+                label="Mật khẩu"
+                name="password"
+                type="password"
+                style="relative z-0 w-full group field"
+                icon={
+                  <FontAwesomeIcon icon={faKey} className="text-camel mr-3" />
+                }
+                errorTimeout={6000}
+              />
+            </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-start">
-                <div className="flex items-center h-5">
-                  <input
-                    id="remember"
-                    aria-describedby="remember"
-                    type="checkbox"
-                    className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-primary-600 dark:ring-offset-gray-800"
-                  />
-                </div>
-                <div className="ml-3 text-sm">
-                  <label htmlFor="remember" className="text-gray-500">
-                    Ghi nhớ đăng nhập
-                  </label>
-                </div>
+            {/* Remember Me & Forgot Password */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
+                <input
+                  id="remember"
+                  name="rememberMe"
+                  type="checkbox"
+                  checked={values.rememberMe}
+                  onChange={() => setFieldValue('rememberMe', !values.rememberMe)}
+                  className="w-4 h-4 text-camel bg-gray-50 border-gray-300 rounded focus:ring-camel focus:ring-2"
+                />
+                <label htmlFor="remember" className="ml-2 text-sm text-gray-600">
+                  Ghi nhớ đăng nhập
+                </label>
               </div>
               <button
                 type="button"
                 onClick={handleForgotPasswordClick}
-                href="#"
-                className="text-sm font-semibold text-primary-600 underline-offset-2 dark:text-primary-500"
+                className="text-sm font-semibold text-camel hover:text-logo_color hover:underline transition-colors duration-200"
               >
                 Quên mật khẩu?
               </button>
             </div>
 
-            {/* Submit */}
+            {/* Login Button */}
             <button
               type="submit"
               disabled={isSubmitting}
-              id="log-in-submit"
-              className={`font-bold uppercase log-in-action text-white tracking-wider focus:ring-4 focus:outline-none rounded-lg text-sm px-5 py-6 text-center flex items-center focus:ring-camel hover:bg-camel my-5 me-2 ${
+              className={`w-full font-semibold uppercase text-white tracking-wider rounded-lg text-sm px-5 py-3 text-center transition-colors duration-200 ${
                 isSubmitting
-                  ? "bg-green-600 hover:bg-green-700 cursor-not-allowed"
-                  : "bg-camel hover:bg-logo_color"
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-camel hover:bg-logo_color focus:ring-4 focus:ring-camel/30"
               }`}
             >
               {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
             </button>
 
-            <p className="text-sm font-semibold text-dark_blue inline">
-              Bạn chưa có tài khoản?
-              <button
-                type="button"
-                onClick={handleRegisterClick}
-                className="font-medium text-primary-600 dark:text-primary-500 inline underline underline-offset-2"
-              >
-                Tạo tài khoản miễn phí
-              </button>
-            </p>
+            {/* Register Link */}
+            <div className="text-center mt-4 mb-4">
+              <p className="text-sm text-gray-600">
+                Bạn chưa có tài khoản?{" "}
+                <button
+                  type="button"
+                  className="font-semibold text-camel hover:text-logo_color hover:underline transition-colors duration-200"
+                  onClick={handleRegisterClick}
+                >
+                  Đăng ký miễn phí
+                </button>
+              </p>
+            </div>
 
-            {/* SWITCH REGISTER FORM */}
-            <button
-              onClick={handleRegisterClick}
-              type="button"
-              id="sign-up-button"
-              className="font-semibold uppercase sign-up-button sign-up-action text-dark_blue bg-[#fff] hover:bg-gray-300 focus:ring-4 focus:outline-none focus:bg-gray-300 rounded-lg text-sm px-5 py-3 text-center flex items-center dark:focus:ring-gray-300 dark:hover:bg-gray-300 me-2 mb-2 border-2 border-dark_blue"
-            >
-              Đăng ký
-            </button>
+            {/* Divider */}
+            <div className="relative mb-4">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="px-2 bg-white text-gray-500">
+                  hoặc đăng nhập với
+                </span>
+              </div>
+            </div>
 
-            <p className="font-semibold text-center">
-              hoặc đăng nhập với mạng xã hội
-            </p>
+            {/* Social Login */}
             <SocialIcon />
           </Form>
         )}

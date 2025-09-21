@@ -14,7 +14,6 @@ import { useAuthStore } from "../../store/authStore";
 const VerificationChoice = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const email = location.state?.email || user?.email || "";
 
   const {
     isAuthenticated,
@@ -22,18 +21,38 @@ const VerificationChoice = () => {
     logout,
     resendVerificationOTP,
     resendVerificationEmail,
+    pendingVerification,
   } = useAuthStore();
+
+  // Get email and provider info from state or pendingVerification
+  const emailFromState = location.state?.email || "";
+  const providerFromState = location.state?.provider || "";
+  const reasonFromState = location.state?.reason || "";
+
+  const email =
+    emailFromState || pendingVerification?.email || user?.email || "";
+  const provider = providerFromState || pendingVerification?.provider || "";
+  const isGoogleVerification = provider === "google";
 
   //! Handle OTP choice
   const handleOTPChoice = async () => {
     if (!email) {
       return navigate("/login", { replace: true });
     }
-    if (!isAuthenticated) {
+
+    // For Google users, don't check isAuthenticated
+    if (!isGoogleVerification && !isAuthenticated) {
       return navigate("/login", { state: { next: "/verify-otp", email } });
     }
+
     await resendVerificationOTP(email);
-    navigate("/verify-otp", { state: { email } });
+    navigate("/verify-otp", {
+      state: {
+        email,
+        provider,
+        reason: reasonFromState,
+      },
+    });
   };
 
   //! Handle email link choice
@@ -41,14 +60,21 @@ const VerificationChoice = () => {
     if (!email) {
       return navigate("/login", { replace: true });
     }
+
     await resendVerificationEmail(email);
     const ts = Date.now();
     try {
       localStorage.setItem(`resend_ts:${email}`, String(ts));
     } catch {}
-    navigate("/verify-email", { state: { email, resentAt: ts } });
+    navigate("/verify-email", {
+      state: {
+        email,
+        resentAt: ts,
+        provider,
+        reason: reasonFromState,
+      },
+    });
   };
-
 
   //! Back to login page
   const backToLogin = async () => {
@@ -74,8 +100,15 @@ const VerificationChoice = () => {
             Chọn cách xác thực
           </h2>
           <p className="text-sm text-gray-600 mb-2">
-            Chúng tôi cần xác thực email của bạn
+            {isGoogleVerification
+              ? "Để bảo mật tài khoản Google, vui lòng xác thực email"
+              : "Chúng tôi cần xác thực email của bạn"}
           </p>
+          {reasonFromState && isGoogleVerification && (
+            <p className="text-xs text-orange-600 mb-2">
+              Lý do: {reasonFromState}
+            </p>
+          )}
           <p className="text-sm font-medium text-blue-600 mb-6">{email}</p>
         </div>
 

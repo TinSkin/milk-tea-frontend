@@ -1,14 +1,9 @@
 //! 1. Import necessary libraries and modules
 import { create } from "zustand"; // Zustand create store to manage global state
-import axios from "axios"; // Axios for making API requests
+import api from "../api/axios"; // Shared axios instance with interceptor
 
-const API_URL = import.meta.env.MODE === "development" ? "http://localhost:5000/api/categories" : "/api/categories";
-
-//! 3. Set up axios to always send cookies when making requests (useful for session authentication)
-const api = axios.create({
-    baseURL: API_URL,
-    withCredentials: true // For cookies
-});
+//! 2. API endpoint for categories
+const API_ENDPOINT = "/categories";
 
 //! Create zustand store to manage product categories
 export const useCategoryStore = create((set, get) => ({
@@ -44,7 +39,7 @@ export const useCategoryStore = create((set, get) => ({
                 sortOrder: params.sortOrder || "desc"
             });
 
-            const response = await api.get(`/?${queryParams}`);
+            const response = await api.get(`${API_ENDPOINT}?${queryParams}`);
 
             if (response.data.success) {
                 set({
@@ -73,7 +68,7 @@ export const useCategoryStore = create((set, get) => ({
     createCategory: async (categoryData) => {
         set({ isLoading: true, error: null });
         try {
-            const response = await api.post("/", categoryData);
+            const response = await api.post(API_ENDPOINT, categoryData);
             const newCategory = response.data.success ? response.data.category : response.data;
 
             // Update local state
@@ -95,7 +90,7 @@ export const useCategoryStore = create((set, get) => ({
     updateCategory: async (categoryId, categoryData) => {
         set({ isLoading: true, error: null });
         try {
-            const response = await api.put(`/${categoryId}`, categoryData);
+            const response = await api.put(`${API_ENDPOINT}/${categoryId}`, categoryData);
             const updatedCategory = response.data.success ? response.data.category : response.data;
 
             // Update local state
@@ -121,7 +116,7 @@ export const useCategoryStore = create((set, get) => ({
         set({ isLoading: true, error: null });
         try {
             console.log("Soft deleting category with ID:", categoryId);
-            const response = await api.post(`/${categoryId}/soft-delete`);
+            const response = await api.post(`${API_ENDPOINT}/${categoryId}/soft-delete`);
             const updatedCategory = response.data.success ? response.data.category : response.data;
 
             // Update local state
@@ -146,7 +141,7 @@ export const useCategoryStore = create((set, get) => ({
     deleteCategory: async (categoryId) => {
         set({ isLoading: true, error: null });
         try {
-            const response = await api.delete(`/${categoryId}`);
+            const response = await api.delete(`${API_ENDPOINT}/${categoryId}`);
             if (response.data.success) {
                 // Xóa khỏi local state
                 const currentCategories = get().categories;
@@ -170,7 +165,7 @@ export const useCategoryStore = create((set, get) => ({
     syncCategoriesWithProducts: async () => {
         set({ isSyncing: true, error: null });
         try {
-            const response = await api.post("/sync-products");
+            const response = await api.post(`${API_ENDPOINT}/sync-products`);
             set({ isSyncing: false });
             return response.data;
         } catch (error) {
