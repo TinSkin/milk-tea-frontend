@@ -66,7 +66,6 @@ function App() {
       {/* Toaster should be rendered at the root of the app */}
       <Toaster richColors position="top-right" />
       {/* Chatbot component should be rendered conditionally based on user role */}
-      {console.log("User for chatbot:", user, "Role:", user?.role)}
       {user && user?.role === "customer" && <ChatbotWrapper />}
       <Routes>
         {/* //* Public Route (Login is not required) */}
@@ -117,8 +116,8 @@ function App() {
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/unauthorized" element={<Unauthorized />} />{" "}
         <Route path="*" element={<NotFound />} />{" "}
-        {/* //* Private Route (Login is required) */}
-        <Route element={<PrivateRoute />}>
+        {/* //* ------ Customer Route (Registered Customer access is required) ------*/}
+        <Route element={<PrivateRoute permittedRole="customer" />}>
           {/* <Route path="/menu" element={<Menu />} />{" "} */}
           {/* Trang giỏ hàng */}
           <Route path="/cart" element={<Cart />} />{" "}
@@ -127,9 +126,29 @@ function App() {
           <Route path="/checkout" element={<Checkout />} />{" "}
           {/* Trang thanh toán */}
         </Route>
-        {/* //* Private Route (Admin access is required) */}
+        {/* //* ------ Manager Route (Manager access is required) ------ */}
+        <Route element={<PrivateRoute permittedRole="storeManager" />}>
+          {/* Khi truy cập /manager → điều hướng tới /manager/dashboard */}
+          <Route
+            path="/storeManager"
+            element={<Navigate to="/admin/products" replace />}
+          />
+          {/* Trang quản lý sản phẩm dành riêng cho admin */}
+          <Route path="/admin/products" element={<AdminProduct />} />
+          <Route path="/admin/accounts" element={<AdminAccount />} />
+          <Route path="/admin/toppings" element={<AdminTopping />} />
+          <Route path="/admin/categories" element={<AdminCategory />} />
+        </Route>
+        {/* //* ------ Staff Route (Staff access is required) ------ */}
+        <Route element={<PrivateRoute permittedRole="staff" />}>
+          {/* Khi truy cập /manager → điều hướng tới /manager/dashboard */}
+          <Route
+            path="/staff"
+            element={<Navigate to="/staff/dashboard" replace />}
+          />
+        </Route>
+        {/* //* ------ Admin Route (Admin access is required) ------*/}
         <Route element={<PrivateRoute permittedRole="admin" />}>
-          {/* Khi truy cập /admin → điều hướng tới /admin/products */}
           <Route
             path="/admin"
             element={<Navigate to="/admin/products" replace />}
