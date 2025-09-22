@@ -123,7 +123,7 @@ function Home() {
 
             {/* Hình nằm trên chữ */}
             <img
-              src="/src/img/menu1.png"
+              src={menu1}
               alt="Frappuccino"
               className="w-80 lg:w-[600px] object-contain z-10"
             />
@@ -221,7 +221,7 @@ function Home() {
           {/* Center Image */}
           <div className="col-span-2 flex justify-center">
             <img
-              src="/src/img/menu2.png"
+              src={menu2}
               alt="Coffee"
               className="w-[900px] object-cover "
             />
