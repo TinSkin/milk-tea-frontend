@@ -9,9 +9,6 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import Carousel from "../components/Carousel";
 
-import menu1 from "../img/menu1.png";
-import menu2 from "../img/menu2.png";
-
 function Home() {
   const images = [
     "https://katinat.vn/wp-content/uploads/2023/12/KAT_NEWBRANDING_COVERFB_3-scaled.jpg",
