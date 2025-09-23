@@ -38,6 +38,8 @@ const updateQuantity = useCartStore((state) => state.updateQuantity);
 
 const [isLoading, setIsLoading] = useState(false); // Trạng thái loading
 
+const [selectedItems, setSelectedItems] = useState([]); // chọn danh sách sản phẩm cần mua
+
 
   //hàm xóa tất cả sản phẩm khỏi giỏ hàng
   const handleClearCart = () => {
@@ -72,6 +74,44 @@ const [isLoading, setIsLoading] = useState(false); // Trạng thái loading
     return getCartTotal().toLocaleString();
   };
 
+//hàm xử lý tick checkbox
+  const handleSelectItem = (itemKey) => {
+    if (selectedItems.includes(itemKey)) {
+      // Nếu đã chọn thì bỏ chọn
+      setSelectedItems(selectedItems.filter((key) => key !== itemKey));
+    } else {
+      // Nếu chưa chọn thì thêm vào danh sách
+      setSelectedItems([...selectedItems, itemKey]);
+    }
+  };
+// Hàm tính tổng số lượng sản phẩm được chọn
+const getSelectedQuantity = () => {
+  return items
+    .filter((item) =>
+      selectedItems.includes(
+        item.productId +
+          item.sizeOption +
+          JSON.stringify(item.toppings)
+      )
+    )
+    .reduce((sum, item) => sum + item.quantity, 0);
+};
+
+  
+//hàm tính tổng tiền sản phẩm được chọn
+  const getSelectedTotal = () => {
+    return items
+      .filter((item) =>
+        selectedItems.includes(
+          item.productId +
+            item.sizeOption +
+            JSON.stringify(item.toppings)
+        )
+      )
+      .reduce((sum, item) => sum + item.price * item.quantity, 0);
+  };
+  
+  
   if (items.length === 0 && !isLoading) {
     return (
       <>
@@ -134,7 +174,7 @@ const [isLoading, setIsLoading] = useState(false); // Trạng thái loading
             {/* Clear Cart Button */}
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold text-black">
-                Sản phẩm ({items.length})
+                Sản phẩm ({getTotalItems()})
               </h2>
               <button
                 onClick={handleClearCart}
@@ -173,6 +213,8 @@ const [isLoading, setIsLoading] = useState(false); // Trạng thái loading
                 <table className="min-w-full bg-white border divide-y divide-gray-200">
                   <thead className="bg-dark_blue text-white">
                     <tr>
+                    <th className="text-center w-[50px]"></th>
+
                       <th className="p-3 text-left text-lg font-semibold w-1/4">
                         Tên
                       </th>
@@ -211,6 +253,21 @@ const [isLoading, setIsLoading] = useState(false); // Trạng thái loading
                           JSON.stringify(item.toppings)
                         }
                       >
+         <td className="px-1 text-center"> 
+  <input
+    type="checkbox"
+    className="w-4 h-4" 
+    checked={selectedItems.includes(
+      item.productId + item.sizeOption + JSON.stringify(item.toppings)
+    )}
+    onChange={() =>
+      handleSelectItem(
+        item.productId + item.sizeOption + JSON.stringify(item.toppings)
+      )
+    }
+  />
+</td>
+
                         <td className="p-3 flex items-center space-x-3">
                           <img
                             src={item.images}
@@ -307,29 +364,27 @@ const [isLoading, setIsLoading] = useState(false); // Trạng thái loading
               className="bg-[#0b3042]/10 rounded-lg shadow-sm p-6 sticky top-24"
             >
               <h2 className="text-xl font-bold text-[#0b3042] mb-6">
-                Tóm tắt đơn hàng
+                Giỏ hàng của bạn
               </h2>
 
               <div className="space-y-4">
                 {/* Items Summary */}
                 <div className="flex justify-between text-black">
-                  <span>Tạm tính ({getTotalItems()} sản phẩm)</span>
+                  <span>Tất cả ({getTotalItems()} sản phẩm)</span>
                   <span>{formatPrice(getCartTotal())}</span>
                 </div>
 
-                <div className="flex justify-between text-black">
-                  <span>Phí vận chuyển</span>
-                  <span className="text-green-600">Miễn phí</span>
-                </div>
 
                 <div className="border-t border-gray-200 pt-4">
-                  <div className="flex justify-between text-lg font-bold text-black">
-                    <span>Tổng cộng</span>
-                    <span className="text-green-600">
-                      {formatPrice(getCartTotal())}
-                    </span>
-                  </div>
-                </div>
+  <div className="flex justify-between text-lg font-bold text-black">
+    <span>Mua hàng ({getSelectedQuantity()} sản phẩm)</span>
+    <span className="text-green-600">
+      {formatPrice(getSelectedTotal())}
+    </span>
+  </div>
+</div>
+
+
 
                 {/* Checkout Button */}
                 <button
