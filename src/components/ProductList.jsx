@@ -22,7 +22,7 @@ function ProductList({ products = [], isLoading = false, error = null }) {
   if (error) {
     return (
       <div className="text-center py-12">
-        <div className="text-red-400 text-6xl mb-4">⚠️</div>
+        <div className="text-red-400 text-6xl mb-4"></div>
         <p className="text-red-600 text-lg mb-2">Lỗi tải sản phẩm</p>
         <p className="text-gray-600 text-sm">{error}</p>
       </div>
@@ -33,7 +33,7 @@ function ProductList({ products = [], isLoading = false, error = null }) {
   if (!products || products.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="text-gray-400 text-6xl mb-4">🍵</div>
+        <div className="text-gray-400 text-6xl mb-4"></div>
         <p className="text-gray-600 text-lg">Không có sản phẩm nào</p>
       </div>
     );

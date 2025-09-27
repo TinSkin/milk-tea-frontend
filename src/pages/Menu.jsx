@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import Category from "../components/Category";
 import ProductList from "../components/ProductList";
 import Cart from "../components/Cart";
 import FadeInOnScroll from "./../components/FadeInOnScroll";
@@ -12,12 +11,14 @@ import {
   DollarSign,
   ListOrdered,
   Search,
+  MapPin,
+  Store,
 } from "lucide-react";
 import Select from "react-select";
 
-// Import Stores
+//! Import Stores
 import { useProductStore } from "../store/productStore";
-import { useCategoryStore } from "../store/categoryStore";
+import { useStoreSelectionStore } from "../store/storeSelectionStore";
 
 const sortOptions = [
   { value: "", label: "Không sắp xếp" },
@@ -93,122 +94,152 @@ const itemsPerPageOptions = [
 ];
 
 function Menu() {
-  //! Product stores
+  //! Store selection
   const {
-    products,
-    isLoading: productsLoading,
-    error: productsError,
-    getAllProducts,
-    clearError: clearProductsError,
-  } = useProductStore();
+    selectedStore,
+    loadStoreCategories,
+    loadStoreProducts,
+    openStoreModal,
+    isLoading: storeLoading,
+  } = useStoreSelectionStore();
 
-  const {
-    categories,
-    isLoading: categoriesLoading,
-    getAllCategories,
-  } = useCategoryStore();
-
-  // Local state for UI
-  const [filteredProducts, setFilteredProducts] = useState([]);
+  // Local state for UI - store-specific data management
+  const [productsList, setProductsList] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(false);
+  const [productsError, setProductsError] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+  
+  // Pagination & filtering - now handled by backend
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(8);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalProducts, setTotalProducts] = useState(0);
 
   //! Load initial data on mount
   useEffect(() => {
+    console.log("Selected Store: MENU", selectedStore);
     loadInitialData();
   }, []);
 
-  //! Load products and categories
+  //! Reload data khi selectedStore thay đổi
+  useEffect(() => {
+    console.log("Selected Store changed:", selectedStore);
+    if (selectedStore?._id) {
+      loadInitialData();
+    }
+  }, [selectedStore?._id]);
+
+  useEffect(() => {
+    console.log("Categories state updated:", categories);
+  }, [categories]);
+ 
+  useEffect(() => {
+    console.log("ProductsList state updated:", productsList);
+  }, [productsList]);
+
+  //! Load categories từ store đã chọn  
   const loadInitialData = async () => {
     try {
-      // Load categories
-      await getAllCategories({
-        status: "available",
-        page: 1,
-        limit: 50,
-        sortBy: "name",
-        sortOrder: "asc",
-      });
+      if (!selectedStore?._id) {
+        console.warn("No store selected, cannot load store-specific data");
+        return;
+      }
 
-      // Load products
-      await getAllProducts({
-        status: "available", // Only show available products
-        page: 1,
-        limit: 100, // Get more products for client-side filtering
-        sortBy: "createdAt",
-        sortOrder: "desc",
-      });
+      setCategoriesLoading(true);
+
+      // Load categories của store cụ thể
+      const storeCategories = await loadStoreCategories(selectedStore._id);
+      const categoriesArray = storeCategories.categories || [];
+      setCategories(categoriesArray);
+      setCategoriesLoading(false);
+      
     } catch (error) {
-      console.error("Error loading initial data:", error);
+      console.error("Error loading store categories:", error);
+      setCategoriesLoading(false);
     }
   };
 
-  //! Filter products based on search, category, and sort
-  useEffect(() => {
-    let filtered = [...products];
+  //! Load products với backend pagination
+  const loadProducts = async (page = currentPage, limit = itemsPerPage, search = searchTerm, category = selectedCategory, sortBy = 'createdAt', sortOrder = 'desc') => {
+    try {
+      if (!selectedStore?._id) return;
 
-    // Filter by search term
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (product) =>
-          product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          product.description.toLowerCase().includes(searchTerm.toLowerCase())
+      setProductsLoading(true);
+      setProductsError(null);
+
+      // Parse sortOption để tạo sortBy và sortOrder
+      let finalSortBy = 'createdAt';
+      let finalSortOrder = 'desc';
+      
+      if (sortOption) {
+        if (sortOption === 'price-asc') {
+          finalSortBy = 'price';
+          finalSortOrder = 'asc';
+        } else if (sortOption === 'price-desc') {
+          finalSortBy = 'price';
+          finalSortOrder = 'desc';
+        } else if (sortOption === 'date-asc') {
+          finalSortBy = 'createdAt';
+          finalSortOrder = 'asc';
+        } else if (sortOption === 'date-desc') {
+          finalSortBy = 'createdAt';
+          finalSortOrder = 'desc';
+        }
+      }
+
+      const productsAPI = await loadStoreProducts(
+        selectedStore._id, 
+        page, 
+        limit, 
+        search, 
+        category === 'all' ? '' : category, 
+        finalSortBy, 
+        finalSortOrder
       );
+      
+      setProductsList(productsAPI.products || []);
+      setTotalProducts(productsAPI.pagination?.totalProducts || 0);
+      setTotalPages(productsAPI.pagination?.totalPages || 0);
+      setProductsLoading(false);
+      
+    } catch (error) {
+      console.error("Error loading store products:", error);
+      setProductsLoading(false);
+      setProductsError(error.message || "Lỗi tải danh sách sản phẩm");
     }
+  };
 
-    // Filter by category
-    if (selectedCategory !== "all") {
-      filtered = filtered.filter((product) => {
-        // Handle both object and string category
-        const productCategory =
-          typeof product.category === "object"
-            ? product.category._id
-            : product.category;
-        return productCategory === selectedCategory;
-      });
+  // Trigger load products when filters change
+  useEffect(() => {
+    if (selectedStore?._id) {
+      loadProducts(1); // Reset to page 1 when filters change
+      setCurrentPage(1);
     }
-
-    // Sort products
-    if (sortOption === "price-asc") {
-      filtered.sort((a, b) => a.price - b.price);
-    } else if (sortOption === "price-desc") {
-      filtered.sort((a, b) => b.price - a.price);
-    } else if (sortOption === "date-asc") {
-      filtered.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-    } else if (sortOption === "date-desc") {
-      filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    }
-
-    setFilteredProducts(filtered);
-    setCurrentPage(1); // Reset to first page when filters change
-  }, [products, searchTerm, selectedCategory, sortOption]);
-
-  //! Pagination calculations
-  const indexOfLastProduct = currentPage * itemsPerPage;
-  const indexOfFirstProduct = indexOfLastProduct - itemsPerPage;
-  const currentProducts = filteredProducts.slice(
-    indexOfFirstProduct,
-    indexOfLastProduct
-  );
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  }, [selectedStore?._id, searchTerm, selectedCategory, sortOption, itemsPerPage]);
 
   const nextPage = () => {
     if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
+      const newPage = currentPage + 1;
+      setCurrentPage(newPage);
+      loadProducts(newPage);
     }
   };
 
   const prevPage = () => {
     if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
+      const newPage = currentPage - 1;
+      setCurrentPage(newPage);
+      loadProducts(newPage);
     }
   };
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
+    loadProducts(pageNumber);
   };
 
   //! Generate page numbers for pagination
@@ -249,6 +280,11 @@ function Menu() {
     return category ? category.name : "Không xác định";
   };
 
+  //! Clear products error
+  const clearProductsError = () => {
+    setProductsError(null);
+  };
+
   //! Clear errors after 5 seconds
   useEffect(() => {
     if (productsError) {
@@ -265,6 +301,50 @@ function Menu() {
   return (
     <div>
       <Header />
+
+      {/* Store Info Bar */}
+      {selectedStore && (
+        <div className="bg-orange-500 text-white p-3 shadow-md">
+          <div className="container mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Store className="w-5 h-5" />
+              <div>
+                <h3 className="font-semibold">
+                  {selectedStore.storeName || selectedStore.name}
+                </h3>
+                <p className="text-sm opacity-90 flex items-center gap-1">
+                  <MapPin className="w-3 h-3" />
+                  {selectedStore.address &&
+                  typeof selectedStore.address === "object"
+                    ? `${selectedStore.address.street}, ${selectedStore.address.district}, ${selectedStore.address.city}`
+                    : selectedStore.address || "Địa chỉ không có sẵn"}
+                </p>
+              </div>
+            </div>
+            <div className="text-right text-sm">
+              <div className="flex items-center gap-2">
+                <span
+                  className={`px-3 py-2 rounded text-xs ${
+                    selectedStore.status ? "bg-green-500" : "bg-red-500"
+                  }`}
+                >
+                  {selectedStore.status ? "Đang mở cửa" : "Đóng cửa"}
+                </span>
+              </div>
+              <button
+                onClick={() => {
+                  openStoreModal();
+                }}
+                className="mt-2 px-3 py-2 bg-white/20 hover:bg-white/30 rounded text-xs border border-white/30 transition-colors"
+              >
+                Đổi cửa hàng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Main Content */}  
       <div className="font-roboto min-h-screen bg-gray-100 p-6">
         <div className="flex gap-4">
           {/* Category Sidebar */}
@@ -314,27 +394,26 @@ function Menu() {
                   >
                     <span className="font-semibold">Tất cả sản phẩm</span>
                     <span className="text-sm font-semibold">
-                      ({products.length})
+                      ({totalProducts})
                     </span>
                   </li>
 
-                  {/* Dynamic categories */}
+                  {/* Categories Sidebar */}
                   {categories && categories.length > 0 ? (
                     categories
                       .filter((cat) => cat.status === "available")
                       .map((category) => {
-                        const categoryProductCount = products.filter(
-                          (product) => {
-                            const productCategory =
-                              product.category &&
-                              typeof product.category === "object"
-                                ? product.category._id
-                                : product.category;
-                            return productCategory === category._id;
-                          }
-                        ).length;
-                        if (categoryProductCount === 0) return null;
-
+                        const categoryProductCount = Array.isArray(productsList) && selectedCategory === "all"
+                          ? productsList.filter((product) => {
+                              const productCategory =
+                                product.category &&
+                                typeof product.category === "object"
+                                  ? product.category._id
+                                  : product.category;
+                              return productCategory === category._id;
+                            }).length 
+                          : selectedCategory === category._id ? productsList.length : 0;
+                        
                         return (
                           <li
                             key={category._id}
@@ -470,8 +549,8 @@ function Menu() {
                 </div>
               ) : (
                 <p>
-                  Hiển thị {currentProducts.length} trong tổng số{" "}
-                  {filteredProducts.length} sản phẩm
+                  Hiển thị {productsList.length} trong tổng số{" "}
+                  {totalProducts} sản phẩm (trang {currentPage}/{totalPages})
                   {searchTerm && ` cho "${searchTerm}"`}
                   {selectedCategory !== "all" &&
                     ` trong danh mục "${getCategoryName(selectedCategory)}"`}
@@ -493,7 +572,7 @@ function Menu() {
             )}
 
             {/* Product Display */}
-            {!isLoading && currentProducts.length === 0 ? (
+            {!isLoading && productsList.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-gray-600 text-lg mb-4">
                   {searchTerm || selectedCategory !== "all"
@@ -514,12 +593,12 @@ function Menu() {
               </div>
             ) : (
               <ProductList
-                products={currentProducts.map((prod) => ({
+                products={productsList.map((prod) => ({
                   ...prod,
                   images:
                     prod.images && prod.images.length > 0
                       ? prod.images
-                      : ["/no-image.png"], // hoặc URL placeholder ảnh
+                      : ["/no-image.png"],
                 }))}
                 isLoading={isLoading}
                 error={productsError}
