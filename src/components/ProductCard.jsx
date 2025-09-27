@@ -15,17 +15,24 @@ import { addOrderSchema } from "../utils/addOrderSchema";
 
 // Import Component
 import Notification from "./Notification";
+import AddToCartAddressModal from "./LocationSelection/AddToCartAddressModal";
 
 // Import Store
 import { useAuthStore } from "../store/authStore";
+import { useStoreSelectionStore } from "../store/storeSelectionStore";
 
 function ProductCard(props) {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [productToAdd, setProductToAdd] = useState(null);
 
   //! Lấy trạng thái đăng nhập từ store
   const { user } = useAuthStore();
+  
+  //! Lấy store đã chọn
+  const { selectedStore } = useStoreSelectionStore();
 
   //! Using props.image (array) for Swiper
   const images =
@@ -42,11 +49,7 @@ function ProductCard(props) {
 
   //! Handle add product click
   const handleAddClick = () => {
-    if (!user) {
-      Notification.warning("Bạn cần đăng nhập để thêm sản phẩm!");
-      navigate("/login");
-      return;
-    }
+    
     setShowAddModal(true);
   };
 
@@ -120,6 +123,7 @@ function ProductCard(props) {
                 (sizePrice + toppingsPrice) * (values.quantity || 1);
 
               const newProduct = {
+
                 _id: props._id,
                 name: props.name,
                 images: props.image || props.images || [],
@@ -140,8 +144,14 @@ function ProductCard(props) {
                 quantity: values.quantity || 1,
               };
 
+
               addToCart(newProduct, 1);
+          
+              // Lưu sản phẩm và chuyển sang bước nhập địa chỉ
+              setProductToAdd(newProduct);
               setShowAddModal(false);
+              setShowAddressModal(true);
+
             }}
           >
             {({ values, setFieldValue }) => {
@@ -151,7 +161,7 @@ function ProductCard(props) {
                 );
                 const sizePrice = selectedSize ? selectedSize.price : 0;
                 const toppingsPrice = values.toppings.reduce(
-                  (sum, t) => sum + t.extraPrice,
+                  (sum, t) => sum + (t.extraPrice || 0),
                   0
                 );
                 const total = (sizePrice + toppingsPrice) * values.quantity;
@@ -214,7 +224,7 @@ function ProductCard(props) {
                           (opt) => opt.size === values.sizeOption
                         );
                         const toppingsTotal = values.toppings.reduce(
-                          (sum, t) => sum + t.extraPrice,
+                          (sum, t) => sum + (t.extraPrice || 0),
                           0
                         );
                         const total = selectedSize
@@ -349,7 +359,7 @@ function ProductCard(props) {
                           (t) => t.name === topping.name
                         );
                         return (
-                          <label key={index} className="flex items-center mb-1">
+                          <label key={index} className="flex items-center mb-1 text-sm">
                             <input
                               type="checkbox"
                               checked={isChecked}
@@ -363,8 +373,9 @@ function ProductCard(props) {
                               }}
                               className="mr-2"
                             />
-                            {topping.name} (+
-                            {topping.extraPrice.toLocaleString("vi-VN")}₫)
+                            <span className="flex-1 whitespace-nowrap">
+                              {topping.name} (+{(topping.extraPrice).toLocaleString("vi-VN")}₫)
+                            </span>
                           </label>
                         );
                       })}
@@ -424,6 +435,35 @@ function ProductCard(props) {
             }}
           </Formik>
         </div>
+      )}
+
+      {/* Address Modal - Hiển thị sau khi chọn xong sản phẩm */}
+      {showAddressModal && productToAdd && (
+        <AddToCartAddressModal
+          onClose={() => {
+            setShowAddressModal(false);
+            setProductToAdd(null);
+          }}
+          onAddressConfirmed={(address, deliveryInfo) => {
+            // Thêm sản phẩm vào giỏ hàng với thông tin địa chỉ
+            const productWithAddress = {
+              ...productToAdd,
+              deliveryAddress: address,
+              deliveryInfo: deliveryInfo
+            };
+            
+            console.log("Adding to cart with address:", productWithAddress);
+            addToCart(productWithAddress);
+            
+            // Đóng modal và reset state
+            setShowAddressModal(false);
+            setProductToAdd(null);
+            
+            Notification.success("Đã thêm sản phẩm vào giỏ hàng!");
+          }}
+          selectedStore={selectedStore}
+          product={productToAdd}
+        />
       )}
     </>
   );

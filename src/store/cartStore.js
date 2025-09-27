@@ -1,10 +1,12 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
+//! 1. Import các thư viện và modules cần thiết
+import { create } from "zustand"; // Zustand tạo store để quản lý state toàn cục
+import { persist } from "zustand/middleware"; // Persist middleware cho localStorage
 
 const useCartStore = create(
   persist(
     (set, get) => ({
-      items: [],
+      //! 3. Khởi tạo các trạng thái mặc định
+      items: [], // Mảng lưu trữ các sản phẩm trong giỏ hàng
 
       // helper: chuẩn hoá topping để so sánh
       _mapToppingsForCompare: (arr) =>
@@ -47,7 +49,7 @@ const useCartStore = create(
           [];
 
         if (existingItemIndex !== -1) {
-          // Nếu sp đã có → tăng số lượng
+          // Nếu sản phẩm đã tồn tại, tăng số lượng
           const updatedItems = [...get().items];
           updatedItems[existingItemIndex].quantity += quantity;
           set({ items: updatedItems });
@@ -119,6 +121,15 @@ const useCartStore = create(
           return item;
         });
         set({ items: updatedItems });
+      },
+
+      //! 7. Hàm xóa toàn bộ giỏ hàng
+      clearCart: () => set({ items: [] }),
+
+      //! 8. Các hàm helper sử dụng get() để truy cập state hiện tại
+      getCurrentItems: () => {
+        const { items } = get();
+        return items;
       },
 
       getTotalItems: () => {
@@ -206,14 +217,18 @@ const useCartStore = create(
   set({ items: mergedItems });
 },
 
-
+      getItemById: (productId) => {
+        const { items } = get();
+        return items.find(item => item.id === productId) || null;
+      },
 
       // Xóa toàn bộ giỏ
       clearCart: () => set({ items: [] }),
+
     }),
     {
-      name: "cart-storage",
-      partialize: (state) => ({ items: state.items }),
+      name: "cart-storage", // localStorage key
+      partialize: (state) => ({ items: state.items }), // Chỉ persist items
     }
   )
 );

@@ -1,15 +1,16 @@
-//! 1. Import necessary libraries and modules
-import { create } from "zustand"; // Zustand create store to manage global state
-import api from "../api/axios"; // Shared axios instance with interceptor
+//! 1. Import các thư viện và module cần thiết
+import { create } from "zustand"; // Zustand create store để quản lý trạng thái toàn cục
+import api from "../api/axios"; // Axios instance được chia sẻ với interceptor
 
-//! 2. API endpoint for users
+//! 2. API endpoint cho người dùng
 const API_ENDPOINT = "/users";
 
-export const useUserStore = create((set) => ({
-    // Initialize default states
-    users: [], // User information will be stored here
-    isLoading: false, // Loading state for async operations
-    error: null, // Error state for handling errors
+//! 3. Tạo zustand store để quản lý người dùng
+export const useUserStore = create((set, get) => ({
+    //! 4. Khởi tạo trạng thái mặc định
+    users: [], // Thông tin người dùng sẽ được lưu trữ ở đây
+    isLoading: false, // Trạng thái loading cho các thao tác bất đồng bộ
+    error: null, // Trạng thái lỗi để xử lý lỗi
     pagination: {
         currentPage: 1,
         totalPages: 0,
@@ -17,17 +18,11 @@ export const useUserStore = create((set) => ({
         limit: 10,
         hasNextPage: false,
         hasPrevPage: false
-    },
+    }, // Thông tin phân trang cho danh sách người dùng
 
-    //! Define actions to update the user store
-    setUsers: (users) => set({ users }),
-    setLoading: (isLoading) => set({ isLoading }),
-    setError: (error) => set({ error }),
-    setPagination: (pagination) => set({ pagination }),
-
-    //! Get all users (pagination, filter, search included)
+    //! 5. Hàm lấy tất cả người dùng (bao gồm phân trang, lọc, tìm kiếm)
     getAllUsers: async (params = {}) => {
-        set({ isLoading: true, error: null }); // Set loading state and clear previous errors
+        set({ isLoading: true, error: null }); // Đặt trạng thái loading và xóa lỗi trước đó
         try {
             const queryParams = new URLSearchParams({
                 page: params.page || 1,
@@ -40,9 +35,9 @@ export const useUserStore = create((set) => ({
                 isVerified: params.isVerified || "all"
             });
 
-            const response = await api.get(`${API_ENDPOINT}?${queryParams}`); // Make GET request to fetch user data
+            const response = await api.get(`${API_ENDPOINT}?${queryParams}`); // Thực hiện GET request để lấy dữ liệu người dùng
 
-            // Handle different response structures
+            // Xử lý các cấu trúc response khác nhau
             if (response.data.success) {
                 set({
                     users: response.data.users,
@@ -53,10 +48,10 @@ export const useUserStore = create((set) => ({
 
                 return response.data;
             } else {
-                throw new Error(response.data.message || "Failed to fetch users");
+                throw new Error(response.data.message || "Lỗi lấy danh sách người dùng");
             }
         } catch (error) {
-            const errorMessage = error.response?.data?.message || "Error fetching accounts";
+            const errorMessage = error.response?.data?.message || "Lỗi lấy danh sách tài khoản";
             set({
                 error: errorMessage,
                 isLoading: false,
@@ -66,13 +61,74 @@ export const useUserStore = create((set) => ({
         }
     },
 
-    //! Clear users
+    //! 6. Các hàm quản lý trạng thái
+    setUsers: (users) => set({ users }),
+    setLoading: (isLoading) => set({ isLoading }),
+    setError: (error) => set({ error }),
+    setPagination: (pagination) => set({ pagination }),
+
     clearUsers: () => {
-        set({ users: [], error: null });
+        set({ 
+            users: [], 
+            error: null,
+            pagination: {
+                currentPage: 1,
+                totalPages: 0,
+                totalUsers: 0,
+                limit: 10,
+                hasNextPage: false,
+                hasPrevPage: false
+            }
+        });
     },
 
-    //! Clear error
     clearError: () => {
         set({ error: null });
+    },
+
+    //! 7. Các hàm helper sử dụng get() để truy cập trạng thái hiện tại
+    getCurrentUsers: () => {
+        const { users } = get();
+        return users;
+    },
+
+    getUserById: (userId) => {
+        const { users } = get();
+        return users.find(user => user._id === userId) || null;
+    },
+
+    getUsersByRole: (role) => {
+        const { users } = get();
+        return users.filter(user => user.role === role);
+    },
+
+    getVerifiedUsers: () => {
+        const { users } = get();
+        return users.filter(user => user.isVerified === true);
+    },
+
+    getActiveUsers: () => {
+        const { users } = get();
+        return users.filter(user => user.status === 'active');
+    },
+
+    getUsersCount: () => {
+        const { users } = get();
+        return users.length;
+    },
+
+    hasUsers: () => {
+        const { users } = get();
+        return users.length > 0;
+    },
+
+    isLoadingUsers: () => {
+        const { isLoading } = get();
+        return isLoading;
+    },
+
+    hasUserError: () => {
+        const { error } = get();
+        return !!error;
     }
 }));

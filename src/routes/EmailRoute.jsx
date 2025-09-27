@@ -1,6 +1,7 @@
 import { Navigate, useLocation, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 
+//! Component route quản lý xác thực email và các bước verification
 const EmailRoute = ({ children }) => {
   const { user, isAuthenticated, pendingVerification } = useAuthStore();
   const location = useLocation();
@@ -11,10 +12,10 @@ const EmailRoute = ({ children }) => {
   const isVerified = !!user?.isVerified;
   const hasGoogleVerification = !!pendingVerification?.provider;
   
-  // If user is fully verified and there's no pending Google verification, prevent access to verify pages
+  //! Nếu người dùng đã verify hoàn toàn và không có Google verification pending, ngăn truy cập vào trang verify
   if (isVerified && !hasGoogleVerification) return <Navigate to="/" replace />;
 
-  // /verify-otp và /verify-choice: bắt buộc đã đăng nhập & (chưa verify || có Google verification pending)
+  //! /verify-otp và /verify-choice: bắt buộc đã đăng nhập & (chưa verify || có Google verification pending)
   if (path === "/verify-otp" || path === "/verify-choice") {
     if ((isAuthenticated && user && (!isVerified || hasGoogleVerification)) || hasGoogleVerification) {
       return children;
@@ -22,7 +23,7 @@ const EmailRoute = ({ children }) => {
     return <Navigate to="/login" state={{ from: path }} replace />;
   }
 
-  // /verify-email: cho vào nếu có token (đi từ email) hoặc đã đăng nhập nhưng (chưa verify || có Google verification)
+  //! /verify-email: cho vào nếu có token (đi từ email) hoặc đã đăng nhập nhưng (chưa verify || có Google verification)
   if (path === "/verify-email") {
     if (hasToken || (isAuthenticated && user && (!isVerified || hasGoogleVerification)) || hasGoogleVerification) {
       return children;
@@ -30,10 +31,10 @@ const EmailRoute = ({ children }) => {
     return <Navigate to="/login" state={{ from: path }} replace />;
   }
 
-  // Default: if not login redirect to login
+  //! Mặc định: nếu chưa đăng nhập thì chuyển hướng về login
   if (!isAuthenticated || !user) return <Navigate to="/login" replace />;
 
-  // If user is authenticated but email is not verified, allow access to the email verification page
+  //! Nếu người dùng đã xác thực nhưng email chưa được verify, cho phép truy cập trang xác thực email
   return children;
 };
 

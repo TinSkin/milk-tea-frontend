@@ -1,16 +1,16 @@
-//! 1. Import necessary libraries and modules
-import { create } from "zustand"; // Zustand create store to manage global state
-import api from "../api/axios"; // Shared axios instance with interceptor
+//! 1. Import các thư viện và module cần thiết
+import { create } from "zustand"; // Zustand create store để quản lý trạng thái toàn cục
+import api from "../api/axios"; // Axios instance được chia sẻ với interceptor
 
-//! 2. API endpoint for toppings
+//! 2. API endpoint cho topping
 const API_ENDPOINT = "/toppings";
 
-//! Create zustand store to manage product categories
+//! 3. Tạo zustand store để quản lý topping
 export const useToppingStore = create((set, get) => ({
-    // Initialize default states
-    toppings: [], // Array to hold all topping objects
-    isLoading: false, // Loading state for API requests
-    error: null, // Error state for API requests
+    //! 4. Khởi tạo trạng thái mặc định
+    toppings: [], // Mảng chứa tất cả đối tượng topping
+    isLoading: false, // Trạng thái loading cho API requests
+    error: null, // Trạng thái lỗi cho API requests
     pagination: {
         currentPage: 1,
         totalPages: 0,
@@ -18,15 +18,9 @@ export const useToppingStore = create((set, get) => ({
         limit: 10,
         hasNextPage: false,
         hasPrevPage: false
-    },
+    }, // Thông tin phân trang cho danh sách topping
 
-    //! Define actions to update the user store
-    setToppings: (toppings) => set({ toppings }),
-    setLoading: (isLoading) => set({ isLoading }),
-    setError: (error) => set({ error }),
-    setPagination: (pagination) => set({ pagination }),
-
-    //! Fetch all toppings
+    //! 5. Hàm lấy tất cả topping
     getAllToppings: async (params = {}) => {
         set({ isLoading: true, error: null });
         try {
@@ -51,10 +45,10 @@ export const useToppingStore = create((set, get) => ({
 
                 return response.data;
             } else {
-                throw new Error(response.data.message || "Failed to fetch toppings");
+                throw new Error(response.data.message || "Lỗi lấy danh sách topping");
             }
         } catch (error) {
-            const errorMessage = error.response?.data?.message || "Error fetching toppings";
+            const errorMessage = error.response?.data?.message || "Lỗi lấy danh sách topping";
             set({
                 error: errorMessage,
                 isLoading: false,
@@ -64,16 +58,16 @@ export const useToppingStore = create((set, get) => ({
         }
     },
 
-    //! Create topping
+    //! 6. Hàm tạo topping mới
     createTopping: async (toppingData) => {
         set({ isLoading: true, error: null });
         try {
-            console.log("Creating topping:", toppingData);
+            console.log("Đang tạo topping:", toppingData);
 
             const response = await api.post(API_ENDPOINT, toppingData);
             const newTopping = response.data.success ? response.data.topping : response.data;
 
-            // Update local state
+            // Cập nhật trạng thái local
             const currentToppings = get().toppings;
             set({
                 toppings: [newTopping, ...currentToppings],
@@ -82,21 +76,21 @@ export const useToppingStore = create((set, get) => ({
 
             return newTopping;
         } catch (error) {
-            const errorMessage = error.response?.data?.message || "Error creating topping";
+            const errorMessage = error.response?.data?.message || "Lỗi tạo topping";
             set({ error: errorMessage, isLoading: false });
             throw error;
         }
     },
 
-    //! Update topping
+    //! 7. Hàm cập nhật topping
     updateTopping: async (toppingId, toppingData) => {
         set({ isLoading: true, error: null });
         try {
-            console.log("Updating topping:", toppingId, toppingData);
+            console.log("Đang cập nhật topping:", toppingId, toppingData);
             const response = await api.put(`${API_ENDPOINT}/${toppingId}`, toppingData);
             const updatedTopping = response.data.success ? response.data.topping : response.data;
 
-            // Update local state
+            // Cập nhật trạng thái local
             const currentToppings = get().toppings;
             const updatedToppings = currentToppings.map(topping =>
                 topping._id === toppingId ? updatedTopping : topping
@@ -108,13 +102,18 @@ export const useToppingStore = create((set, get) => ({
 
             return updatedTopping;
         } catch (error) {
-            const errorMessage = error.response?.data?.message || "Error updating topping";
+            const errorMessage = error.response?.data?.message || "Lỗi cập nhật topping";
             set({ error: errorMessage, isLoading: false });
             throw error;
         }
     },
 
-    //! Clear toppings
+    //! 8. Các hàm quản lý trạng thái
+    setToppings: (toppings) => set({ toppings }),
+    setLoading: (isLoading) => set({ isLoading }),
+    setError: (error) => set({ error }),
+    setPagination: (pagination) => set({ pagination }),
+
     clearToppings: () => {
         set({
             toppings: [],
@@ -130,8 +129,50 @@ export const useToppingStore = create((set, get) => ({
         });
     },
 
-    //! Clear error
     clearError: () => {
         set({ error: null });
+    },
+
+    //! 9. Các hàm helper sử dụng get() để truy cập trạng thái hiện tại
+    getCurrentToppings: () => {
+        const { toppings } = get();
+        return toppings;
+    },
+
+    getToppingById: (toppingId) => {
+        const { toppings } = get();
+        return toppings.find(topping => topping._id === toppingId) || null;
+    },
+
+    getAvailableToppings: () => {
+        const { toppings } = get();
+        return toppings.filter(topping => topping.status === 'available');
+    },
+
+    getToppingsByPriceRange: (minPrice, maxPrice) => {
+        const { toppings } = get();
+        return toppings.filter(topping => 
+            topping.price >= minPrice && topping.price <= maxPrice
+        );
+    },
+
+    getToppingsCount: () => {
+        const { toppings } = get();
+        return toppings.length;
+    },
+
+    hasToppings: () => {
+        const { toppings } = get();
+        return toppings.length > 0;
+    },
+
+    isLoadingToppings: () => {
+        const { isLoading } = get();
+        return isLoading;
+    },
+
+    hasToppingError: () => {
+        const { error } = get();
+        return !!error;
     }
 }));
