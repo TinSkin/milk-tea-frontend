@@ -1,6 +1,3 @@
-import React from "react";
-import CustomWave from "./CustomWave";
-
 const ToggleBox = ({ handleRegisterClick, handleLogInClick }) => {
   return (
     <div

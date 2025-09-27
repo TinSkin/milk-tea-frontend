@@ -1,16 +1,16 @@
-//! 1. Import necessary libraries and modules
-import { create } from "zustand"; // Zustand create store to manage global state
-import api from "../api/axios"; // Shared axios instance with interceptor
+//! 1. Import các thư viện và modules cần thiết
+import { create } from "zustand"; // Zustand tạo store để quản lý state toàn cục
+import api from "../api/axios"; // Axios instance được chia sẻ với interceptor
 
-//! 2. API endpoint for products
+//! 2. API endpoint cho sản phẩm
 const API_ENDPOINT = "/products";
 
-//! Create zustand store to manage product categories
+//! 3. Tạo zustand store để quản lý sản phẩm
 export const useProductStore = create((set, get) => ({
-    // Initialize default states
-    products: [],
-    isLoading: false,
-    error: null,
+    //! 4. Khởi tạo các trạng thái mặc định
+    products: [], // Danh sách tất cả sản phẩm
+    isLoading: false, // Trạng thái loading cho các thao tác sản phẩm
+    error: null, // Trạng thái lỗi cho các thao tác sản phẩm
     pagination: {
         currentPage: 1,
         totalPages: 0,
@@ -18,22 +18,13 @@ export const useProductStore = create((set, get) => ({
         limit: 10,
         hasNextPage: false,
         hasPrevPage: false
-    },
-
-    // Form data for dropdowns
+    }, // Thông tin phân trang cho danh sách sản phẩm
     formData: {
         categories: [],
         toppings: []
-    },
+    }, // Dữ liệu form cho dropdown
 
-    //! Actions
-    setProducts: (products) => set({ products }),
-    setLoading: (isLoading) => set({ isLoading }),
-    setError: (error) => set({ error }),
-    setPagination: (pagination) => set({ pagination }),
-    setFormData: (formData) => set({ formData }),
-
-    //! Get all products
+    //! 5. Hàm lấy tất cả sản phẩm
     getAllProducts: async (params = {}) => {
         set({ isLoading: true, error: null });
         try {
@@ -59,10 +50,10 @@ export const useProductStore = create((set, get) => ({
 
                 return response.data;
             } else {
-                throw new Error(response.data.message || "Failed to fetch products");
+                throw new Error(response.data.message || "Không thể lấy danh sách sản phẩm");
             }
         } catch (error) {
-            const errorMessage = error.response?.data?.message || "Error fetching products";
+            const errorMessage = error.response?.data?.message || "Lỗi lấy danh sách sản phẩm";
             set({
                 error: errorMessage,
                 isLoading: false,
@@ -72,29 +63,29 @@ export const useProductStore = create((set, get) => ({
         }
     },
 
-    //! Get all categories
+    //! 6. Hàm lấy danh mục
     getCategories: async () => {
         set({ isLoading: true, error: null });
         try {
-            // Send request to fetch categories from the backend
+            // Gửi request để lấy danh mục từ backend
             const response = await api.get(`${API_ENDPOINT}/categories`);
             set({ categories: response.data, isLoading: false });
-            return response.data; // Return fetched categories
+            return response.data; // Trả về danh sách danh mục
         } catch (error) {
-            const errorMessage = error.response?.data?.message || "Error fetching categories";
+            const errorMessage = error.response?.data?.message || "Lỗi lấy danh sách danh mục";
             set({ error: errorMessage, isLoading: false });
-            throw error; // Re-throw the error for further handling
+            throw error; // Ném lại lỗi để xử lý tiếp
         }
     },
 
-    //! Create product
+    //! 7. Hàm tạo sản phẩm
     createProduct: async (productData) => {
         set({ isLoading: true, error: null });
         try {
             const response = await api.post(API_ENDPOINT, productData);
             const newProduct = response.data.success ? response.data.product : response.data;
 
-            // Update local state
+            // Cập nhật state local
             const currentProducts = get().products;
             set({
                 products: [newProduct, ...currentProducts],
@@ -103,20 +94,20 @@ export const useProductStore = create((set, get) => ({
 
             return newProduct;
         } catch (error) {
-            const errorMessage = error.response?.data?.message || "Error creating product";
+            const errorMessage = error.response?.data?.message || "Lỗi tạo sản phẩm";
             set({ error: errorMessage, isLoading: false });
             throw error;
         }
     },
 
-    //! Update product
+    //! 8. Hàm cập nhật sản phẩm
     updateProduct: async (productId, productData) => {
         set({ isLoading: true, error: null });
         try {
             const response = await api.put(`${API_ENDPOINT}/${productId}`, productData);
             const updatedProduct = response.data.success ? response.data.product : response.data;
 
-            // Update local state
+            // Cập nhật state local
             const currentProducts = get().products;
             const updatedProducts = currentProducts.map(product =>
                 product._id === productId ? updatedProduct : product
@@ -128,20 +119,20 @@ export const useProductStore = create((set, get) => ({
 
             return updatedProduct;
         } catch (error) {
-            const errorMessage = error.response?.data?.message || "Error updating product";
+            const errorMessage = error.response?.data?.message || "Lỗi cập nhật sản phẩm";
             set({ error: errorMessage, isLoading: false });
             throw error;
         }
     },
 
-    //! Soft delete product
+    //! 9. Hàm xóa mềm sản phẩm
     softDeleteProduct: async (productId) => {
         set({ isLoading: true, error: null });
         try {
             const response = await api.post(`${API_ENDPOINT}/${productId}/soft-delete`);
             const updatedProduct = response.data.success ? response.data.product : response.data;
 
-            // Update local state
+            // Cập nhật state local
             const currentProducts = get().products;
             const updatedProducts = currentProducts.map(product =>
                 product._id === productId ? updatedProduct : product
@@ -153,13 +144,19 @@ export const useProductStore = create((set, get) => ({
 
             return updatedProduct;
         } catch (error) {
-            const errorMessage = error.response?.data?.message || "Error updating product status";
+            const errorMessage = error.response?.data?.message || "Lỗi cập nhật trạng thái sản phẩm";
             set({ error: errorMessage, isLoading: false });
             throw error;
         }
     },
 
-    //! Clear products
+    //! 10. Các hàm quản lý state
+    setProducts: (products) => set({ products }),
+    setLoading: (isLoading) => set({ isLoading }),
+    setError: (error) => set({ error }),
+    setPagination: (pagination) => set({ pagination }),
+    setFormData: (formData) => set({ formData }),
+
     clearProducts: () => {
         set({
             products: [],
@@ -175,31 +172,60 @@ export const useProductStore = create((set, get) => ({
         });
     },
 
-    //! Clear error
     clearError: () => {
         set({ error: null });
     },
 
-    //! Get product by ID (helper)
-    getProductById: (productId) => {
-        return get().products.find(product => product._id === productId);
+    //! 11. Các hàm helper sử dụng get() để truy cập state hiện tại
+    getCurrentProducts: () => {
+        const { products } = get();
+        return products;
     },
 
-    //! Filter products by category (helper)
+    getProductById: (productId) => {
+        const { products } = get();
+        return products.find(product => product._id === productId) || null;
+    },
+
     getProductsByCategory: (categoryId) => {
-        return get().products.filter(product =>
+        const { products } = get();
+        return products.filter(product =>
             product.category._id === categoryId && product.status === 'available'
         );
     },
 
-    //! Search products locally (helper)
+    getAvailableProducts: () => {
+        const { products } = get();
+        return products.filter(product => product.status === 'available');
+    },
+
     searchProducts: (searchTerm) => {
-        const products = get().products;
+        const { products } = get();
         if (!searchTerm) return products;
 
         return products.filter(product =>
             product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             product.description.toLowerCase().includes(searchTerm.toLowerCase())
         );
+    },
+
+    getProductsCount: () => {
+        const { products } = get();
+        return products.length;
+    },
+
+    hasProducts: () => {
+        const { products } = get();
+        return products.length > 0;
+    },
+
+    isLoadingProducts: () => {
+        const { isLoading } = get();
+        return isLoading;
+    },
+
+    hasProductError: () => {
+        const { error } = get();
+        return !!error;
     }
 }));

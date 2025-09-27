@@ -1,13 +1,11 @@
-import React from "react";
 import { Navigate, Outlet } from "react-router-dom";
-
-// Import store for managing authentication state
 import { useAuthStore } from "../store/authStore";
 
+//! Component route bảo vệ cho các trang yêu cầu đăng nhập và quyền truy cập
 const PrivateRoute = ({ permittedRole }) => {
   const { user, isAuthenticated, isCheckingAuth } = useAuthStore();
 
-  //! Show loading state while checking authentication
+  //! Hiển thị trạng thái loading khi đang kiểm tra xác thực
   if (isCheckingAuth) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -16,17 +14,17 @@ const PrivateRoute = ({ permittedRole }) => {
     );
   }
 
-  //! If user is not authenticated
+  //! Nếu người dùng chưa được xác thực
   if (!isAuthenticated || !user) {
     return <Navigate to="/login" replace />;
   }
 
-  //! If specific role is required but user doesn't have it
+  //! Nếu yêu cầu quyền cụ thể nhưng người dùng không có quyền đó
   if (permittedRole && user.role !== permittedRole) {
     return <Navigate to="/unauthorized" replace />;
   }
 
-  //! If the user is logged in and has the required role
+  //! Nếu người dùng đã đăng nhập và có quyền yêu cầu
   return <Outlet />;
 };
 

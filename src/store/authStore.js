@@ -1,91 +1,90 @@
-//! 1. Import necessary libraries and modules
-import { create } from "zustand"; // Zustand create store to manage global state
-import api from "../api/axios"; // Shared axios instance with interceptor
-import Notification from "../components/Notification"; // Notification component for user feedback
+//! 1. Import các thư viện và modules cần thiết
+import { create } from "zustand"; // Zustand tạo store để quản lý state toàn cục
+import api from "../api/axios"; // Axios instance được chia sẻ với interceptor
 
-//! 2. API endpoint for auth
+//! 2. API endpoint cho xác thực
 const API_ENDPOINT = "/auth";
 
-//! 4. Create zustand store to manage authentication state
+//! 3. Tạo zustand store để quản lý trạng thái xác thực
 export const useAuthStore = create((set, get) => ({
-    // Initialize default states
-    user: null, // Save user information after login
-    isAuthenticated: false, // Verify if user is authenticated or not
-    error: null, // Save error information if any
-    isLoading: false, // Loading data state, default is not loading (not making a request)
-    isCheckingAuth: true, // This state is used to check if the user is authenticated when the app loads
-    message: null, // Save messages from the server (e.g., successful registration message, successful email verification message, etc.)
-    pendingVerification: null, // Store info for pending Google verification { email, provider, reason }
+    //! 4. Khởi tạo các trạng thái mặc định
+    user: null, // Lưu thông tin người dùng sau khi đăng nhập
+    isAuthenticated: false, // Xác minh người dùng đã được xác thực chưa
+    error: null, // Lưu thông tin lỗi nếu có
+    isLoading: false, // Trạng thái loading dữ liệu, mặc định không loading
+    isCheckingAuth: true, // Trạng thái này dùng để kiểm tra xác thực khi app khởi động
+    message: null, // Lưu thông báo từ server (ví dụ: đăng ký thành công, xác minh email thành công, v.v.)
+    pendingVerification: null, // Lưu thông tin chờ xác minh Google { email, provider, reason }
 
-    //! Register new account function 
+    //! 5. Hàm đăng ký tài khoản mới
     register: async (userData) => {
-        set({ isLoading: true, error: null, message: null }); // Set loading state to true and reset error and message states
+        set({ isLoading: true, error: null, message: null }); // Đặt trạng thái loading và reset error, message
         try {
-            // Send request POST to register endpoint with userData object
+            // Gửi request POST đến endpoint đăng ký với dữ liệu userData
             const response = await api.post(`${API_ENDPOINT}/register`, userData);
-            // If successful, don't login immediately - wait for email verification
+            // Nếu thành công, không đăng nhập ngay - chờ xác minh email
             set({
-                user: { email: userData.email, isVerified: false }, // permit for verify flow
-                isAuthenticated: true,   // has cookie
-                isCheckingAuth: false,   // avoid guard redirecting to /login
-                message: response.data.message || "Please check your email to verify your account",
+                user: { email: userData.email, isVerified: false }, // cho phép flow xác minh
+                isAuthenticated: true,   // có cookie
+                isCheckingAuth: false,   // tránh guard chuyển hướng về /login
+                message: response.data.message || "Vui lòng kiểm tra email để xác minh tài khoản",
                 isLoading: false,
                 error: null,
             });
-            return response.data; // Return response for further handling
+            return response.data; // Trả về response để xử lý tiếp
         } catch (error) {
-            // If there is an error, update the error with the message from the server or a default message, and set loading to false
-            const errorMessage = error.response?.data?.message || "Error signing up";
+            // Nếu có lỗi, cập nhật error với thông báo từ server hoặc thông báo mặc định
+            const errorMessage = error.response?.data?.message || "Lỗi đăng ký";
             set({ error: errorMessage, isLoading: false });
-            throw error; // Re-throw the error for further handling
+            throw error; // Ném lại lỗi để xử lý tiếp
         }
     },
 
-    //! Verify OTP function
+    //! 6. Hàm xác minh OTP
     verifyOTP: async (code) => {
         set({ isLoading: true, error: null, message: null });
         try {
-            // Send request POST to verify email endpoint with code
+            // Gửi request POST đến endpoint xác minh email với mã OTP
             const response = await api.post(`${API_ENDPOINT}/verify-otp`, { code });
-            // If successful, update user state and set isAuthenticated to true
+            // Nếu thành công, cập nhật trạng thái user và đặt isAuthenticated thành true
             set({
-                user: response.data.user, // Save user information from the response
-                isAuthenticated: true, // Set isAuthenticated to true
-                isLoading: false, // Set loading to false
-                message: response.data.message || "Email verified successfully", // Save success message
+                user: response.data.user, // Lưu thông tin user từ response
+                isAuthenticated: true, // Đặt isAuthenticated thành true
+                isLoading: false, // Đặt loading thành false
+                message: response.data.message || "Xác minh email thành công", // Lưu thông báo thành công
             });
-            return response.data; // Return response for further handling
+            return response.data; // Trả về response để xử lý tiếp
         } catch (error) {
-            // If there is an error, update the error with the message from the server or a default message, and set loading to false
-            const errorMessage = error.response?.data?.message || "Error verifying email";
+            // Nếu có lỗi, cập nhật error với thông báo từ server hoặc thông báo mặc định
+            const errorMessage = error.response?.data?.message || "Lỗi xác minh email";
             set({ error: errorMessage, isLoading: false });
-            throw error; // Re-throw the error for further handling
+            throw error; // Ném lại lỗi để xử lý tiếp
         }
     },
 
-    //! Resend verification OTP function
+    //! 7. Hàm gửi lại OTP xác minh
     resendVerificationOTP: async (email) => {
         set({ isLoading: true, error: null, message: null });
         try {
-            // Send request POST to resend verification OTP endpoint with email
+            // Gửi request POST đến endpoint gửi lại OTP với email
             const response = await api.post(`${API_ENDPOINT}/resend-otp`, { email });
 
-            // If successful, update message state
+            // Nếu thành công, cập nhật trạng thái message
             set({
-                message: response.data.message || "Verification OTP email resent successfully",
-                isLoading: false, // Set loading to false
-                error: null // Reset error state
+                message: response.data.message || "Gửi lại email OTP xác minh thành công",
+                isLoading: false, // Đặt loading thành false
+                error: null // Reset trạng thái error
             });
-            return response.data; // Return response for further handling
+            return response.data; // Trả về response để xử lý tiếp
         } catch (error) {
-            // If there is an error, update the error with the message from the server or a default message, and set loading to false
-            const errorMessage = error.response?.data?.message || "Error resending verification email";
+            // Nếu có lỗi, cập nhật error với thông báo từ server hoặc thông báo mặc định
+            const errorMessage = error.response?.data?.message || "Lỗi gửi lại email xác minh";
             set({ error: errorMessage, isLoading: false });
-            throw error; // Re-throw the error for further handling
+            throw error; // Ném lại lỗi để xử lý tiếp
         }
     },
 
-    //! Verify email function
+    //! 8. Hàm xác minh email
     verifyEmail: async (token) => {
         if (!token) {
             const msg = "Thiếu token xác minh";
@@ -98,19 +97,19 @@ export const useAuthStore = create((set, get) => ({
         try {
             const { data } = await api.post(`${API_ENDPOINT}/verify-email`, { token });
             
-            // Use response directly from backend (no need for additional check-auth call)
+            // Sử dụng response trực tiếp từ backend (không cần gọi check-auth thêm)
             if (data.isAuthenticated && data.user) {
                 set({
                     user: { ...data.user, isVerified: true },
                     isAuthenticated: true,
-                    message: null, // Don't store message to prevent double display
+                    message: null, // Không lưu message để tránh hiển thị lặp
                     isLoading: false,
                     error: null,
-                    pendingVerification: null // Clear pending verification state
+                    pendingVerification: null // Xóa trạng thái chờ xác minh
                 });
             } else {
                 set({
-                    message: null, // Don't store message to prevent double display
+                    message: null, // Không lưu message để tránh hiển thị lặp
                     isLoading: false,
                     error: null,
                 });
@@ -125,69 +124,69 @@ export const useAuthStore = create((set, get) => ({
         }
     },
 
-    //! Resend verification email function
+    //! 9. Hàm gửi lại email xác minh
     resendVerificationEmail: async (email) => {
         set({ isLoading: true, error: null, message: null });
         try {
-            // Send request POST to resend verification email endpoint with email
+            // Gửi request POST đến endpoint gửi lại email xác minh với email
             const response = await api.post(`${API_ENDPOINT}/resend-verification-email`, { email });
 
-            // If successful, update message state
+            // Nếu thành công, cập nhật trạng thái message
             set({
-                message: response.data.message || "Verification email resent successfully",
-                isLoading: false, // Set loading to false
-                error: null // Reset error state
+                message: response.data.message || "Gửi lại email xác minh thành công",
+                isLoading: false, // Đặt loading thành false
+                error: null // Reset trạng thái error
             });
-            return response; // Return response for further handling
+            return response; // Trả về response để xử lý tiếp
         } catch (error) {
-            // If there is an error, update the error with the message from the server or a default message, and set loading to false
-            const errorMessage = error.response?.data?.message || "Error resending verification email";
+            // Nếu có lỗi, cập nhật error với thông báo từ server hoặc thông báo mặc định
+            const errorMessage = error.response?.data?.message || "Lỗi gửi lại email xác minh";
             set({ error: errorMessage, isLoading: false });
-            throw error; // Re-throw the error for further handling
+            throw error; // Ném lại lỗi để xử lý tiếp
         }
     },
 
-    //! Login function
+    //! 10. Hàm đăng nhập
     login: async (userData) => {
-        set({ isLoading: true, error: null }); // Set state to loading is true and reset error
+        set({ isLoading: true, error: null }); // Đặt trạng thái loading và reset error
         try {
-            // Send request POST to login endpoint with email, password and rememberMe
+            // Gửi request POST đến endpoint đăng nhập với email, password và rememberMe
             const response = await api.post(`${API_ENDPOINT}/login`, userData);
 
-            // If successful, update user state and set isAuthenticated to true
+            // Nếu thành công, cập nhật trạng thái user và đặt isAuthenticated thành true
             set({
-                user: response.data.user, // Save user information from the response
-                isAuthenticated: true, // Set isAuthenticated to true
-                error: null, // Reset error state
-                isLoading: false // Set loading to false
+                user: response.data.user, // Lưu thông tin user từ response
+                isAuthenticated: true, // Đặt isAuthenticated thành true
+                error: null, // Reset trạng thái error
+                isLoading: false // Đặt loading thành false
             });
-            return response.data; // Return response for further handling
+            return response.data; // Trả về response để xử lý tiếp
         } catch (error) {
-            // If there is an error, update the error with the message from the server or a default message, and set loading to false
-            const errorMessage = error.response?.data?.message || "Error logging in";
+            // Nếu có lỗi, cập nhật error với thông báo từ server hoặc thông báo mặc định
+            const errorMessage = error.response?.data?.message || "Lỗi đăng nhập";
             set({ error: errorMessage, isLoading: false });
-            throw error; // Re-throw the error for further handling
+            throw error; // Ném lại lỗi để xử lý tiếp
         }
     },
 
-    //! Google Login function
+    //! 11. Hàm đăng nhập Google
     loginWithGoogle: async (googleCredential) => {
-        set({ isLoading: true, error: null, message: null }); // Set loading state
+        set({ isLoading: true, error: null, message: null }); // Đặt trạng thái loading
         try {
-            console.log("Sending Google credential to backend...", api.defaults.baseURL + API_ENDPOINT + "/google");
+            console.log("Gửi thông tin Google credential đến backend...", api.defaults.baseURL + API_ENDPOINT + "/google");
             
-            // Send Google credential token to backend
+            // Gửi Google credential token đến backend
             const response = await api.post(`${API_ENDPOINT}/google`, {
                 credential: googleCredential
             });
 
-            console.log("Google login response:", response.data);
+            console.log("Phản hồi đăng nhập Google:", response.data);
 
-            // Check if verification is required
+            // Kiểm tra xem có cần xác minh thêm không
             if (response.data.requiresVerification) {
-                console.log("Google user requires additional verification");
+                console.log("Người dùng Google cần xác minh bổ sung");
                 
-                // Set pending verification state
+                // Đặt trạng thái chờ xác minh
                 set({
                     user: null,
                     isAuthenticated: false,
@@ -228,11 +227,11 @@ export const useAuthStore = create((set, get) => ({
             // If there is an error, update the error with the message from the server or a default message
             const errorMessage = error.response?.data?.message || "Lỗi đăng nhập Google";
             set({ error: errorMessage, isLoading: false });
-            throw error; // Re-throw the error for further handling
+            throw error; // Ném lại lỗi để xử lý tiếp
         }
     },
 
-    //! Check authentication function
+    //! 12. Hàm kiểm tra xác thực
     checkAuth: async () => {
         set({ isCheckingAuth: true, error: null });
         try {
@@ -244,7 +243,7 @@ export const useAuthStore = create((set, get) => ({
                 .find(row => row.startsWith('rememberMe='));
             const rememberMeStatus = rememberMeCookie ? rememberMeCookie.split('=')[1] === 'true' : false;
             
-            console.log("Remember Me Status:", rememberMeStatus);
+            console.log("Trạng thái Remember Me:", rememberMeStatus);
             
             set({
                 user,
@@ -263,73 +262,105 @@ export const useAuthStore = create((set, get) => ({
         }
     },
 
-    //! Check token validity - useful for admin pages
+    //! 13. Hàm kiểm tra tính hợp lệ của token - hữu ích cho trang admin
     checkTokenValidity: async () => {
-        console.log("Checking token validity...");
+        console.log("Kiểm tra tính hợp lệ của token...");
         try {
             await api.get(`${API_ENDPOINT}/check-auth`);
-            console.log("Token is valid");
+            console.log("Token hợp lệ");
             return true;
         } catch (error) {
-            console.log("Token validation failed:", error.response?.status);
+            console.log("Xác thực token thất bại:", error.response?.status);
             return false;
         }
     },
 
-    //! Logout function
+    //! 14. Hàm đăng xuất
     logout: async () => {
-        set({ isLoading: true, error: null }); //Set state to loading is true and reset error
+        set({ isLoading: true, error: null }); // Đặt trạng thái loading và reset error
         try {
-            // Send request POST method to logout endpoint
+            // Gửi request POST đến endpoint đăng xuất
             await api.post(`${API_ENDPOINT}/logout`);
-            // If successful, reset user, isAuthenticated and set loading to false
+            // Nếu thành công, reset user, isAuthenticated và đặt loading thành false
             set({ user: null, isAuthenticated: false, isLoading: false });
         } catch (error) {
-            // If there is an error, update the error with the message from the server or a default message, and set loading to false
-            const errorMessage = error.response?.data?.message || "Error logging out";
+            // Nếu có lỗi, cập nhật error với thông báo từ server hoặc thông báo mặc định
+            const errorMessage = error.response?.data?.message || "Lỗi đăng xuất";
             set({ error: errorMessage, isLoading: false });
-            throw error; // Re-throw the error for further handling
+            throw error; // Ném lại lỗi để xử lý tiếp
         }
     },
 
-    //! Forgot password function
+    //! 15. Hàm quên mật khẩu
     forgotPassword: async (email) => {
-        set({ isLoading: true, error: null, message: null }); // Set loading state to true and reset error and message states
+        set({ isLoading: true, error: null, message: null }); // Đặt trạng thái loading và reset error, message
         try {
-            // Send request POST to forgot password endpoint with email
+            // Gửi request POST đến endpoint quên mật khẩu với email
             const response = await api.post(`${API_ENDPOINT}/forgot-password`, { email });
 
-            // If successful, update message state
+            // Nếu thành công, cập nhật trạng thái message
             set({
-                message: response.data.message || "Password reset email sent successfully",
-                isLoading: false, // Set loading to false
-                error: null // Reset error state
+                message: response.data.message || "Gửi email đặt lại mật khẩu thành công",
+                isLoading: false, // Đặt loading thành false
+                error: null // Reset trạng thái error
             });
         } catch (error) {
-            // If there is an error, update the error with the message from the server or a default message, and set loading to false
-            const errorMessage = error.response?.data?.message || "Error sending password reset email";
+            // Nếu có lỗi, cập nhật error với thông báo từ server hoặc thông báo mặc định
+            const errorMessage = error.response?.data?.message || "Lỗi gửi email đặt lại mật khẩu";
             set({ error: errorMessage, isLoading: false });
-            throw error; // Re-throw the error for further handling
+            throw error; // Ném lại lỗi để xử lý tiếp
         }
     },
 
-    //! Reset password function
+    //! 16. Hàm đặt lại mật khẩu
     resetPassword: async (resetData) => {
-        set({ isLoading: true, error: null }); // Set loading state to true and reset error
+        set({ isLoading: true, error: null }); // Đặt trạng thái loading và reset error
         try {
-            // Send request POST to reset password endpoint with resetData
+            // Gửi request POST đến endpoint đặt lại mật khẩu với resetData
             const response = await api.post(`${API_ENDPOINT}/reset-password/${resetData.token}`, { password: resetData.password });
 
-            // If successful, update message state
+            // Nếu thành công, cập nhật trạng thái message
             set({ message: response.data.message, isLoading: false });
         } catch (error) {
             // Nếu có lỗi, cập nhật error với thông báo từ server hoặc thông báo mặc định, tắt loading
             set({
                 isLoading: false,
-                error: error.response.data.message || "Error resetting password",
+                error: error.response.data.message || "Lỗi đặt lại mật khẩu",
             });
             throw error; // Ném lỗi ra ngoài
         }
-    }
+    },
+
+    //! 17. Các hàm helper sử dụng get() để truy cập state hiện tại
+    getCurrentUser: () => {
+        const { user } = get();
+        return user;
+    },
+
+    getCurrentUserRole: () => {
+        const { user } = get();
+        return user?.role || null;
+    },
+
+    isCurrentUserVerified: () => {
+        const { user } = get();
+        return user?.isVerified || false;
+    },
+
+    hasError: () => {
+        const { error } = get();
+        return !!error;
+    },
+
+    canPerformAction: () => {
+        const { isAuthenticated, user, isLoading } = get();
+        return isAuthenticated && user && !isLoading;
+    },
+
+    //! 18. Hàm xóa lỗi
+    clearError: () => set({ error: null }),
+    
+    //! 19. Hàm xóa thông báo
+    clearMessage: () => set({ message: null })
 }));
 

@@ -41,6 +41,7 @@ import AdminCategory from "./pages/admin/AdminCategory";
 import PrivateRoute from "./routes/PrivateRoute";
 import EmailRoute from "./routes/EmailRoute";
 import GuestRoute from "./routes/GuestRoute";
+import StoreGuard from "./routes/StoreGuard";
 
 import { useAuthStore } from "./store/authStore";
 
@@ -72,7 +73,7 @@ function App() {
         {/* //* Public Route (Login is not required) */}
         <Route path="/" element={<Home />} />{" "}
         <Route path="/intro" element={<Intro />} />
-        <Route path="/menu" element={<Menu />} />
+        <Route path="/menu" element={<StoreGuard><Menu /></StoreGuard>} />
         <Route
           path="/login"
           element={
@@ -127,7 +128,7 @@ function App() {
           <Route path="/checkout" element={<Checkout />} />{" "}
           {/* Trang thanh toán */}
           <Route path="/ordertracking" element={<OrderTracking />} />{" "}
-{/* Trang theo dõi đơn hàng*/}
+          {/* Trang theo dõi đơn hàng*/}
         </Route>
         {/* //* ------ Manager Route (Manager access is required) ------ */}
         <Route element={<PrivateRoute permittedRole="storeManager" />}>

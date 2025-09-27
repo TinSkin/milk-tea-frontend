@@ -1,16 +1,16 @@
-//! 1. Import necessary libraries and modules
-import { create } from "zustand"; // Zustand create store to manage global state
-import api from "../api/axios"; // Shared axios instance with interceptor
+//! 1. Import các thư viện và modules cần thiết
+import { create } from "zustand"; // Zustand tạo store để quản lý state toàn cục
+import api from "../api/axios"; // Axios instance được chia sẻ với interceptor
 
-//! 2. API endpoint for categories
+//! 2. API endpoint cho danh mục
 const API_ENDPOINT = "/categories";
 
-//! Create zustand store to manage product categories
+//! 3. Tạo zustand store để quản lý danh mục sản phẩm
 export const useCategoryStore = create((set, get) => ({
-    //! State
-    categories: [],
-    isLoading: false,
-    error: null,
+    //! 4. Khởi tạo các trạng thái mặc định
+    categories: [], // Danh sách tất cả danh mục
+    isLoading: false, // Trạng thái loading cho các thao tác danh mục
+    error: null, // Trạng thái lỗi cho các thao tác danh mục
     pagination: {
         currentPage: 1,
         totalPages: 0,
@@ -18,15 +18,9 @@ export const useCategoryStore = create((set, get) => ({
         limit: 10,
         hasNextPage: false,
         hasPrevPage: false
-    },
+    }, // Thông tin phân trang cho danh sách danh mục
 
-    //! Actions
-    setCategories: (categories) => set({ categories }),
-    setLoading: (isLoading) => set({ isLoading }),
-    setError: (error) => set({ error }),
-    setPagination: (pagination) => set({ pagination }),
-
-    //! Get all categories
+    //! 5. Hàm lấy tất cả danh mục
     getAllCategories: async (params = {}) => {
         set({ isLoading: true, error: null });
         try {
@@ -51,10 +45,10 @@ export const useCategoryStore = create((set, get) => ({
 
                 return response.data;
             } else {
-                throw new Error(response.data.message || "Failed to fetch categories");
+                throw new Error(response.data.message || "Không thể lấy danh sách danh mục");
             }
         } catch (error) {
-            const errorMessage = error.response?.data?.message || "Error fetching categories";
+            const errorMessage = error.response?.data?.message || "Lỗi lấy danh sách danh mục";
             set({
                 error: errorMessage,
                 isLoading: false,
@@ -64,14 +58,14 @@ export const useCategoryStore = create((set, get) => ({
         }
     },
 
-    //! Create category
+    //! 6. Hàm tạo danh mục
     createCategory: async (categoryData) => {
         set({ isLoading: true, error: null });
         try {
             const response = await api.post(API_ENDPOINT, categoryData);
             const newCategory = response.data.success ? response.data.category : response.data;
 
-            // Update local state
+            // Cập nhật state local
             const currentCategories = get().categories;
             set({
                 categories: [newCategory, ...currentCategories],
@@ -80,20 +74,20 @@ export const useCategoryStore = create((set, get) => ({
 
             return newCategory;
         } catch (error) {
-            const errorMessage = error.response?.data?.message || "Error creating category";
+            const errorMessage = error.response?.data?.message || "Lỗi tạo danh mục";
             set({ error: errorMessage, isLoading: false });
             throw error;
         }
     },
 
-    //! Update category
+    //! 7. Hàm cập nhật danh mục
     updateCategory: async (categoryId, categoryData) => {
         set({ isLoading: true, error: null });
         try {
             const response = await api.put(`${API_ENDPOINT}/${categoryId}`, categoryData);
             const updatedCategory = response.data.success ? response.data.category : response.data;
 
-            // Update local state
+            // Cập nhật state local
             const currentCategories = get().categories;
             const updatedCategories = currentCategories.map(category =>
                 category._id === categoryId ? updatedCategory : category
@@ -105,21 +99,21 @@ export const useCategoryStore = create((set, get) => ({
 
             return updatedCategory;
         } catch (error) {
-            const errorMessage = error.response?.data?.message || "Error updating category";
+            const errorMessage = error.response?.data?.message || "Lỗi cập nhật danh mục";
             set({ error: errorMessage, isLoading: false });
             throw error;
         }
     },
 
-    //! Soft delete category
+    //! 8. Hàm xóa mềm danh mục
     softDeleteCategory: async (categoryId) => {
         set({ isLoading: true, error: null });
         try {
-            console.log("Soft deleting category with ID:", categoryId);
+            console.log("Xóa mềm danh mục với ID:", categoryId);
             const response = await api.post(`${API_ENDPOINT}/${categoryId}/soft-delete`);
             const updatedCategory = response.data.success ? response.data.category : response.data;
 
-            // Update local state
+            // Cập nhật state local
             const currentCategories = get().categories;
             const updatedCategories = currentCategories.map(category =>
                 category._id === categoryId ? updatedCategory : category
@@ -131,19 +125,19 @@ export const useCategoryStore = create((set, get) => ({
 
             return updatedCategory;
         } catch (error) {
-            const errorMessage = error.response?.data?.message || "Error updating category status";
+            const errorMessage = error.response?.data?.message || "Lỗi cập nhật trạng thái danh mục";
             set({ error: errorMessage, isLoading: false });
             throw error;
         }
     },
 
-    //! Hard delete category
+    //! 9. Hàm xóa cứng danh mục
     deleteCategory: async (categoryId) => {
         set({ isLoading: true, error: null });
         try {
             const response = await api.delete(`${API_ENDPOINT}/${categoryId}`);
             if (response.data.success) {
-                // Xóa khỏi local state
+                // Xóa khỏi state local
                 const currentCategories = get().categories;
                 const updatedCategories = currentCategories.filter(category => category._id !== categoryId);
                 set({
@@ -152,30 +146,35 @@ export const useCategoryStore = create((set, get) => ({
                 });
                 return response.data;
             } else {
-                throw new Error(response.data.message || "Failed to delete category");
+                throw new Error(response.data.message || "Không thể xóa danh mục");
             }
         } catch (error) {
-            const errorMessage = error.response?.data?.message || "Error deleting category";
+            const errorMessage = error.response?.data?.message || "Lỗi xóa danh mục";
             set({ error: errorMessage, isLoading: false });
             throw error;
         }
     },
 
-    //! Sync categories with products
+    //! 10. Hàm đồng bộ danh mục với sản phẩm
     syncCategoriesWithProducts: async () => {
-        set({ isSyncing: true, error: null });
+        set({ isLoading: true, error: null });
         try {
             const response = await api.post(`${API_ENDPOINT}/sync-products`);
-            set({ isSyncing: false });
+            set({ isLoading: false });
             return response.data;
         } catch (error) {
-            const errorMessage = error.response?.data?.message || "Error syncing categories with products";
-            set({ error: errorMessage, isSyncing: false });
+            const errorMessage = error.response?.data?.message || "Lỗi đồng bộ danh mục với sản phẩm";
+            set({ error: errorMessage, isLoading: false });
             throw error;
         }
     },
 
-    //! Clear categories
+    //! 11. Các hàm quản lý state
+    setCategories: (categories) => set({ categories }),
+    setLoading: (isLoading) => set({ isLoading }),
+    setError: (error) => set({ error }),
+    setPagination: (pagination) => set({ pagination }),
+
     clearCategories: () => {
         set({
             categories: [],
@@ -191,8 +190,43 @@ export const useCategoryStore = create((set, get) => ({
         });
     },
 
-    //! Clear error
     clearError: () => {
         set({ error: null });
+    },
+
+    //! 12. Các hàm helper sử dụng get() để truy cập state hiện tại
+    getCurrentCategories: () => {
+        const { categories } = get();
+        return categories;
+    },
+
+    getCategoryById: (categoryId) => {
+        const { categories } = get();
+        return categories.find(category => category._id === categoryId) || null;
+    },
+
+    getActiveCategories: () => {
+        const { categories } = get();
+        return categories.filter(category => category.status === 'active');
+    },
+
+    getCategoriesCount: () => {
+        const { categories } = get();
+        return categories.length;
+    },
+
+    hasCategories: () => {
+        const { categories } = get();
+        return categories.length > 0;
+    },
+
+    isLoadingCategories: () => {
+        const { isLoading } = get();
+        return isLoading;
+    },
+
+    hasCategoryError: () => {
+        const { error } = get();
+        return !!error;
     }
 }));
