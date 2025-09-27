@@ -99,7 +99,7 @@ function ProductCard(props) {
           <Formik
             initialValues={{
               name: props.name || "",
-              images: props.images || "",  // props.images là mảng các URL string
+              images: props.images || "", // props.images là mảng các URL string
               sizeOption: "",
               price: 0,
               toppings: [],
@@ -108,32 +108,51 @@ function ProductCard(props) {
               iceOption: "Chung", // Mặc định đá chung
             }}
             validationSchema={addOrderSchema}
+            // inside Formik onSubmit in ProductCard.jsx
             onSubmit={(values) => {
-              // Lấy thông tin size đã chọn
-              const selectedSize = props.sizeOptions.find(
+              // lấy price size, toppings như bạn đã làm
+              const selectedSize = props.sizeOptions?.find(
                 (opt) => opt.size === values.sizeOption
               );
-            
-              // Tạo object sản phẩm đúng format cho store
+              const sizePrice = selectedSize ? selectedSize.price : 0;
+              const toppingsPrice = (values.toppings || []).reduce(
+                (s, t) => s + (t.extraPrice || 0),
+                0
+              );
+              const total =
+                (sizePrice + toppingsPrice) * (values.quantity || 1);
+
               const newProduct = {
-                _id: props._id, 
+
+                _id: props._id,
                 name: props.name,
-                images: props.image, 
-                price: values.price, 
+                images: props.image || props.images || [],
+                // lưu price ban đầu (frontend của bạn dùng price field), nhưng store sẽ dùng price khi hiển thị
+                price: total, // giữ như trước (bạn có thể thay bằng props.price nếu muốn base)
                 sizeOption: values.sizeOption,
-                sizeOptionPrice: selectedSize ? selectedSize.price : 0,
+                sizeOptionPrice: sizePrice,
                 sugarLevel: values.sugarLevel,
                 iceOption: values.iceOption,
-                toppings: values.toppings,
-                quantity: values.quantity,
+                toppings: values.toppings || [], // toppings đã chọn
+                // ✅ quan trọng: truyền full list topping từ product (props.toppings) để store có availableToppings
+                availableToppings: (props.toppings || []).map((t) => ({
+                  _id: t._id,
+                  name: t.name,
+                  extraPrice: t.extraPrice || 0,
+                })),
+                sizeOptions: props.sizeOptions || [],
+                quantity: values.quantity || 1,
               };
-            
+
+
+              addToCart(newProduct, 1);
+          
               // Lưu sản phẩm và chuyển sang bước nhập địa chỉ
               setProductToAdd(newProduct);
               setShowAddModal(false);
               setShowAddressModal(true);
+
             }}
-            
           >
             {({ values, setFieldValue }) => {
               useEffect(() => {
