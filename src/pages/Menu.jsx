@@ -301,10 +301,11 @@ function Menu() {
   return (
     <div>
       <Header />
-
+  <div className="min-h-screen bg-gray-100 py-10">
+  <div className="max-w-[100rem] mx-auto px-4 sm:px-6 lg:px-8">
       {/* Store Info Bar */}
       {selectedStore && (
-        <div className="bg-orange-500 text-white p-3 shadow-md">
+        <div className="bg-[#151d2d] text-white p-3 shadow-md">
           <div className="container mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Store className="w-5 h-5" />
@@ -345,12 +346,12 @@ function Menu() {
       )}
       
       {/* Main Content */}  
-      <div className="font-roboto min-h-screen bg-gray-100 p-6">
+      <div className="font-roboto min-h-screen bg-gray-100 mt-6">
         <div className="flex gap-4">
           {/* Category Sidebar */}
           <FadeInOnScroll direction="left" delay={0.2}>
             <div className="bg-white shadow w-60 rounded-md">
-              <div className="bg-dark_blue p-4 rounded-tr-md rounded-tl-md">
+              <div className="bg-[#151d2d] p-4 rounded-tr-md rounded-tl-md">
                 <h2 className="font-semibold text-white text-center">
                   Danh Mục
                 </h2>
@@ -635,7 +636,9 @@ function Menu() {
           </FadeInOnScroll>
         </div>
       </div>
-      <Footer />
+      </div>
+      </div>
+       <Footer />
     </div>
   );
 }

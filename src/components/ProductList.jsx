@@ -41,7 +41,7 @@ function ProductList({ products = [], isLoading = false, error = null }) {
 
   // Always pass images array to ProductCard
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {products.map((prod, idx) => (
         <ProductCard
           key={prod._id || prod.id || idx}
