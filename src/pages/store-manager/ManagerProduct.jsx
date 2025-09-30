@@ -35,7 +35,7 @@ import EditProductModal from "../../components/Admin/Product/EditProductModal";
 import ConfirmDeleteModal from "../../components/Admin/ConfirmDeleteModal";
 import ViewToppingsModal from "../../components/Admin/Product/ViewToppingsModal";
 
-const AdminProduct = () => {
+const ManagerProduct = () => {
   // Khởi tạo hook useNavigate để điều hướng trang
   const navigate = useNavigate();
 
@@ -455,27 +455,10 @@ const AdminProduct = () => {
     }
   }, [error, clearError]);
 
-  //! Checking log in & loading products
+  //! Load initial data and products
   useEffect(() => {
-    // Wait for auth check to complete
-    if (isCheckingAuth) {
-      return;
-    }
-
-    // Check if user is authenticated
-    if (!isAuthenticated || !user) {
-      navigate("/login");
-      return;
-    }
-
-    // Check if user is admin
-    if (user.role !== "admin") {
-      navigate("/");
-      return;
-    }
-
     loadProducts(); // Gọi hàm loadProducts để tải danh sách sản phẩm
-  }, [isCheckingAuth, isAuthenticated, user, navigate]); // Chạy lại khi navigate thay đổi
+  }, []);
 
   //! Render pagination numbers
   const renderPaginationNumbers = () => {
@@ -959,4 +942,4 @@ const AdminProduct = () => {
   );
 };
 
-export default AdminProduct;
+export default ManagerProduct;
