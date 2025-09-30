@@ -45,8 +45,6 @@ import PrivateRoute from "./routes/PrivateRoute";
 import EmailRoute from "./routes/EmailRoute";
 import GuestRoute from "./routes/GuestRoute";
 import StoreGuard from "./routes/StoreGuard";
-import RoleRestrictedRoute from "./routes/RoleRestrictedRoute";
-
 import { useAuthStore } from "./store/authStore";
 
 import "./App.css";
@@ -64,8 +62,6 @@ function App() {
     didInit.current = true;
     checkAuth(); // gọi đúng 1 lần lúc app mount
   }, [checkAuth]);
-
-  //! Không gọi useChatbot ở đây nữa - sẽ move vào component riêng
 
   return (
     <Router>
