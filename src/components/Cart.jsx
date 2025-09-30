@@ -28,7 +28,7 @@ function Cart() {
   return (
     <div className="rounded-lg w-72 text-center shadow-lg">
       {/* Cart Header */}
-      <div className="bg-dark_blue p-4 rounded-tr-md rounded-tl-md mb-4 shadow-sm">
+      <div className="bg-[#151d2d] p-4 rounded-tr-md rounded-tl-md mb-4 shadow-sm">
         <h2 className="text-white text-lg font-semibold">Giỏ Hàng Của Tôi</h2>
       </div>
       {/* Cart Items */}
@@ -58,7 +58,7 @@ function Cart() {
         )}
         <Link
           to="/cart"
-          className="bg-dark_blue hover:bg-camel text-white w-full px-4 py-2 rounded text-sm font-semibold block"
+          className="bg-[#151d2d] hover:bg-camel text-white w-full px-4 py-2 rounded text-sm font-semibold block"
         >
           Thanh toán
         </Link>
