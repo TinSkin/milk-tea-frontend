@@ -44,8 +44,6 @@ const Cart = () => {
 
   const products = useProductStore((state) => state.products);
   
-  
-
   //! hàm xóa tất cả sản phẩm khỏi giỏ hàng
   const handleClearCart = () => {
     if (window.confirm("Bạn có chắc muốn xóa tất cả sản phẩm khỏi giỏ hàng?")) {

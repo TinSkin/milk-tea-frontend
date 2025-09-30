@@ -8,13 +8,10 @@ import loginSchema from "../../utils/loginSchema";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEnvelope, faKey } from "@fortawesome/free-solid-svg-icons";
 
-// Hook for navigation
+// Hook điều hướng
 import { useNavigate, useLocation } from "react-router-dom";
 
-// Call API to fetch accounts (fallback)
-import { fetchAccounts } from "../../api/accountAPI";
-
-// Import store for managing state
+// Import store quản lý trạng thái
 import { useAuthStore } from "../../store/authStore";
 
 // Import Components
@@ -25,122 +22,54 @@ import Notification from "../Notification";
 const Login = ({ handleRegisterClick }) => {
   const navigate = useNavigate();
   const location = useLocation();
-
   const { user, isAuthenticated, login, isCheckingAuth } = useAuthStore();
 
-  //! Handle login logic with backend + fallback approach
+  //! Xử lý logic đăng nhập với error handling 
   const handleLogin = async (userData, { setErrors, setSubmitting }) => {
     try {
-      // Call API to login
       const response = await login(userData);
-
+      
       Notification.success("Đăng nhập thành công!", "Chào mừng bạn quay lại.");
 
-      const user =
-        response?.data?.user || useAuthStore.getState()?.user || null;
+      const user = response?.data?.user || useAuthStore.getState()?.user || null;
 
       if (user) {
-        console.log("User role data:", typeof user.role, user.role);
-        // Not verified -> verify-choice
+        // Chưa xác thực email -> chuyển đến trang verify
         if (!user.isVerified) {
           return navigate("/verify-choice", {
             replace: true,
             state: { email: user.email },
           });
         }
-        // Verified -> navigate based on role
-        const targetRoute = user.role === "admin" ? "/admin/products" : "/";
-        console.log("Navigating to:", targetRoute);
-        return navigate(targetRoute, { replace: true });
+        
+        // Đã xác thực -> GuestRoute sẽ tự động redirect theo role
+        console.log("Login success for role:", user.role, "- GuestRoute will handle redirect");
       }
+      
     } catch (error) {
-      console.log("Backend login failed, trying fallback...", error);
-
-      // Fallback to mock API
-      try {
-        const users = await fetchAccounts();
-        const user = users.find(
-          (acc) =>
-            acc.email === userData.email.trim() &&
-            acc.password === userData.password.trim()
-        );
-
-        if (user) {
-          // If found: save to localStorage
-          localStorage.setItem("user", JSON.stringify(user));
-          localStorage.setItem("isLoggedIn", "true");
-
-          Notification.success(
-            "Đăng nhập thành công!",
-            "Chào mừng bạn quay lại."
-          );
-
-          // Navigate based on role
-          if (user.role === "admin") {
-            navigate("/admin/products");
-          } else {
-            navigate("/");
-          }
-        } else {
-          // If not found: show error on email field
-          Notification.error("Đăng nhập thất bại", "Sai email hoặc mật khẩu.");
-          setErrors({ email: "Sai Email hoặc Mật khẩu" });
-        }
-      } catch (error) {
-        // Handle API call error
-        setErrors({ email: "Error Issue Log In" });
-        Notification.error("Đăng nhập thất bại", "Không lấy được dữ liệu.");
-      } finally {
-        // Stop loading state
-        setSubmitting(false);
+      console.error("Login failed:", error);
+      
+      // Kiểm tra nếu BE đã trả về error message
+      const errorMessage = error.response?.data?.message || error.message;
+      
+      if (errorMessage) {
+        // Sử dụng error message từ BE
+        setErrors({ email: errorMessage });
+        Notification.error("Đăng nhập thất bại", errorMessage);
+      } else {
+        // Fallback nếu không có message từ BE
+        setErrors({ email: "Có lỗi xảy ra. Vui lòng thử lại." });
+        Notification.error("Đăng nhập thất bại", "Vui lòng kiểm tra kết nối mạng");
       }
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  //! Handle forgot password click
+  //! Xử lý click quên mật khẩu 
   const handleForgotPasswordClick = () => {
     navigate("/forgot-password");
   };
-
-  //! If the user is already logged in, redirect to the landing page
-  useEffect(() => {
-    // Cần check trạng thái xác thực
-    if (isCheckingAuth) return;
-    if (!isAuthenticated || !user) return;
-
-    // If user is not in login page
-    if (location.pathname !== "/login") {
-      return;
-    }
-
-    console.log("🔍 Login useEffect - user state:", { 
-      isVerified: user.isVerified, 
-      pendingVerification: user.pendingVerification 
-    });
-
-    // Check user verification status
-    if (!user.isVerified) {
-      // Don't navigate if already navigating to verification pages
-      if (location.pathname.includes('/verify')) {
-        console.log("🚫 Already on verification page, skipping redirect");
-        return;
-      }
-      
-      navigate("/verify-choice", {
-        replace: true,
-        state: { email: user.email },
-      });
-      return;
-    }
-
-    // User is verified -> redirect page
-    const targetRoute = user.role === "admin" ? "/admin/products" : "/";
-    console.log("useEffect redirecting to:", targetRoute);
-
-    navigate(targetRoute, {
-      replace: true,
-    });
-  }, [isAuthenticated, user, navigate, location.pathname]);
 
   return (
     <div className="form-box log-in-form-container absolute bg-white flex items-center h-full">
@@ -153,8 +82,6 @@ const Login = ({ handleRegisterClick }) => {
             password: values.password.trim(),
             rememberMe: values.rememberMe,
           };
-
-          // Call login function
           await handleLogin(userData, formikActions);
         }}
       >
@@ -207,10 +134,15 @@ const Login = ({ handleRegisterClick }) => {
                   name="rememberMe"
                   type="checkbox"
                   checked={values.rememberMe}
-                  onChange={() => setFieldValue('rememberMe', !values.rememberMe)}
+                  onChange={() =>
+                    setFieldValue("rememberMe", !values.rememberMe)
+                  }
                   className="w-4 h-4 text-camel bg-gray-50 border-gray-300 rounded focus:ring-camel focus:ring-2"
                 />
-                <label htmlFor="remember" className="ml-2 text-sm text-gray-600">
+                <label
+                  htmlFor="remember"
+                  className="ml-2 text-sm text-gray-600"
+                >
                   Ghi nhớ đăng nhập
                 </label>
               </div>

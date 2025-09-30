@@ -1,7 +1,6 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 
-//! Component route bảo vệ cho các trang yêu cầu đăng nhập và quyền truy cập
 const PrivateRoute = ({ permittedRole }) => {
   const { user, isAuthenticated, isCheckingAuth } = useAuthStore();
 

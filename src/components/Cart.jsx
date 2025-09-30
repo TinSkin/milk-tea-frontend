@@ -7,8 +7,9 @@ function Cart() {
 
   //! Handle loading cart
   const loadCart = () => {
-    const storedCart = JSON.parse(localStorage.getItem("cart") || "[]");
-    setCartItems(storedCart);
+    const storedCart = JSON.parse(localStorage.getItem("cart-storage") || "[]");
+    const cartItems = storedCart?.state?.items || [];
+    setCartItems(cartItems);
   };
 
   useEffect(() => {

@@ -37,12 +37,14 @@ import AdminAccount from "./pages/admin/AdminAccount";
 import AdminTopping from "./pages/admin/AdminTopping";
 import AdminCategory from "./pages/admin/AdminCategory";
 
+// Import Store Manager Pages
+import ManagerProduct from "./pages/store-manager/ManagerProduct";
+
 // Import Protected Route
 import PrivateRoute from "./routes/PrivateRoute";
 import EmailRoute from "./routes/EmailRoute";
 import GuestRoute from "./routes/GuestRoute";
 import StoreGuard from "./routes/StoreGuard";
-
 import { useAuthStore } from "./store/authStore";
 
 import "./App.css";
@@ -61,8 +63,6 @@ function App() {
     checkAuth(); // gọi đúng 1 lần lúc app mount
   }, [checkAuth]);
 
-  //! Không gọi useChatbot ở đây nữa - sẽ move vào component riêng
-
   return (
     <Router>
       {/* Toaster should be rendered at the root of the app */}
@@ -73,7 +73,14 @@ function App() {
         {/* //* Public Route (Login is not required) */}
         <Route path="/" element={<Home />} />{" "}
         <Route path="/intro" element={<Intro />} />
-        <Route path="/menu" element={<StoreGuard><Menu /></StoreGuard>} />
+        <Route
+          path="/menu"
+          element={
+            <StoreGuard>
+              <Menu />
+            </StoreGuard>
+          }
+        />
         <Route
           path="/login"
           element={
@@ -120,25 +127,22 @@ function App() {
         <Route path="*" element={<NotFound />} />{" "}
         {/* //* ------ Customer Route (Registered Customer access is required) ------*/}
         <Route element={<PrivateRoute permittedRole="customer" />}>
-          {/* <Route path="/menu" element={<Menu />} />{" "} */}
           {/* Trang giỏ hàng */}
-          <Route path="/cart" element={<Cart />} />{" "}
-          {/* Trang user sau khi đăng nhập */}
-          {/* Trang chi tiết sản phẩm với ID động */}
-          <Route path="/checkout" element={<Checkout />} />{" "}
+          <Route path="/cart" element={<Cart />} />
           {/* Trang thanh toán */}
-          <Route path="/ordertracking" element={<OrderTracking />} />{" "}
+          <Route path="/checkout" element={<Checkout />} />
           {/* Trang theo dõi đơn hàng*/}
+          <Route path="/ordertracking" element={<OrderTracking />} />
         </Route>
         {/* //* ------ Manager Route (Manager access is required) ------ */}
         <Route element={<PrivateRoute permittedRole="storeManager" />}>
-          {/* Khi truy cập /manager → điều hướng tới /manager/dashboard */}
+          {/* Khi truy cập /storeManager → điều hướng tới /manager/dashboard */}
           <Route
-            path="/storeManager"
-            element={<Navigate to="/admin/products" replace />}
+            path="/store-manager"
+            element={<Navigate to="/store-manager/products" replace />}
           />
           {/* Trang quản lý sản phẩm dành riêng cho admin */}
-          <Route path="/admin/products" element={<AdminProduct />} />
+          <Route path="/store-manager/products" element={<ManagerProduct />} />
           <Route path="/admin/accounts" element={<AdminAccount />} />
           <Route path="/admin/toppings" element={<AdminTopping />} />
           <Route path="/admin/categories" element={<AdminCategory />} />

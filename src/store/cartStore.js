@@ -1,6 +1,10 @@
 //! 1. Import các thư viện và modules cần thiết
 import { create } from "zustand"; // Zustand tạo store để quản lý state toàn cục
 import { persist } from "zustand/middleware"; // Persist middleware cho localStorage
+import api from "../api/axios"; 
+
+//! 2. API endpoint cho xác thực
+const API_ENDPOINT = "/cart";
 
 const useCartStore = create(
   persist(
@@ -18,10 +22,7 @@ const useCartStore = create(
           }))
         ),
 
-        //cập nhật giá sau khi thay đổi
-        
-
-      // Thêm sản phẩm vào giỏ
+      //! 4. Thêm sản phẩm vào giỏ
       addToCart: (product, quantity = 1) => {
         const mapToppingsForCompare = get()._mapToppingsForCompare;
 
@@ -32,7 +33,7 @@ const useCartStore = create(
             item.sugarLevel === (product.sugarLevel || "100%") &&
             item.iceOption === (product.iceOption || "Chung") &&
             mapToppingsForCompare(item.toppings) ===
-              mapToppingsForCompare(product.toppings)
+            mapToppingsForCompare(product.toppings)
         );
 
         const sizeOptionObj = product.sizeOptions?.find(
@@ -87,7 +88,7 @@ const useCartStore = create(
         set({ items: [...get().items, newItem] });
       },
 
-      // Xóa sản phẩm (theo id + option)
+      //! 5. Xóa sản phẩm (theo id + option)
       removeFromCart: (id, options = {}) => {
         const mapToppingsForCompare = get()._mapToppingsForCompare;
         const updatedItems = get().items.filter(
@@ -98,13 +99,13 @@ const useCartStore = create(
               item.sugarLevel === (options.sugarLevel || "100%") &&
               item.iceOption === (options.iceOption || "Chung") &&
               mapToppingsForCompare(item.toppings) ===
-                mapToppingsForCompare(options.toppings)
+              mapToppingsForCompare(options.toppings)
             )
         );
         set({ items: updatedItems });
       },
 
-      // Cập nhật số lượng
+      //! 6. Cập nhật số lượng
       updateQuantity: (id, quantity, options = {}) => {
         const mapToppingsForCompare = get()._mapToppingsForCompare;
         const updatedItems = get().items.map((item) => {
@@ -114,7 +115,7 @@ const useCartStore = create(
             item.sugarLevel === (options.sugarLevel || "100%") &&
             item.iceOption === (options.iceOption || "Chung") &&
             mapToppingsForCompare(item.toppings) ===
-              mapToppingsForCompare(options.toppings)
+            mapToppingsForCompare(options.toppings)
           ) {
             return { ...item, quantity };
           }
@@ -160,62 +161,59 @@ const useCartStore = create(
               item.sugarLevel === oldItem.sugarLevel &&
               item.iceOption === oldItem.iceOption &&
               mapToppingsForCompare(item.toppings) ===
-                mapToppingsForCompare(oldItem.toppings)
+              mapToppingsForCompare(oldItem.toppings)
             ) {
-            
-              // 👉 Tính lại giá mới chỉ dựa vào size + topping
               const newSizePrice = updatedItem.sizeOptionPrice || 0;
               const toppingTotal = (updatedItem.toppings || []).reduce(
                 (s, t) => s + (t.extraPrice || 0),
                 0
               );
-      
+
               return {
                 ...item,
                 ...updatedItem,
                 availableToppings: item.availableToppings || updatedItem.availableToppings || [],
                 sizeOptions: item.sizeOptions || updatedItem.sizeOptions || [],
-                // ✅ Giá mới thay thế giá cũ
                 price: newSizePrice + toppingTotal,
               };
             }
             return item;
           }),
         });
-      },      
-         
-     mergeDuplicateItems: () => {
-  const { items } = get();
-  const mapToppingsForCompare = get()._mapToppingsForCompare;
+      },
 
-  let mergedItems = [];
+      mergeDuplicateItems: () => {
+        const { items } = get();
+        const mapToppingsForCompare = get()._mapToppingsForCompare;
 
-  for (let i = 0; i < items.length; i++) {
-    const current = items[i];
+        let mergedItems = [];
 
-    // tìm xem mergedItems đã có item trùng cấu hình chưa
-    const existingIndex = mergedItems.findIndex(
-      (m) =>
-        m.id === current.id &&
-        m.sizeOption === current.sizeOption &&
-        m.sugarLevel === current.sugarLevel &&
-        m.iceOption === current.iceOption &&
-        mapToppingsForCompare(m.toppings) === mapToppingsForCompare(current.toppings)
-    );
+        for (let i = 0; i < items.length; i++) {
+          const current = items[i];
 
-    if (existingIndex !== -1) {
-      // gộp số lượng lại, nhưng giữ cấu hình của current (sản phẩm mới nhất)
-      mergedItems[existingIndex] = {
-        ...current,
-        quantity: (mergedItems[existingIndex].quantity || 0) + (current.quantity || 0),
-      };
-    } else {
-      mergedItems.push({ ...current });
-    }
-  }
+          // tìm xem mergedItems đã có item trùng cấu hình chưa
+          const existingIndex = mergedItems.findIndex(
+            (m) =>
+              m.id === current.id &&
+              m.sizeOption === current.sizeOption &&
+              m.sugarLevel === current.sugarLevel &&
+              m.iceOption === current.iceOption &&
+              mapToppingsForCompare(m.toppings) === mapToppingsForCompare(current.toppings)
+          );
 
-  set({ items: mergedItems });
-},
+          if (existingIndex !== -1) {
+            // gộp số lượng lại, nhưng giữ cấu hình của current (sản phẩm mới nhất)
+            mergedItems[existingIndex] = {
+              ...current,
+              quantity: (mergedItems[existingIndex].quantity || 0) + (current.quantity || 0),
+            };
+          } else {
+            mergedItems.push({ ...current });
+          }
+        }
+
+        set({ items: mergedItems });
+      },
 
       getItemById: (productId) => {
         const { items } = get();
