@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import api from "../api/axios";
 import {
   CreditCard,
   Truck,
@@ -14,26 +15,28 @@ import {
 import Header from "../components/Header";
 import CheckoutModal from "../components/CheckoutModal";
 import { useCartStore } from "../store/cartStore";
+import { useAuthStore } from "../store/authStore";
 
 const CheckoutPage = () => {
+  const { user, isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);  
+  const [errors, setErrors] = useState({});
   const items = useCartStore((s) => s.items);
   const selectedItems = useCartStore((s) => s.selectedItems);
   const getSelectedTotal = useCartStore((s) => s.getSelectedTotal);
 
-  const user = { name: "Nguyễn Văn A", email: "nguyenvana@example.com" };
 
   const getItemKey = (item) =>
     `${item.id}__${item.sizeOption || "M"}__${JSON.stringify(
       item.toppings || []
     )}`;
 
-  const checkoutItems = items.filter(
-    (it) =>
-      selectedItems && selectedItems.length > 0
-        ? selectedItems.includes(getItemKey(it))
-        : true
+  const checkoutItems = items.filter((it) =>
+    selectedItems && selectedItems.length > 0
+      ? selectedItems.includes(getItemKey(it))
+      : true
   );
 
   const [formData, setFormData] = useState({
@@ -48,8 +51,6 @@ const CheckoutPage = () => {
     notes: "",
   });
 
-  const [errors, setErrors] = useState({});
-  const [isProcessing, setIsProcessing] = useState(false);
 
   const formatPrice = (price) =>
     new Intl.NumberFormat("vi-VN", {
@@ -67,18 +68,19 @@ const CheckoutPage = () => {
     }
   };
 
-
   const validateForm = () => {
     const newErrors = {};
-  
-    if (!formData.fullName.trim()) newErrors.fullName = "Vui lòng nhập họ và tên";
+
+    if (!formData.fullName.trim())
+      newErrors.fullName = "Vui lòng nhập họ và tên";
     if (!formData.email.trim()) newErrors.email = "Vui lòng nhập email";
     if (!formData.phone.trim()) newErrors.phone = "Vui lòng nhập số điện thoại";
-    if (!formData.address.trim()) newErrors.address = "Vui lòng nhập địa chỉ cụ thể";
+    if (!formData.address.trim())
+      newErrors.address = "Vui lòng nhập địa chỉ cụ thể";
     if (!formData.city.trim()) newErrors.city = "Vui lòng chọn tỉnh/thành phố";
-  
+
     setErrors(newErrors);
-  
+
     return Object.keys(newErrors).length === 0; // true nếu form hợp lệ
   };
 
@@ -89,7 +91,7 @@ const CheckoutPage = () => {
       toast.error("Vui lòng điền đầy đủ thông tin nhận hàng"); // hoặc dùng alert()
     }
   };
-  
+
   const paymentMethods = [
     {
       id: "cod",
@@ -111,12 +113,10 @@ const CheckoutPage = () => {
     },
   ];
 
-
   const handleConfirm = async () => {
     setModalOpen(false);
     setIsProcessing(true);
-
-    // Tạo payload gửi lên backend
+  
     const orderData = {
       customerInfo: { name: formData.fullName, email: formData.email },
       shippingAddress: {
@@ -140,28 +140,11 @@ const CheckoutPage = () => {
       })),
       totalAmount: getSelectedTotal(),
     };
-
+  
     try {
-      // Lấy token nếu có
-      const token = localStorage.getItem("token");
-
-      const res = await fetch("http://localhost:5000/api/orders", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-        body: JSON.stringify(orderData),
-      });
-
-      if (!res.ok) throw new Error("Đặt hàng thất bại");
-
-      const result = await res.json();
-
+      const res = await api.post("/orders", orderData); // cookie JWT tự gửi
       alert("Đặt hàng thành công!");
-      // Xóa giỏ hàng đã chọn sau khi đặt thành công
-      // useCartStore.getState().clearSelectedItems(); // nếu bạn có hàm clearSelectedItems
-      navigate("/order-tracking"); // chuyển sang trang theo dõi đơn hàng
+      navigate("/order-tracking");
     } catch (error) {
       console.error(error);
       alert("Đặt hàng thất bại, vui lòng thử lại!");
@@ -169,6 +152,7 @@ const CheckoutPage = () => {
       setIsProcessing(false);
     }
   };
+  
   // ========================================================
 
   if (items.length === 0) {
@@ -208,18 +192,18 @@ const CheckoutPage = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-gradient-to-b from-[#447484]  to-transparent rounded-lg shadow-sm p-6"
               >
-                 <h2 className="text-2xl font-extrabold text-[#e2cda2] mb-6 flex items-center gap-2">
+                <h2 className="text-2xl font-extrabold text-[#e2cda2] mb-6 flex items-center gap-2">
                   <MapPin className="w-5 h-5 text-[#e2cda2]" />
                   Thông tin giao hàng
-                 </h2>
+                </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-white mb-2">
                       Họ và tên *
-                     </label>
-                     <div className="relative">
-                       <User className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                       <input
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                      <input
                         type="text"
                         name="fullName"
                         value={formData.fullName}
@@ -368,11 +352,11 @@ const CheckoutPage = () => {
                 className="bg-gradient-to-b from-[#447484]  rounded-lg shadow-sm p-6"
               >
                 <h2 className="text-2xl font-extrabold text-[#e2cda2] mb-6 flex items-center gap-2">
-                   <CreditCard className="w-5 h-5 text-[#e2cda2]" />
-                   Phương thức thanh toán
-                 </h2>
+                  <CreditCard className="w-5 h-5 text-[#e2cda2]" />
+                  Phương thức thanh toán
+                </h2>
 
-                 <div className="space-y-3">
+                <div className="space-y-3">
                   {paymentMethods.map((method) => {
                     const Icon = method.icon;
                     return (
@@ -437,10 +421,10 @@ const CheckoutPage = () => {
                 transition={{ delay: 0.2 }}
                 className="bg-gradient-to-b from-[#447484]  rounded-lg shadow-sm p-6"
               >
-              <h2 className="text-2xl font-extrabold text-[#e2cda2] mb-4">
+                <h2 className="text-2xl font-extrabold text-[#e2cda2] mb-4">
                   Ghi chú đơn hàng
-               </h2>
-                 <textarea
+                </h2>
+                <textarea
                   name="notes"
                   value={formData.notes}
                   onChange={handleInputChange}
@@ -459,11 +443,11 @@ const CheckoutPage = () => {
                 className="bg-gradient-to-b from-[#447484]  rounded-lg shadow-sm p-6 sticky top-24"
               >
                 <h2 className="text-2xl font-extrabold text-[#e2cda2] mb-6">
-                   Đơn hàng của bạn
-                 </h2>
+                  Đơn hàng của bạn
+                </h2>
 
-                 <div className="space-y-4 mb-6">
-                   {checkoutItems.map((item) => (
+                <div className="space-y-4 mb-6">
+                  {checkoutItems.map((item) => (
                     <div key={item.productId} className="flex justify-between">
                       <div className="flex-1">
                         <p className="font-medium text-white truncate">
@@ -499,13 +483,13 @@ const CheckoutPage = () => {
                 </div>
 
                 <button
-  type="button"
-  disabled={isProcessing}
-  onClick={handleCheckoutClick} // <-- dùng hàm mới
-  className="w-full bg-[#044c5c] text-white hover:scale-105 font-medium py-4 rounded-lg transition-colors flex items-center justify-center gap-2 mt-4"
->
-  {isProcessing ? "Đang xử lý..." : "Đặt hàng"}
-</button>
+                  type="button"
+                  disabled={isProcessing}
+                  onClick={handleCheckoutClick} // <-- dùng hàm mới
+                  className="w-full bg-[#044c5c] text-white hover:scale-105 font-medium py-4 rounded-lg transition-colors flex items-center justify-center gap-2 mt-4"
+                >
+                  {isProcessing ? "Đang xử lý..." : "Đặt hàng"}
+                </button>
               </motion.div>
             </div>
           </div>
@@ -514,11 +498,15 @@ const CheckoutPage = () => {
 
       {/* Modal */}
       <CheckoutModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onConfirm={handleConfirm}
-        orderInfo={{ ...formData, items: checkoutItems, total: getSelectedTotal() }}
-      />
+  isOpen={modalOpen}
+  onClose={() => setModalOpen(false)}
+  onConfirm={handleConfirm} // <-- đây
+  orderInfo={{
+    ...formData,
+    items: checkoutItems,
+    total: getSelectedTotal(),
+  }}
+/>
     </>
   );
 };
