@@ -7,6 +7,15 @@ const useCartStore = create(
     (set, get) => ({
       //! 3. Khởi tạo các trạng thái mặc định
       items: [], // Mảng lưu trữ các sản phẩm trong giỏ hàng
+      
+      // ✅ Thêm trạng thái lưu id các sản phẩm được tick chọn
+      selectedItems: [],
+
+      // ✅ Set sản phẩm đã chọn
+      setSelectedItems: (selected) => set({ selectedItems: selected }),
+
+      // ✅ Lấy danh sách sản phẩm đã chọn
+      getSelectedItems: () => get().selectedItems,
 
       // helper: chuẩn hoá topping để so sánh
       _mapToppingsForCompare: (arr) =>
@@ -18,8 +27,7 @@ const useCartStore = create(
           }))
         ),
 
-        //cập nhật giá sau khi thay đổi
-        
+      //cập nhật giá sau khi thay đổi
 
       // Thêm sản phẩm vào giỏ
       addToCart: (product, quantity = 1) => {
@@ -64,7 +72,8 @@ const useCartStore = create(
           price: product.price || 0,
           quantity: quantity,
           // choices
-          sizeOption: product.sizeOption || (product.sizeOptions?.[0]?.size ?? "M"),
+          sizeOption:
+            product.sizeOption || (product.sizeOptions?.[0]?.size ?? "M"),
           sizeOptionPrice: sizeOptionObj?.price || 0,
           sugarLevel: product.sugarLevel || "100%",
           iceOption: product.iceOption || "Chung",
@@ -137,17 +146,34 @@ const useCartStore = create(
       },
 
       // Tính tổng tiền: đơn giá = item.price + sizeOptionPrice + toppings extra
+      // getCartTotal: () => {
+      //   return get().items.reduce((total, item) => {
+      //     const toppingTotal = (item.toppings || []).reduce(
+      //       (s, t) => s + (t.extraPrice || 0),
+      //       0
+      //     );
+      //     const sizeExtra = item.sizeOptionPrice || 0;
+      //     const unitPrice = (item.price || 0) + sizeExtra + toppingTotal;
+      //     return total + unitPrice * (item.quantity || 1);
+      //   }, 0);
+      // },
       getCartTotal: () => {
         return get().items.reduce((total, item) => {
-          const toppingTotal = (item.toppings || []).reduce(
-            (s, t) => s + (t.extraPrice || 0),
-            0
-          );
-          const sizeExtra = item.sizeOptionPrice || 0;
-          const unitPrice = (item.price || 0) + sizeExtra + toppingTotal;
-          return total + unitPrice * (item.quantity || 1);
+          return total + (item.price || 0) * (item.quantity || 1);
         }, 0);
       },
+      
+      //hàm tính tổng sản phẩm đã chọn, bên checkout page dùng
+      getSelectedTotal: () => {
+        const { items, selectedItems } = get();
+        const getItemKey = (item) =>
+          `${item.id}__${item.sizeOption || "M"}__${JSON.stringify(item.toppings || [])}`;
+      
+        return items
+          .filter((item) => selectedItems.includes(getItemKey(item)))
+          .reduce((sum, item) => sum + item.price * item.quantity, 0);
+      },
+      
 
       // Chỉnh sửa sản phẩm: dùng oldItem object để match chính xác
       updateCartItem: (oldItem, updatedItem) => {
@@ -162,18 +188,18 @@ const useCartStore = create(
               mapToppingsForCompare(item.toppings) ===
                 mapToppingsForCompare(oldItem.toppings)
             ) {
-            
               // 👉 Tính lại giá mới chỉ dựa vào size + topping
               const newSizePrice = updatedItem.sizeOptionPrice || 0;
               const toppingTotal = (updatedItem.toppings || []).reduce(
                 (s, t) => s + (t.extraPrice || 0),
                 0
               );
-      
+
               return {
                 ...item,
                 ...updatedItem,
-                availableToppings: item.availableToppings || updatedItem.availableToppings || [],
+                availableToppings:
+                  item.availableToppings || updatedItem.availableToppings || [],
                 sizeOptions: item.sizeOptions || updatedItem.sizeOptions || [],
                 // ✅ Giá mới thay thế giá cũ
                 price: newSizePrice + toppingTotal,
@@ -182,53 +208,58 @@ const useCartStore = create(
             return item;
           }),
         });
-      },      
-         
-     mergeDuplicateItems: () => {
-  const { items } = get();
-  const mapToppingsForCompare = get()._mapToppingsForCompare;
+      },
 
-  let mergedItems = [];
+      mergeDuplicateItems: () => {
+        const { items } = get();
+        const mapToppingsForCompare = get()._mapToppingsForCompare;
 
-  for (let i = 0; i < items.length; i++) {
-    const current = items[i];
+        let mergedItems = [];
 
-    // tìm xem mergedItems đã có item trùng cấu hình chưa
-    const existingIndex = mergedItems.findIndex(
-      (m) =>
-        m.id === current.id &&
-        m.sizeOption === current.sizeOption &&
-        m.sugarLevel === current.sugarLevel &&
-        m.iceOption === current.iceOption &&
-        mapToppingsForCompare(m.toppings) === mapToppingsForCompare(current.toppings)
-    );
+        for (let i = 0; i < items.length; i++) {
+          const current = items[i];
 
-    if (existingIndex !== -1) {
-      // gộp số lượng lại, nhưng giữ cấu hình của current (sản phẩm mới nhất)
-      mergedItems[existingIndex] = {
-        ...current,
-        quantity: (mergedItems[existingIndex].quantity || 0) + (current.quantity || 0),
-      };
-    } else {
-      mergedItems.push({ ...current });
-    }
-  }
+          // tìm xem mergedItems đã có item trùng cấu hình chưa
+          const existingIndex = mergedItems.findIndex(
+            (m) =>
+              m.id === current.id &&
+              m.sizeOption === current.sizeOption &&
+              m.sugarLevel === current.sugarLevel &&
+              m.iceOption === current.iceOption &&
+              mapToppingsForCompare(m.toppings) ===
+                mapToppingsForCompare(current.toppings)
+          );
 
-  set({ items: mergedItems });
-},
+          if (existingIndex !== -1) {
+            // gộp số lượng lại, nhưng giữ cấu hình của current (sản phẩm mới nhất)
+            mergedItems[existingIndex] = {
+              ...current,
+              quantity:
+                (mergedItems[existingIndex].quantity || 0) +
+                (current.quantity || 0),
+            };
+          } else {
+            mergedItems.push({ ...current });
+          }
+        }
+
+        set({ items: mergedItems });
+      },
 
       getItemById: (productId) => {
         const { items } = get();
-        return items.find(item => item.id === productId) || null;
+        return items.find((item) => item.id === productId) || null;
       },
 
       // Xóa toàn bộ giỏ
       clearCart: () => set({ items: [] }),
-
     }),
     {
       name: "cart-storage", // localStorage key
-      partialize: (state) => ({ items: state.items }), // Chỉ persist items
+      partialize: (state) => ({
+        items: state.items,
+        selectedItems: state.selectedItems, // ✅ lưu thêm selectedItems
+      }),
     }
   )
 );
