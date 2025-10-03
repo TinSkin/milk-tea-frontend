@@ -22,9 +22,9 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import { checkOutSchema } from "../utils/checkOutSchema";
 
 // Import Component
-import Header from "../components/Header";
-import Footer from "../components/Footer";
-import Notification from "../components/Notification";
+import Header from "../components/layout/Header";
+import Footer from "../components/layout/Footer";
+import Notification from "../components/ui/Notification";
 
 const Cart = () => {
   // Định nghĩa component Cart
