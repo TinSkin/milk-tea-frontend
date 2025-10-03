@@ -11,8 +11,8 @@ import {
   User,
   Mail,
 } from "lucide-react";
-import Header from "../components/Header";
-import CheckoutModal from "../components/CheckoutModal";
+import Header from "../components/layout/Header";
+import CheckoutModal from "../components/features/ecommerce/CheckoutModal";
 import { useCartStore } from "../store/cartStore";
 
 const CheckoutPage = () => {

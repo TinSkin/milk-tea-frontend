@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 
 // Import Components
-import Header from "../components/Header";
-import Register from "../components/RegisterForm/Register";
-import Login from "../components/LoginForm/Login";
-import ToggleBox from "../components/ToggleBox";
-import FadeInOnScroll from "./../components/FadeInOnScroll";
+import Header from "../components/layout/Header";
+import Register from "../components/features/auth/RegisterForm/Register";
+import Login from "../components/features/auth/LoginForm/Login";
+import ToggleBox from "../components/ui/ToggleBox";
+import FadeInOnScroll from "../components/ui/FadeInOnScroll";
 
 function Auth() {
   // State to manage the Login form and Register form

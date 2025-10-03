@@ -13,9 +13,9 @@ import { useUserStore } from "../../store/userStore";
 import { useAuthStore } from "../../store/authStore";
 
 // Import component
-import Header from "../../components/Admin/Header";
-import Notification from "../../components/Notification";
-import ViewUserModal from "../../components/Admin/ViewUserModal";
+import Header from "../../components/features/admin/Header";
+import Notification from "../../components/ui/Notification";
+import ViewUserModal from "../../components/features/admin/ViewUserModal";
 
 const AdminAccount = () => {
   const navigate = useNavigate();
