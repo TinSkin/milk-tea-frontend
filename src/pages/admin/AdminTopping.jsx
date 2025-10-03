@@ -22,11 +22,11 @@ import { useToppingStore } from "../../store/toppingStore";
 import { useAuthStore } from "../../store/authStore";
 
 // Components
-import Header from "../../components/Admin/Header";
-import Notification from "../../components/Notification";
-import AddToppingModal from "../../components/Admin/Topping/AddToppingModal";
-import EditToppingModal from "../../components/Admin/Topping/EditToppingModal";
-import ConfirmDeleteModal from "../../components/Admin/ConfirmDeleteModal";
+import Header from "../../components/features/admin/Header";
+import Notification from "../../components/ui/Notification";
+import AddToppingModal from "../../components/features/admin/topping/AddToppingModal";
+import EditToppingModal from "../../components/features/admin/topping/EditToppingModal";
+import ConfirmDeleteModal from "../../components/features/admin/ConfirmDeleteModal";
 
 const sortOptions = [
   {

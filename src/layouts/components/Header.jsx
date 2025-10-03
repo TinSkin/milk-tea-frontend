@@ -1,0 +1,146 @@
+import React from "react";
+import { useEffect, useState } from "react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
+import { Menu, X } from "lucide-react";
+import { useAuthStore } from "../../store/authStore";
+import { useSidebar } from "../hooks/useSidebar";
+import logo from "../../img/logo.png";
+
+function Header() {
+  const navigate = useNavigate();
+  const location = useLocation(); // Get current path
+  const { isOpen, toggleSidebar } = useSidebar();
+
+  const { user, logout, isCheckingAuth } = useAuthStore();
+  const [openMenu, setOpenMenu] = useState(false);
+
+  useEffect(() => {
+    setOpenMenu(false);
+  }, [location.pathname]);
+
+  //! Handle login click
+  const handleLoginClick = () => {
+    navigate("/login");
+  };
+
+  //! Handle logout click
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
+  //! Loading state for checking authentication
+  if (isCheckingAuth) {
+    return (
+      <header className="bg-dark_blue shadow-md py-4 px-6 sticky top-0 z-50 border-b-8 border-camel">
+        <div className="max-w-7xl mx-auto flex justify-between items-center px-4">
+          <Link
+            to="/"
+            className="font-bold text-camel text-lg focus:outline-none"
+          >
+            <img src={logo} alt="Logo" className="w-full h-[130px]" />
+          </Link>
+          <div className="text-white">Đang tải...</div>
+        </div>
+      </header>
+    );
+  }
+
+  const isActive = (path) =>
+    location.pathname === path ? "border-b-2 border-camel" : "hover:text-camel";
+
+  return (
+    <>
+      <header className="bg-green_starbuck shadow-md py-4 px-6 sticky top-0 z-50 border-b-8 border-camel">
+        <div className="max-w-7xl mx-auto flex justify-evenly items-center px-4">
+          {/* Logo & Button Sidebar */}
+          <div className="flex font-bold text-camel text-lg focus:outline-none">
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              className="p-1.5 rounded-lg bg-gray-200 hover:bg-gray-100 transition-colors"
+            >
+              {isOpen ? (
+                <X className="w-5 h-5 text-gray-600" />
+              ) : (
+                <Menu className="w-5 h-5 text-gray-600" />
+              )}
+            </button>
+
+            <img src={logo} alt="Logo" className="w-full h-[130px]" />
+          </div>
+          {/* Image & Name & Role */}
+          <div className="flex w-[70%] items-center justify-around">
+            {user ? (
+              <div className="relative">
+                {/* Avatar button */}
+                <div className="flex items-center">
+                  <button
+                    type="button"
+                    className="text-sm rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    id="user-menu-button"
+                    aria-expanded="false"
+                    onClick={() => setOpenMenu((o) => !o)}
+                  >
+                    <img
+                      className="w-12 h-12 rounded"
+                      src="https://flowbite.com/docs/images/people/profile-picture-3.jpg"
+                      alt="user"
+                    />
+                  </button>
+                  {/* Show name and role */}
+                  <div className="flex flex-col ml-2">
+                    <span className="font-semibold text-camel text-base capitalize">
+                      {user.userName}
+                    </span>
+                    <span className="font-medium text-white text-xs lowercase">
+                      {user.email}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Dropdown menu */}
+                <div
+                  id="user-dropdown"
+                  className={`absolute right-0 mt-2 w-48 bg-white divide-y divide-gray-100 rounded-lg shadow z-50 ${
+                    openMenu ? "" : "hidden"
+                  }`}
+                >
+                  <div className="px-4 py-3 text-md text-dark_blue ">
+                    <div className="font-semibold">{user.fullName}</div>
+                    <div className="font-medium truncate text-camel">
+                      {user.email}
+                    </div>
+                  </div>
+                  <div className="py-2">
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="block w-full bg-camel text-white px-4 py-2 rounded hover:bg-logo_color transition font-semibold"
+                    >
+                      Đăng xuất
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="bg-camel text-white px-4 py-2 rounded hover:bg-logo_color transition font-semibold"
+                onClick={handleLoginClick}
+              >
+                Đăng nhập
+              </button>
+            )}
+          </div>
+        </div>
+      </header>
+    </>
+  );
+}
+
+export default Header;

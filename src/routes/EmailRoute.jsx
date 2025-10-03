@@ -1,7 +1,6 @@
 import { Navigate, useLocation, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 
-//! Component route quản lý xác thực email và các bước verification
 const EmailRoute = ({ children }) => {
   const { user, isAuthenticated, pendingVerification } = useAuthStore();
   const location = useLocation();

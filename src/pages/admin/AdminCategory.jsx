@@ -8,11 +8,11 @@ import { useCategoryStore } from "../../store/categoryStore";
 import { useAuthStore } from "../../store/authStore";
 
 // Components
-import Header from "../../components/Admin/Header";
-import Notification from "../../components/Notification";
-import AddCategoryModal from "../../components/Admin/Category/AddCategoryModal";
-import EditCategoryModal from "../../components/Admin/Category/EditCategoryModal";
-import ConfirmDeleteModal from "../../components/Admin/ConfirmDeleteModal";
+import Header from "../../components/features/admin/Header";
+import Notification from "../../components/ui/Notification";
+import AddCategoryModal from "../../components/features/admin/category/AddCategoryModal";
+import EditCategoryModal from "../../components/features/admin/category/EditCategoryModal";
+import ConfirmDeleteModal from "../../components/features/admin/ConfirmDeleteModal";
 
 const AdminCategory = () => {
   const navigate = useNavigate();

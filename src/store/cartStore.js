@@ -1,6 +1,10 @@
 //! 1. Import các thư viện và modules cần thiết
 import { create } from "zustand"; // Zustand tạo store để quản lý state toàn cục
 import { persist } from "zustand/middleware"; // Persist middleware cho localStorage
+import api from "../api/axios"; 
+
+//! 2. API endpoint cho xác thực
+const API_ENDPOINT = "/cart";
 
 const useCartStore = create(
   persist(
@@ -40,7 +44,7 @@ const useCartStore = create(
             item.sugarLevel === (product.sugarLevel || "100%") &&
             item.iceOption === (product.iceOption || "Chung") &&
             mapToppingsForCompare(item.toppings) ===
-              mapToppingsForCompare(product.toppings)
+            mapToppingsForCompare(product.toppings)
         );
 
         const sizeOptionObj = product.sizeOptions?.find(
@@ -96,7 +100,7 @@ const useCartStore = create(
         set({ items: [...get().items, newItem] });
       },
 
-      // Xóa sản phẩm (theo id + option)
+      //! 5. Xóa sản phẩm (theo id + option)
       removeFromCart: (id, options = {}) => {
         const mapToppingsForCompare = get()._mapToppingsForCompare;
         const updatedItems = get().items.filter(
@@ -107,13 +111,13 @@ const useCartStore = create(
               item.sugarLevel === (options.sugarLevel || "100%") &&
               item.iceOption === (options.iceOption || "Chung") &&
               mapToppingsForCompare(item.toppings) ===
-                mapToppingsForCompare(options.toppings)
+              mapToppingsForCompare(options.toppings)
             )
         );
         set({ items: updatedItems });
       },
 
-      // Cập nhật số lượng
+      //! 6. Cập nhật số lượng
       updateQuantity: (id, quantity, options = {}) => {
         const mapToppingsForCompare = get()._mapToppingsForCompare;
         const updatedItems = get().items.map((item) => {
@@ -123,7 +127,7 @@ const useCartStore = create(
             item.sugarLevel === (options.sugarLevel || "100%") &&
             item.iceOption === (options.iceOption || "Chung") &&
             mapToppingsForCompare(item.toppings) ===
-              mapToppingsForCompare(options.toppings)
+            mapToppingsForCompare(options.toppings)
           ) {
             return { ...item, quantity };
           }
@@ -186,7 +190,7 @@ const useCartStore = create(
               item.sugarLevel === oldItem.sugarLevel &&
               item.iceOption === oldItem.iceOption &&
               mapToppingsForCompare(item.toppings) ===
-                mapToppingsForCompare(oldItem.toppings)
+              mapToppingsForCompare(oldItem.toppings)
             ) {
               // 👉 Tính lại giá mới chỉ dựa vào size + topping
               const newSizePrice = updatedItem.sizeOptionPrice || 0;
@@ -201,7 +205,6 @@ const useCartStore = create(
                 availableToppings:
                   item.availableToppings || updatedItem.availableToppings || [],
                 sizeOptions: item.sizeOptions || updatedItem.sizeOptions || [],
-                // ✅ Giá mới thay thế giá cũ
                 price: newSizePrice + toppingTotal,
               };
             }

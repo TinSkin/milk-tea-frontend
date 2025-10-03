@@ -2,9 +2,9 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 
 // Import Components
-import Header from "./../components/Header";
-import Footer from "./../components/Footer";
-import FadeInOnScroll from "./../components/FadeInOnScroll";
+import Header from "../components/layout/Header";
+import Footer from "../components/layout/Footer";
+import FadeInOnScroll from "../components/ui/FadeInOnScroll";
 
 // Import Imgae
 import logo from "./../img/logo.png";

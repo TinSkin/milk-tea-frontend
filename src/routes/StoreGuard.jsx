@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useStoreSelectionStore } from "../store/storeSelectionStore";
-import CitySelectionModal from "../components/LocationSelection/CitySelectionModal";
-import StoreSelectionFlow from "../components/LocationSelection/StoreSelectionFlow";
+import CitySelectionModal from "../components/features/location/LocationSelection/CitySelectionModal";
+import StoreSelectionFlow from "../components/features/location/LocationSelection/StoreSelectionFlow";
 
 const StoreGuard = ({ children }) => {
   const { isStoreSelectionRequired, isStoreModalOpen, selectedStore } =
