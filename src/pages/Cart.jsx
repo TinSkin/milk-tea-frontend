@@ -30,6 +30,8 @@ const Cart = () => {
   // Định nghĩa component Cart
   const navigate = useNavigate(); // Khởi tạo hook useNavigate
   const items = useCartStore((state) => state.items);
+  const selectedItems = useCartStore((state) => state.selectedItems);
+const setSelectedItems = useCartStore((state) => state.setSelectedItems);
   const clearCart = useCartStore((state) => state.clearCart);
   const getCartTotal = useCartStore((state) => state.getCartTotal);
   const getTotalItems = useCartStore((state) => state.getTotalItems);
@@ -38,12 +40,15 @@ const Cart = () => {
 
   const [isLoading, setIsLoading] = useState(false); // Trạng thái loading
 
-  const [selectedItems, setSelectedItems] = useState([]); // chọn danh sách sản phẩm cần mua
-
   const [editingItem, setEditingItem] = useState(null); // item đang chỉnh sửa
 
   const products = useProductStore((state) => state.products);
   
+  
+  const getItemKey = (item) =>
+    `${item.id}__${item.sizeOption || "M"}__${JSON.stringify(item.toppings || [])}`;
+  
+
   //! hàm xóa tất cả sản phẩm khỏi giỏ hàng
   const handleClearCart = () => {
     if (window.confirm("Bạn có chắc muốn xóa tất cả sản phẩm khỏi giỏ hàng?")) {
@@ -57,8 +62,16 @@ const Cart = () => {
       toast.error("Giỏ hàng trống!");
       return;
     }
+  
+    if (selectedItems.length === 0) {
+      toast.error("Vui lòng chọn ít nhất 1 sản phẩm để thanh toán!");
+      return;
+    }
+  
+    // Nếu đã chọn rồi thì mới cho đi tiếp
     navigate("/checkout");
   };
+  
 
   //! hàm đếm tiền
   const formatPrice = (price) => {
@@ -70,43 +83,32 @@ const Cart = () => {
     }).format(price);
   };
 
-  //! Tính tổng tiền
-  const getTotal = () => {
-    return getCartTotal().toLocaleString();
-  };
+  const getTotal = () => { return getCartTotal().toLocaleString(); };
+
 
   //! hàm xử lý tick checkbox
-  const handleSelectItem = (itemKey) => {
-    if (selectedItems.includes(itemKey)) {
-      // Nếu đã chọn thì bỏ chọn
-      setSelectedItems(selectedItems.filter((key) => key !== itemKey));
+  const handleSelectItem = (item) => {
+    const key = getItemKey(item);
+    if (selectedItems.includes(key)) {
+      setSelectedItems(selectedItems.filter((k) => k !== key));
     } else {
-      // Nếu chưa chọn thì thêm vào danh sách
-      setSelectedItems([...selectedItems, itemKey]);
+      setSelectedItems([...selectedItems, key]);
     }
   };
+  
   //! Hàm tính tổng số lượng sản phẩm được chọn
   const getSelectedQuantity = () => {
     return items
-      .filter((item) =>
-        selectedItems.includes(
-          item.id + item.sizeOption + JSON.stringify(item.toppings)
-        )
-      )
-      .reduce((sum, item) => sum + item.quantity, 0);
+      .filter((item) => selectedItems.includes(getItemKey(item)))
+      .reduce((sum, item) => sum + (item.quantity || 0), 0);
   };
 
   //! hàm tính tổng tiền sản phẩm được chọn
   const getSelectedTotal = () => {
     return items
-      .filter((item) =>
-        selectedItems.includes(
-          item.id + item.sizeOption + JSON.stringify(item.toppings)
-        )
-      )
+      .filter((item) => selectedItems.includes(getItemKey(item)))
       .reduce((sum, item) => sum + item.price * item.quantity, 0);
   };
-
   //!hàm sửa sp+
   const handleEdit = (cartItem) => {
     // tìm product gốc (nếu có)
@@ -296,22 +298,13 @@ const Cart = () => {
                               }
                             >
                               <td className="px-1 text-center">
-                                <input
-                                  type="checkbox"
-                                  className="w-4 h-4"
-                                  checked={selectedItems.includes(
-                                    item.id +
-                                      item.sizeOption +
-                                      JSON.stringify(item.toppings)
-                                  )}
-                                  onChange={() =>
-                                    handleSelectItem(
-                                      item.id +
-                                        item.sizeOption +
-                                        JSON.stringify(item.toppings)
-                                    )
-                                  }
-                                />
+                              <input
+  type="checkbox"
+  className="w-4 h-4"
+  checked={selectedItems.includes(getItemKey(item))}
+  onChange={() => handleSelectItem(item)}
+/>
+
                               </td>
 
                               <td className="p-3 flex items-center space-x-3">
