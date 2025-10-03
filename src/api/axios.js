@@ -35,7 +35,7 @@ api.interceptors.response.use(
             console.log("Token expired, auto logout from shared axios interceptor");
             
             // Show notification
-            import("../components/Notification").then((module) => {
+            import("../components/ui/Notification").then((module) => {
                 module.default.warning("Phiên đăng nhập hết hạn", "Vui lòng đăng nhập lại");
             }).catch(() => {
                 console.log("Notification not available");

@@ -153,13 +153,28 @@ export const useAuthStore = create((set, get) => ({
             // Gửi request POST đến endpoint đăng nhập với email, password và rememberMe
             const response = await api.post(`${API_ENDPOINT}/login`, userData);
 
+            const user = response.data.user;
+
             // Nếu thành công, cập nhật trạng thái user và đặt isAuthenticated thành true
             set({
-                user: response.data.user, // Lưu thông tin user từ response
+                user: user, // Lưu thông tin user từ response (có thể chứa assignedStoreId)
                 isAuthenticated: true, // Đặt isAuthenticated thành true
                 error: null, // Reset trạng thái error
                 isLoading: false // Đặt loading thành false
             });
+
+            // Nếu user là Quản lý cửa hàng và có assignedStoreId, lưu vào localStorage
+            if (user.role === 'storeManager' && user.assignedStoreId) {
+                // Lưu vào localStorage (tồn tại ngay cả khi reload trang)
+                localStorage.setItem('managerStoreId', user.assignedStoreId);
+                console.log('Stored manager store ID:', user.assignedStoreId);
+
+                // Dispatch event (real-time thông báo cho các component lắng nghe sự kiện này)
+                window.dispatchEvent(new CustomEvent('managerStoreAssignment', {
+                    detail: { storeId: user.assignedStoreId, trigger: 'login' }
+                }));
+            }
+
             return response.data; // Trả về response để xử lý tiếp
         } catch (error) {
             // Nếu có lỗi, cập nhật error với thông báo từ server hoặc thông báo mặc định
@@ -251,6 +266,28 @@ export const useAuthStore = create((set, get) => ({
                 isCheckingAuth: false,
                 error: null,
             });
+
+            // Verify manager store ID on reload
+            if (user && user.role === 'storeManager' && user.assignedStoreId) {
+                const storedStoreId = localStorage.getItem('managerStoreId');
+                console.log('Manager store ID - Backend:', user.assignedStoreId, 'localStorage:', storedStoreId);
+                
+                // Chỉ update nếu khác biệt (edge case: admin thay đổi assignment)
+                if (storedStoreId !== user.assignedStoreId) {
+                    localStorage.setItem('managerStoreId', user.assignedStoreId);
+                    console.log('Updated manager store ID:', user.assignedStoreId);
+                    
+                    // Dispatch event khi có thay đổi
+                    window.dispatchEvent(new CustomEvent('managerStoreAssignment', {
+                        detail: { storeId: user.assignedStoreId, trigger: 'checkAuth-updated' }
+                    }));
+                } else if (storedStoreId) {
+                    // Dispatch event cho case bình thường (reload page)
+                    window.dispatchEvent(new CustomEvent('managerStoreAssignment', {
+                        detail: { storeId: user.assignedStoreId, trigger: 'checkAuth-reload' }
+                    }));
+                }
+            }
         } catch (_) {
             // Silent fail - không log vì đây là behavior bình thường khi user chưa đăng nhập
             set({
@@ -281,6 +318,10 @@ export const useAuthStore = create((set, get) => ({
         try {
             // Gửi request POST đến endpoint đăng xuất
             await api.post(`${API_ENDPOINT}/logout`);
+            
+            // Clear manager store ID khi logout
+            localStorage.removeItem('managerStoreId');
+            
             // Nếu thành công, reset user, isAuthenticated và đặt loading thành false
             set({ user: null, isAuthenticated: false, isLoading: false });
         } catch (error) {
@@ -361,6 +402,12 @@ export const useAuthStore = create((set, get) => ({
     clearError: () => set({ error: null }),
     
     //! 19. Hàm xóa thông báo
-    clearMessage: () => set({ message: null })
+    clearMessage: () => set({ message: null }),
+
+    //! 20. Helper function để lấy assignedStoreId của manager
+    getManagerStoreId: () => {
+        const { user } = get();
+        return user?.role === 'storeManager' ? user.assignedStoreId : null;
+    }
 }));
 

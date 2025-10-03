@@ -19,6 +19,24 @@ export const useStoreSelectionStore = create(
             error: null, // Trạng thái lỗi cho các thao tác cửa hàng
             hasCompletedSelection: false, // Theo dõi xem user đã hoàn thành chọn cửa hàng chưa
 
+            //! 4a. Setup event listener cho Manager Store Assignment
+            _initialized: (() => {
+                // Setup event listener for manager store assignment
+                if (typeof window !== 'undefined') {
+                    window.addEventListener('managerStoreAssignment', async (event) => {
+                        const { storeId } = event.detail;
+                        console.log("Received manager store assignment:", storeId);
+                        
+                        try {
+                            await get().loadStoreById(storeId);
+                        } catch (error) {
+                            console.error("Failed to auto-assign manager store:", error);
+                        }
+                    });
+                }
+                return true; // Mark as initialized
+            })(),
+
             //! 5. Các hàm quản lý modal chọn cửa hàng
             openStoreModal: () => {
                 set({ isStoreModalOpen: true, error: null });
@@ -229,6 +247,33 @@ export const useStoreSelectionStore = create(
                     const errorMessage = error.response?.data?.message || "Lỗi lấy sản phẩm của cửa hàng";
                     set({ error: errorMessage, isLoadingStores: false });
                     console.error("Error loading store products:", error);
+                    throw error;
+                }
+            },
+
+            //! 16. Hàm load store by ID cho Store Manager assignment
+            loadStoreById: async (storeId) => {
+                set({ isLoadingStores: true, error: null });
+                try {
+                    const response = await api.get(`${API_ENDPOINT}/${storeId}`);
+                    const store = response.data.data || response.data.store;
+                    
+                    if (store) {
+                        set({
+                            selectedStore: store,
+                            hasCompletedSelection: true,
+                            isLoadingStores: false,
+                            error: null
+                        });
+                        console.log("Auto-assigned store for manager:", store.storeName || store.name);
+                        return store;
+                    } else {
+                        throw new Error("Store không tìm thấy");
+                    }
+                } catch (error) {
+                    const errorMessage = error.response?.data?.message || "Lỗi load thông tin cửa hàng";
+                    set({ error: errorMessage, isLoadingStores: false });
+                    console.error("Error loading store by ID:", error);
                     throw error;
                 }
             },

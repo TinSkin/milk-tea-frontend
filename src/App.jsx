@@ -7,6 +7,10 @@ import {
 } from "react-router-dom";
 import { Toaster } from "sonner";
 
+// Import Store Manager Layout
+import StoreManagerLayout from "./layouts/StoreManagerLayout";
+import AdminLayout from "./layouts/AdminLayout";
+
 // Import Pages
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
@@ -25,7 +29,7 @@ import ForgotPassword from "./pages/forgot-password/ForgotPassword";
 import ResetPassword from "./pages/reset-password/ResetPassword";
 
 // Import AI Chat Components & Icons & Data
-import ChatbotWrapper from "./components/ChatbotWrapper";
+import ChatbotWrapper from "./components/features/chatbot/ChatbotWrapper";
 
 // Import Error Page
 import NotFound from "./pages/notfound/NotFound";
@@ -33,12 +37,19 @@ import Unauthorized from "./pages/unauthorized/Unauthorized";
 
 // Import Admin Pages
 import AdminProduct from "./pages/admin/AdminProduct";
-import AdminAccount from "./pages/admin/AdminAccount";
-import AdminTopping from "./pages/admin/AdminTopping";
 import AdminCategory from "./pages/admin/AdminCategory";
+import AdminTopping from "./pages/admin/AdminTopping";
+import AdminAccount from "./pages/admin/AdminAccount";
 
 // Import Store Manager Pages
+import ManagerDashboard from "./pages/store-manager/ManagerDashboard";
 import ManagerProduct from "./pages/store-manager/ManagerProduct";
+import ManagerCategory from "./pages/store-manager/ManagerCategory";
+import ManagerTopping from "./pages/store-manager/ManagerTopping";
+import ManagerOrders from "./pages/store-manager/ManagerOrders";
+import ManagerCustomers from "./pages/store-manager/ManagerCustomers";
+import ManagerAccount from "./pages/store-manager/ManagerAccount";
+import ManagerSettings from "./pages/store-manager/ManagerSettings";
 
 // Import Protected Route
 import PrivateRoute from "./routes/PrivateRoute";
@@ -55,7 +66,6 @@ function App() {
 
   //! Check authentication
   const checkAuth = useAuthStore((s) => s.checkAuth);
-  const isCheckingAuth = useAuthStore((s) => s.isCheckingAuth);
   const didInit = useRef(false);
   useEffect(() => {
     if (didInit.current) return;
@@ -136,16 +146,25 @@ function App() {
         </Route>
         {/* //* ------ Manager Route (Manager access is required) ------ */}
         <Route element={<PrivateRoute permittedRole="storeManager" />}>
-          {/* Khi truy cập /storeManager → điều hướng tới /manager/dashboard */}
-          <Route
-            path="/store-manager"
-            element={<Navigate to="/store-manager/products" replace />}
-          />
-          {/* Trang quản lý sản phẩm dành riêng cho admin */}
-          <Route path="/store-manager/products" element={<ManagerProduct />} />
-          <Route path="/admin/accounts" element={<AdminAccount />} />
-          <Route path="/admin/toppings" element={<AdminTopping />} />
-          <Route path="/admin/categories" element={<AdminCategory />} />
+          <Route path="/store-manager" element={<StoreManagerLayout />}>
+            {/* Khi truy cập /store-manager → điều hướng tới /store-manager/dashboard */}
+            <Route
+              index
+              element={<Navigate to="/store-manager/dashboard" replace />}
+            />
+            {/* Trang dashboard */}
+            <Route path="dashboard" element={<ManagerDashboard />} />
+            {/* Trang quản lý sản phẩm dành riêng cho cửa hàng trưởng */}
+            <Route path="products" element={<ManagerProduct />} />
+            <Route path="categories" element={<ManagerCategory />} />
+            <Route path="toppings" element={<ManagerTopping />} />
+            {/* Trang quản lý đơn hàng và khách hàng */}
+            <Route path="orders" element={<ManagerOrders />} />
+            <Route path="customers" element={<ManagerCustomers />} />
+            {/* Trang quản lý tài khoản và cài đặt */}
+            <Route path="accounts" element={<ManagerAccount />} />
+            <Route path="settings" element={<ManagerSettings />} />
+          </Route>
         </Route>
         {/* //* ------ Staff Route (Staff access is required) ------ */}
         <Route element={<PrivateRoute permittedRole="staff" />}>
@@ -157,15 +176,18 @@ function App() {
         </Route>
         {/* //* ------ Admin Route (Admin access is required) ------*/}
         <Route element={<PrivateRoute permittedRole="admin" />}>
-          <Route
-            path="/admin"
-            element={<Navigate to="/admin/products" replace />}
-          />
-          {/* Trang quản lý sản phẩm dành riêng cho admin */}
-          <Route path="/admin/products" element={<AdminProduct />} />
-          <Route path="/admin/accounts" element={<AdminAccount />} />
-          <Route path="/admin/toppings" element={<AdminTopping />} />
-          <Route path="/admin/categories" element={<AdminCategory />} />
+          <Route path="/admin" element={<AdminLayout />}>
+            {/* Khi truy cập /admin → điều hướng tới /admin/products */}
+            <Route
+              index
+              element={<Navigate to="/admin/products" replace />}
+            />
+            {/* Trang quản lý sản phẩm dành riêng cho admin */}
+            <Route path="products" element={<AdminProduct />} />
+            <Route path="categories" element={<AdminCategory />} />
+            <Route path="toppings" element={<AdminTopping />} />
+            <Route path="accounts" element={<AdminAccount />} />
+          </Route>
         </Route>
       </Routes>
     </Router>

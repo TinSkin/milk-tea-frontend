@@ -11,7 +11,7 @@ import { Link } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
 
 // Import Components
-import Notification from "../../components/Notification";
+import Notification from "../../components/ui/Notification";
 
 // Validation schema
 const forgotPasswordSchema = Yup.object().shape({

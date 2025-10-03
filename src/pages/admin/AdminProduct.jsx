@@ -8,9 +8,6 @@ import { useEffect, useState } from "react";
 import { Pencil, Eye, Package, Search } from "lucide-react";
 import { Switch } from "@headlessui/react";
 
-// Formik Yup
-import { Formik, Form, Field, ErrorMessage } from "formik";
-
 // Import Swiper
 import "swiper/css"; // Import CSS của Swiper để hiển thị carousel ảnh
 import "swiper/css/navigation"; // Import CSS navigation của Swiper (nếu có dùng navigation)
@@ -23,17 +20,13 @@ import { useAuthStore } from "../../store/authStore";
 import { useCategoryStore } from "../../store/categoryStore";
 import { useToppingStore } from "../../store/toppingStore";
 
-// Import Schema
-import { addProductSchema } from "../../utils/addProductSchema";
-import { editProductSchema } from "../../utils/editProductSchema";
-
 // Import component
-import Header from "../../components/Admin/Header";
-import Notification from "../../components/Notification";
-import AddProductModal from "../../components/Admin/Product/AddProductModal";
-import EditProductModal from "../../components/Admin/Product/EditProductModal";
-import ConfirmDeleteModal from "../../components/Admin/ConfirmDeleteModal";
-import ViewToppingsModal from "../../components/Admin/Product/ViewToppingsModal";
+import Header from "../../components/features/admin/Header";
+import Notification from "../../components/ui/Notification";
+import AddProductModal from "../../components/features/admin/product/AddProductModal";
+import EditProductModal from "../../components/features/admin/product/EditProductModal";
+import ConfirmDeleteModal from "../../components/features/admin/ConfirmDeleteModal";
+import ViewToppingsModal from "../../components/features/admin/product/ViewToppingsModal";
 
 const AdminProduct = () => {
   // Khởi tạo hook useNavigate để điều hướng trang

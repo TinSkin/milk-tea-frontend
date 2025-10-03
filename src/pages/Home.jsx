@@ -5,9 +5,9 @@ import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 
 // Import Components
-import Header from "../components/Header";
-import Footer from "../components/Footer";
-import Carousel from "../components/Carousel";
+import Header from "../components/layout/Header";
+import Footer from "../components/layout/Footer";
+import Carousel from "../components/features/ecommerce/Carousel";
 
 import menu1 from "../img/menu1.png";
 import menu2 from "../img/menu2.png";
