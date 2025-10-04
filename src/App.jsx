@@ -40,6 +40,7 @@ import AdminProduct from "./pages/admin/AdminProduct";
 import AdminCategory from "./pages/admin/AdminCategory";
 import AdminTopping from "./pages/admin/AdminTopping";
 import AdminAccount from "./pages/admin/AdminAccount";
+import AdminStore from "./pages/admin/AdminStore";
 
 // Import Store Manager Pages
 import ManagerDashboard from "./pages/store-manager/ManagerDashboard";
@@ -187,6 +188,7 @@ function App() {
             <Route path="categories" element={<AdminCategory />} />
             <Route path="toppings" element={<AdminTopping />} />
             <Route path="accounts" element={<AdminAccount />} />
+            <Route path="stores" element={<AdminStore />} />
           </Route>
         </Route>
       </Routes>

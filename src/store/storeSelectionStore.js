@@ -238,7 +238,7 @@ export const useStoreSelectionStore = create(
                     // Gọi API backend để load products của store cụ thể với pagination
                     const response = await api.get(`${API_ENDPOINT}/${storeId}/products?${params}`);
 
-                    // Products sẽ được lưu trong local state của Menu component
+                    // Products sẽ được lưu trong local state của component
                     set({ isLoadingStores: false, error: null });
 
                     console.log("Loaded store products with pagination:", response.data.data);

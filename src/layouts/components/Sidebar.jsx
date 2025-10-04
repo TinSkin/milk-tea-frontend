@@ -117,7 +117,7 @@ const Sidebar = () => {
       >
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-center p-4 border-b border-gray-200">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200">
             {isOpen ? (
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-green_starbuck rounded-lg flex items-center justify-center">

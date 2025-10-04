@@ -103,12 +103,11 @@ function Menu() {
 
   //! Load initial data on mount
   useEffect(() => {
-    console.log("Selected Store: MENU", selectedStore);
     loadInitialData();
   }, []);
 
   //! Reload data khi selectedStore thay đổi
-  useEffect(() => {
+  useEffect(() => { 
     console.log("Selected Store changed:", selectedStore);
     if (selectedStore?._id) {
       loadInitialData();

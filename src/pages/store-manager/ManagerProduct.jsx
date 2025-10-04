@@ -119,17 +119,17 @@ const ManagerProduct = () => {
   const [editingProduct, setEditingProduct] = useState(null); // State editingProduct: Lưu thông tin sản phẩm đang được chỉnh sửa
   const [imagePreviews, setImagePreviews] = useState([]); // State imagePreviews: Lưu danh sách URL ảnh để hiển thị preview trong modal
 
-  //! Modal xem topping
+  // Modal xem topping
   const [showToppingModal, setShowToppingModal] = useState(false);
   const [viewingToppings, setViewingToppings] = useState([]);
 
-  //! Xử lý xem toppings
+  //! Hàm xử lý xem toppings
   const handleViewToppings = (toppings) => {
     setViewingToppings(toppings);
     setShowToppingModal(true);
   };
 
-  //! State cho modal xóa
+  // State cho modal xóa
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteModalConfig, setDeleteModalConfig] = useState({
     type: "soft",
@@ -167,7 +167,7 @@ const ManagerProduct = () => {
 
   //! Xử lý expand/collapse description
   const toggleDescription = (productId) => {
-    setExpandedDescriptions(prev => {
+    setExpandedDescriptions((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(productId)) {
         newSet.delete(productId);
@@ -211,7 +211,13 @@ const ManagerProduct = () => {
   }, [searchTerm, statusFilter, categoryFilter, sortOption, itemsPerPage]);
 
   //! Tải products với filter hiện tại
-  const loadProducts = async (page = 1) => {
+  const loadProducts = async (
+    page = currentPage,
+    limit = itemsPerPage,
+    search = searchTerm,
+    category = selectedCategory,
+    sortOrder = "desc"
+  ) => {
     try {
       if (!selectedStore?._id) {
         console.warn("No store selected for manager");
@@ -231,6 +237,10 @@ const ManagerProduct = () => {
         getSortBy(),
         getSortOrder()
       );
+
+      console.log("🔍 Debug loadStoreProducts response:", response);
+      console.log("🔍 Products array:", response.products);
+      console.log("🔍 Pagination:", response.pagination);
 
       setProducts(response.products || []);
       setPagination(response.pagination || {});
@@ -574,11 +584,6 @@ const ManagerProduct = () => {
     }
   }, [error]);
 
-  //! Tải dữ liệu ban đầu và products
-  useEffect(() => {
-    loadProducts(); // Gọi hàm loadProducts để tải danh sách sản phẩm
-  }, []);
-
   //! Hiển thị số trang phân trang
   const renderPaginationNumbers = () => {
     const pages = [];
@@ -894,7 +899,6 @@ const ManagerProduct = () => {
               </p>
             ) : (
               <table className="min-w-full divide-y divide-gray-200">
-                {" "}
                 {/* Phần tiêu đề bảng */}
                 <thead>
                   <tr className="border-b-2 border-gray-200">
@@ -1000,17 +1004,26 @@ const ManagerProduct = () => {
                       {/* Hiển thị mô tả sản phẩm */}
                       <td className="p-3 text-md text-start text-gray-900 max-w-xs">
                         <div>
-                          <div className={expandedDescriptions.has(product._id) ? "" : "line-clamp-2"}>
+                          <div
+                            className={
+                              expandedDescriptions.has(product._id)
+                                ? ""
+                                : "line-clamp-2"
+                            }
+                          >
                             {product.description || "N/A"}
                           </div>
-                          {product.description && product.description.length > 100 && (
-                            <button 
-                              onClick={() => toggleDescription(product._id)}
-                              className="text-blue-600 hover:underline text-sm mt-1"
-                            >
-                              {expandedDescriptions.has(product._id) ? "Thu gọn" : "Xem thêm"}
-                            </button>
-                          )}
+                          {product.description &&
+                            product.description.length > 100 && (
+                              <button
+                                onClick={() => toggleDescription(product._id)}
+                                className="text-blue-600 hover:underline text-sm mt-1"
+                              >
+                                {expandedDescriptions.has(product._id)
+                                  ? "Thu gọn"
+                                  : "Xem thêm"}
+                              </button>
+                            )}
                         </div>
                       </td>
                       {/* Hiển thị danh mục sản phẩm */}

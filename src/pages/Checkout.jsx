@@ -75,7 +75,6 @@ const CheckoutPage = () => {
     }
   };
 
-
   const validateForm = () => {
     const newErrors = {};
 
@@ -125,7 +124,6 @@ const CheckoutPage = () => {
       icon: Shield,
     },
   ];
-
 
   const handleConfirm = async () => {
     setModalOpen(false);
