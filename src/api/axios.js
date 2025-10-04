@@ -12,6 +12,33 @@ const api = axios.create({
     withCredentials: true // For cookies
 });
 
+/**
+ * REQUEST INTERCEPTOR
+ * - Lấy token trực tiếp từ Zustand store (sử dụng getState để tránh hook rules)
+ * - Gắn header Authorization nếu có token
+ */
+api.interceptors.request.use(
+    (config) => {
+      try {
+        // Tìm token ở một vài chỗ thường gặp
+        const state = useAuthStore.getState();
+        const token = state?.user?.token || state?.token || state?.accessToken;
+  
+        if (token) {
+          // đảm bảo giữ các headers khác
+          config.headers = {
+            ...config.headers,
+            Authorization: `Bearer ${token}`
+          };
+        }
+      } catch (e) {
+        console.error("Auth request interceptor error:", e);
+      }
+      return config;
+    },
+    (error) => Promise.reject(error)
+  );
+
 // Global response interceptor for auto-logout
 api.interceptors.response.use(
     (response) => {
@@ -79,6 +106,28 @@ export const toppingAPI = axios.create({
     baseURL: `${BASE_URL}/toppings`,
     withCredentials: true
 });
+
+/**
+ * ÁP DỤNG REQUEST INTERCEPTOR CHO CÁC INSTANCE KHÁC
+ * - Hàm tiện ích để attach interceptor vào nhiều instance
+ */
+const attachAuthRequestInterceptor = (instance) => {
+    instance.interceptors.request.use(
+      (config) => {
+        const state = useAuthStore.getState();
+        const token = state?.user?.token || state?.token || state?.accessToken;
+        if (token) {
+          config.headers = {
+            ...config.headers,
+            Authorization: `Bearer ${token}`
+          };
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
+  };
+  
 
 // Apply interceptor to all API instances
 [authAPI, productAPI, userAPI, categoryAPI, toppingAPI].forEach(instance => {

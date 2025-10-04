@@ -144,8 +144,6 @@ function ProductCard(props) {
                 quantity: values.quantity || 1,
               };
 
-
-              addToCart(newProduct, 1);
           
               // Lưu sản phẩm và chuyển sang bước nhập địa chỉ
               setProductToAdd(newProduct);
