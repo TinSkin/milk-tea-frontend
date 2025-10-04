@@ -142,7 +142,7 @@ function App() {
           {/* Trang thanh toán */}
           <Route path="/checkout" element={<Checkout />} />
           {/* Trang theo dõi đơn hàng*/}
-          <Route path="/ordertracking" element={<OrderTracking />} />
+          <Route path="/order-tracking/:id" element={<OrderTracking />} />
         </Route>
         {/* //* ------ Manager Route (Manager access is required) ------ */}
         <Route element={<PrivateRoute permittedRole="storeManager" />}>
