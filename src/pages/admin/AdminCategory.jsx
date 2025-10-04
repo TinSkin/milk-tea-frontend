@@ -1,24 +1,157 @@
+// Import các hook useEffect, useState từ React để quản lý trạng thái và side-effect
 import { useEffect, useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import { Pencil, Trash2, Plus, Tags, Search } from "lucide-react";
+
+// Import các icon từ thư viện lucide-react để dùng trong giao diện
+import {
+  Pencil,
+  Eye,
+  Trash2,
+  Search,
+  Filter,
+  SortAsc,
+  SortDesc,
+  DollarSign,
+  CheckCircle2,
+  Ban,
+  ListOrdered,
+  ChevronDown,
+  ChevronUp,
+  Check,
+  Square,
+  CheckSquare,
+  Settings,
+  Tags,
+} from "lucide-react";
 import { Switch } from "@headlessui/react";
+import Select from "react-select";
 
-// Stores
+// Import stores để quản lý trạng thái
 import { useCategoryStore } from "../../store/categoryStore";
-import { useAuthStore } from "../../store/authStore";
 
-// Components
-import Header from "../../components/features/admin/Header";
+// Import component
 import Notification from "../../components/ui/Notification";
 import AddCategoryModal from "../../components/features/admin/category/AddCategoryModal";
 import EditCategoryModal from "../../components/features/admin/category/EditCategoryModal";
 import ConfirmDeleteModal from "../../components/features/admin/ConfirmDeleteModal";
 
-const AdminCategory = () => {
-  const navigate = useNavigate();
-  const isInitLoaded = useRef(false);
+// Import utilities và hooks
+import { formatNiceDate } from "../../utils/helpers/dateFormatter";
+import { useTableCheckbox } from "../../utils/hooks/useCheckboxSelection";
 
-  //! Category store
+// Tùy chọn sắp xếp
+const sortOptions = [
+  {
+    value: "createdAt-desc",
+    label: (
+      <span className="flex items-center gap-2">
+        <SortDesc className="w-4 h-4 text-blue-600" />
+        Mới nhất
+      </span>
+    ),
+  },
+  {
+    value: "createdAt-asc",
+    label: (
+      <span className="flex items-center gap-2">
+        <SortAsc className="w-4 h-4 text-blue-600" />
+        Cũ nhất
+      </span>
+    ),
+  },
+  {
+    value: "name-asc",
+    label: (
+      <span className="flex items-center gap-2">
+        <SortAsc className="w-4 h-4 text-green-600" />
+        Tên A-Z
+      </span>
+    ),
+  },
+  {
+    value: "name-desc",
+    label: (
+      <span className="flex items-center gap-2">
+        <SortDesc className="w-4 h-4 text-green-600" />
+        Tên Z-A
+      </span>
+    ),
+  },
+];
+
+// Tùy chọn trạng thái
+const statusOptions = [
+  {
+    value: "all",
+    label: (
+      <span className="flex items-center gap-2">
+        <Tags className="w-4 h-4 text-gray-600" />
+        Tất cả trạng thái
+      </span>
+    ),
+  },
+  {
+    value: "available",
+    label: (
+      <span className="flex items-center gap-2">
+        <CheckCircle2 className="w-4 h-4 text-green-600" />
+        Đang sử dụng
+      </span>
+    ),
+  },
+  {
+    value: "unavailable",
+    label: (
+      <span className="flex items-center gap-2">
+        <Ban className="w-4 h-4 text-red-600" />
+        Ngừng sử dụng
+      </span>
+    ),
+  },
+];
+
+// Số mục hiển thị trên mỗi trang
+const itemsPerPageOptions = [
+  {
+    value: 10,
+    label: (
+      <span className="flex items-center gap-2">
+        <ListOrdered className="w-4 h-4 text-camel" />
+        10 / Trang
+      </span>
+    ),
+  },
+  {
+    value: 5,
+    label: (
+      <span className="flex items-center gap-2">
+        <ListOrdered className="w-4 h-4 text-camel" />5 / Trang
+      </span>
+    ),
+  },
+  {
+    value: 15,
+    label: (
+      <span className="flex items-center gap-2">
+        <ListOrdered className="w-4 h-4 text-camel" />
+        15 / Trang
+      </span>
+    ),
+  },
+  {
+    value: 20,
+    label: (
+      <span className="flex items-center gap-2">
+        <ListOrdered className="w-4 h-4 text-camel" />
+        20 / Trang
+      </span>
+    ),
+  },
+];
+
+const AdminCategory = () => {
+  const isInitLoaded = useRef(false);
+  
+  // Store quản lý danh mục
   const {
     categories,
     isLoading,
@@ -32,15 +165,44 @@ const AdminCategory = () => {
     syncCategoriesWithProducts,
   } = useCategoryStore();
 
-  //! Auth store
-  const { isAuthenticated, user, isCheckingAuth } = useAuthStore();
-
-  //! Modal states
+  // Trạng thái các modal
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
 
-  //! Delete modal states
+  //! Hàm xử lý thêm danh mục
+  const handleAddCategory = async (categoryData) => {
+    try {
+      await createCategory(categoryData);
+      setShowAddModal(false);
+      Notification.success("Thêm danh mục thành công!");
+      loadCategories(pagination.currentPage);
+    } catch (error) {
+      Notification.error("Thêm danh mục thất bại", error.message);
+    }
+  };
+
+  //! Hàm xử lý khi bấm chỉnh sửa danh mục
+  const handleEditCategory = (category) => {
+    setEditingCategory(category);
+    setShowEditModal(true);
+  };
+
+  //! Hàm xử lý cập nhật danh mục
+  const handleUpdateCategory = async (categoryData) => {
+    try {
+      await updateCategory(editingCategory._id, categoryData);
+      await handleSyncCategoriesWithProducts();
+      setShowEditModal(false);
+      setEditingCategory(null);
+      Notification.success("Cập nhật danh mục thành công!");
+      loadCategories(pagination.currentPage);
+    } catch (error) {
+      Notification.error("Cập nhật thất bại", error.message);
+    }
+  };
+
+  // Trạng thái modal xóa
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteModalConfig, setDeleteModalConfig] = useState({
     type: "soft",
@@ -49,16 +211,119 @@ const AdminCategory = () => {
     action: null,
   });
 
-  //! Filter states
+  // Trạng thái modal xóa hàng loạt
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+
+  //! Hàm xử lý xóa hẳn các danh mục được chọn
+  const handleDeleteSelectedCategories = async () => {
+    if (!hasSelection) {
+      Notification.warning("Vui lòng chọn ít nhất một danh mục để xóa");
+      return;
+    }
+
+    // Mở modal xác nhận thay vì dùng window.confirm
+    setShowBulkDeleteModal(true);
+  };
+
+  //! Xác nhận xóa bulk categories (HARD DELETE)
+  const handleConfirmBulkDelete = async () => {
+    try {
+      // getSelectedItems() trả về objects, cần extract IDs
+      const selectedCategoryObjects = getSelectedItems();
+      const selectedCategoryIds = selectedCategoryObjects.map(category => category._id);
+      
+      // Thêm vào logic xóa vĩnh viễn ở store
+      for (const categoryId of selectedCategoryIds) {
+        await deleteCategory(categoryId); // Hard delete thay vì soft delete
+      }
+
+      await handleSyncCategoriesWithProducts(); // Đồng bộ sau khi xóa
+      Notification.success(`Đã xóa vĩnh viễn ${selectedCount} danh mục`);
+      clearSelection();
+      setShowBulkDeleteModal(false);
+      loadCategories(pagination.currentPage);
+    } catch (error) {
+      console.error("Bulk delete error:", error);
+      Notification.error("Xóa danh mục thất bại", error.message);
+    }
+  };
+
+  //! Hàm xử lý xóa vĩnh viễn danh mục (mở modal xác nhận xóa vĩnh viễn)
+  const handleDeleteCategory = (category) => {
+    setDeleteModalConfig({
+      type: "hard",
+      categoryId: category._id,
+      categoryName: category.name,
+      action: "hardDelete",
+    });
+    setShowDeleteModal(true);
+  };
+
+  //! Hàm xử lý xóa mềm danh mục (mở modal xác nhận chuyển trạng thái)
+  const handleSoftDeleteCategory = (category) => {
+    setDeleteModalConfig({
+      type: "soft",
+      categoryId: category._id,
+      categoryName: category.name,
+      action: "softDelete",
+    });
+    setShowDeleteModal(true);
+  };
+
+  //! Hàm xác nhận hành động xóa
+  const handleConfirmDelete = async () => {
+    try {
+      const { categoryId, action } = deleteModalConfig;
+
+      if (action === "softDelete") {
+        await softDeleteCategory(categoryId);
+        Notification.success("Đã thay đổi trạng thái danh mục!");
+        await handleSyncCategoriesWithProducts();
+      } else if (action === "hardDelete") {
+        await deleteCategory(categoryId);
+        Notification.success("Đã xóa danh mục vĩnh viễn!");
+        await handleSyncCategoriesWithProducts();
+      }
+
+      // Đóng modal và tải lại danh sách
+      setShowDeleteModal(false);
+      setDeleteModalConfig({
+        type: "soft",
+        categoryId: null,
+        categoryName: "",
+        action: null,
+      });
+      loadCategories(pagination.currentPage);
+    } catch (error) {
+      const errorMsg =
+        deleteModalConfig.action === "softDelete"
+          ? "Thay đổi trạng thái thất bại"
+          : "Xóa danh mục thất bại";
+      Notification.error(errorMsg, error.message);
+    }
+  };
+
+  //! Hàm đóng modal xóa
+  const handleCloseDeleteModal = () => {
+    if (!isLoading) {
+      setShowDeleteModal(false);
+      setDeleteModalConfig({
+        type: "soft",
+        categoryId: null,
+        categoryName: "",
+        action: null,
+      });
+    }
+  };
+
+  // Trạng thái bộ lọc và phân trang
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState("desc");
-
-  //! Pagination
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  //! Load categories
+  //! Hàm tải danh sách danh mục cho lần đầu (có notification)
   const loadCategoriesInit = async (page = 1, limit = itemsPerPage) => {
     try {
       clearError();
@@ -73,7 +338,6 @@ const AdminCategory = () => {
       };
 
       const result = await getAllCategories(params);
-
       if (result && result.categories) {
         Notification.success(
           `Tải thành công ${result.categories.length} danh mục.`
@@ -86,6 +350,8 @@ const AdminCategory = () => {
       );
     }
   };
+
+  //! Hàm tải danh sách danh mục cho search/filter/pagination (không notification)
   const loadCategories = async (page = 1, limit = itemsPerPage) => {
     try {
       clearError();
@@ -108,107 +374,7 @@ const AdminCategory = () => {
     }
   };
 
-  //! Handle add category
-  const handleAddCategory = async (categoryData) => {
-    try {
-      await createCategory(categoryData);
-      setShowAddModal(false);
-      Notification.success("Thêm danh mục thành công!");
-      loadCategories(pagination.currentPage);
-    } catch (error) {
-      Notification.error("Thêm danh mục thất bại", error.message);
-    }
-  };
-
-  //! Handle edit category
-  const handleEditCategory = (category) => {
-    setEditingCategory(category);
-    setShowEditModal(true);
-  };
-
-  //! Handle update category
-  const handleUpdateCategory = async (categoryData) => {
-    try {
-      await updateCategory(editingCategory._id, categoryData);
-      await handleSyncCategoriesWithProducts();
-      setShowEditModal(false);
-      setEditingCategory(null);
-      Notification.success("Cập nhật danh mục thành công!");
-      loadCategories(pagination.currentPage);
-    } catch (error) {
-      Notification.error("Cập nhật thất bại", error.message);
-    }
-  };
-
-  //! Handle hard delete category (mở modal xác nhận xóa vĩnh viễn)
-  const handleDeleteCategory = (category) => {
-    setDeleteModalConfig({
-      type: "hard",
-      categoryId: category._id,
-      categoryName: category.name,
-      action: "hardDelete",
-    });
-    setShowDeleteModal(true);
-  };
-
-  //! Handle soft delete category (mở modal xác nhận chuyển trạng thái)
-  const handleSoftDeleteCategory = (category) => {
-    setDeleteModalConfig({
-      type: "soft",
-      categoryId: category._id,
-      categoryName: category.name,
-      action: "softDelete",
-    });
-    setShowDeleteModal(true);
-  };
-
-  //! Confirm delete action
-  const handleConfirmDelete = async () => {
-    try {
-      const { categoryId, action } = deleteModalConfig;
-
-      if (action === "softDelete") {
-        await softDeleteCategory(categoryId);
-        Notification.success("Đã thay đổi trạng thái danh mục!");
-        await handleSyncCategoriesWithProducts();
-      } else if (action === "hardDelete") {
-        await deleteCategory(categoryId);
-        Notification.success("Đã xóa danh mục vĩnh viễn!");
-        await handleSyncCategoriesWithProducts();
-      }
-
-      // Close modal and reload
-      setShowDeleteModal(false);
-      setDeleteModalConfig({
-        type: "soft",
-        categoryId: null,
-        categoryName: "",
-        action: null,
-      });
-      loadCategories(pagination.currentPage);
-    } catch (error) {
-      const errorMsg =
-        deleteModalConfig.action === "softDelete"
-          ? "Thay đổi trạng thái thất bại"
-          : "Xóa danh mục thất bại";
-      Notification.error(errorMsg, error.message);
-    }
-  };
-
-  //! Close delete modal
-  const handleCloseDeleteModal = () => {
-    if (!isLoading) {
-      setShowDeleteModal(false);
-      setDeleteModalConfig({
-        type: "soft",
-        categoryId: null,
-        categoryName: "",
-        action: null,
-      });
-    }
-  };
-
-  //! Handle sync categories with products
+  //! Hàm xử lý đồng bộ danh mục với sản phẩm
   const handleSyncCategoriesWithProducts = async () => {
     try {
       await syncCategoriesWithProducts();
@@ -221,7 +387,7 @@ const AdminCategory = () => {
     }
   };
 
-  //! Handle toggle topping status
+  //! Xử lý chuyển trạng thái danh mục
   const handleToggleStatus = async (category) => {
     try {
       handleSoftDeleteCategory(category);
@@ -230,7 +396,15 @@ const AdminCategory = () => {
     }
   };
 
-  //! Handle search with debounce
+  //! Tải dữ liệu ban đầu khi component mount
+  useEffect(() => {
+    if (!isInitLoaded.current) {
+      loadCategoriesInit();
+      isInitLoaded.current = true;
+    }
+  }, []); // Chỉ chạy một lần khi component mount
+
+  //! Xử lý tìm kiếm với debounce
   useEffect(() => {
     const debounceTimer = setTimeout(() => {
       loadCategories(1);
@@ -239,286 +413,501 @@ const AdminCategory = () => {
     return () => clearTimeout(debounceTimer);
   }, [searchTerm, statusFilter, sortBy, sortOrder]);
 
-  //! Handle pagination
+  //! Xử lý chuyển trang
   const handlePageChange = (newPage) => {
     loadCategories(newPage);
   };
 
-  //! Auth check and initial load
-  useEffect(() => {
-    if (isCheckingAuth) return;
-
-    if (!isAuthenticated || !user) {
-      navigate("/login");
-      return;
+  const nextPage = () => {
+    if (pagination.hasNextPage) {
+      handlePageChange(pagination.currentPage + 1);
     }
+  };
 
-    if (user.role !== "admin") {
-      navigate("/");
-      return;
+  const prevPage = () => {
+    if (pagination.hasPrevPage) {
+      handlePageChange(pagination.currentPage - 1);
     }
+  };
 
-    // Load initial data
-    if (!isInitLoaded.current) {
-      isInitLoaded.current = true;
-      loadCategoriesInit(1);
-    }
-  }, [isCheckingAuth, isAuthenticated, user, navigate]);
+  // Checkbox selection hook
+  const {
+    selectedItems,
+    selectedCount,
+    hasSelection,
+    toggleSelectItem,
+    toggleSelectAll,
+    clearSelection,
+    isItemSelected,
+    isAllSelected,
+    getSelectedItems,
+  } = useTableCheckbox(categories, "_id");
 
-  //! Loading state
-  if (isLoading && categories.length === 0) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Đang tải danh mục...</div>
-      </div>
-    );
-  }
+  // State cho expand description
+  const [expandedDescriptions, setExpandedDescriptions] = useState(new Set());
+
+  //! Xử lý expand/collapse description
+  const toggleDescription = (categoryId) => {
+    setExpandedDescriptions((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(categoryId)) {
+        newSet.delete(categoryId);
+      } else {
+        newSet.add(categoryId);
+      }
+      return newSet;
+    });
+  };
 
   return (
     <>
-      <Header />
-      <div className="font-roboto max-w-full mx-auto mt-10 p-6 bg-white rounded shadow">
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-8 bg-camel/10 rounded-lg py-4 px-6">
-          <Tags className="w-8 h-8 text-camel" strokeWidth={2} />
-          <h1 className="font-montserrat text-2xl font-semibold text-dark_blue capitalize tracking-tight pb-2 border-b-2 border-camel inline-block">
-            Quản lý danh mục
-          </h1>
-        </div>
-
-        {/* Filters */}
-        <div className="flex flex-wrap gap-4 items-center justify-between mb-4">
-          <div className="flex gap-4 flex-wrap">
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="bg-green_starbuck text-white px-4 py-2 rounded hover:bg-green_starbuck/80 flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Thêm Danh mục
-            </button>
-            {/* Search */}
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Tìm kiếm tên danh mục..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="px-5 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pl-10"
-              />
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-            </div>
-
-            {/* Status filter */}
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="all">Tất cả trạng thái</option>
-              <option value="available">Đang sử dụng</option>
-              <option value="unavailable">Ngừng sử dụng</option>
-            </select>
-
-            {/* Sort */}
-            <select
-              value={`${sortBy}-${sortOrder}`}
-              onChange={(e) => {
-                const [field, order] = e.target.value.split("-");
-                setSortBy(field);
-                setSortOrder(order);
-              }}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="createdAt-desc">Mới nhất</option>
-              <option value="createdAt-asc">Cũ nhất</option>
-              <option value="name-asc">Tên A-Z</option>
-              <option value="name-desc">Tên Z-A</option>
-            </select>
-
-            {/* Items per page */}
-            <select
-              value={itemsPerPage}
-              onChange={(e) => {
-                const newLimit = parseInt(e.target.value);
-                setItemsPerPage(newLimit);
-                loadCategories(1, newLimit);
-              }}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="5">5 danh mục / trang</option>
-              <option value="10">10 danh mục / trang</option>
-              <option value="15">15 danh mục / trang</option>
-            </select>
+      {/* Tiêu đề */}
+      <div className="bg-green_starbuck/80 text-white px-5 py-4 shadow-md -mt-6 -mx-6 mb-6">
+        <div className="max-w-[110rem] mx-auto flex">
+          {/* Title */}
+          <div className="flex items-center gap-3 flex-1 pl-3">
+            <Tags className="w-5 h-5" />
+            <h1 className="text-md font-montserrat font-semibold capitalize tracking-tight pb-1 border-b-2 border-camel inline-block">
+              Quản lý danh mục
+            </h1>
           </div>
         </div>
+      </div>
 
-        {/* Categories table */}
-        <div className="overflow-x-auto rounded-md">
-          {categories.length === 0 ? (
-            <p className="text-center text-gray-600 text-lg py-8">
-              {searchTerm ? "Không tìm thấy danh mục nào" : "Chưa có danh mục"}
-            </p>
-          ) : (
-            <table className="min-w-full border-2 divide-y divide-gray-200">
-              <thead className="bg-green_starbuck">
-                <tr className="text-center">
-                  <th className="p-3 text-lg font-semibold text-white text-left">
-                    Tên Danh mục
-                  </th>
-                  <th className="p-3 text-lg font-semibold text-white text-left">
-                    Mô tả
-                  </th>
-                  <th className="p-3 text-lg font-semibold text-white">
-                    Trạng thái
-                  </th>
-                  <th className="p-3 text-lg font-semibold text-white">
-                    Ngày tạo
-                  </th>
-                  <th className="p-3 text-lg font-semibold text-white">
-                    Hành động
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {categories.map((category) => (
-                  <tr
-                    key={category._id}
-                    className="hover:bg-gray-50 text-center"
+      {/* Content chính */}
+      <div className="px-5 pt-4 pb-6">
+        <div className="font-roboto max-w-[110rem] mx-auto mt-10 bg-white rounded-lg shadow border-2">
+          {/* Title & Nút tác vụ */}
+          <div className="flex flex-col justify-between gap-5 border-b-2 border-gray-200 px-5 py-4 sm:flex-row sm:items-center my-4">
+            {/* Title */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800">
+                Danh sách danh mục
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Theo dõi danh mục của bạn để thêm vào sản phẩm.
+              </p>
+            </div>
+            {/* Nút tác vụ */}
+            <div className="flex gap-4 flex-wrap">
+              {/* Xóa danh mục */}
+              <div className="flex gap-2">
+                <button
+                  onClick={handleDeleteSelectedCategories}
+                  className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 font-semibold flex items-center gap-2"
+                  disabled={isLoading}
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Xóa danh mục đã chọn ({selectedCount})
+                </button>
+              </div>
+              {/* Thêm danh mục */}
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="bg-green_starbuck text-white px-4 py-2 rounded hover:bg-green_starbuck/80 flex items-center gap-2"
+              >
+                <Tags className="w-4 h-4" />
+                Thêm danh mục
+              </button>
+            </div>
+          </div>
+
+          {hasSelection && (
+            <div className="px-5">
+              <div className="flex items-center justify-around p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-center gap-3">
+                  <span className="text-blue-700 font-medium">
+                    Đã chọn {selectedCount} danh mục
+                  </span>
+                  <button
+                    onClick={clearSelection}
+                    className="text-blue-600 hover:text-blue-800 underline text-md"
                   >
-                    {/* Name */}
-                    <td className="p-3 text-dark_blue font-semibold text-left">
-                      {category.name}
-                    </td>
+                    Bỏ chọn tất cả
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
-                    {/* Description */}
-                    <td className="p-3 text-lg text-gray-900 text-left">
-                      {category.description || "Không có mô tả"}
-                    </td>
+          {/* Thanh tìm kiếm & sắp xếp & lọc */}
+          <div className="border-b-2 border-gray-200 px-5 py-4">
+            <div className="flex gap-3 sm:justify-between">
+              {/* Tìm kiếm & Sắp xếp */}
+              <div className="flex gap-3">
+                {/* Tìm kiếm */}
+                <div className="relative flex-1 sm:flex-auto">
+                  <input
+                    type="text"
+                    placeholder="Tìm kiếm tên danh mục..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="px-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pl-10"
+                  />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                </div>
+                {/* Lọc theo trạng thái */}
+                <Select
+                  options={statusOptions}
+                  value={statusOptions.find(
+                    (opt) => opt.value === statusFilter
+                  )}
+                  onChange={(opt) => setStatusFilter(opt.value)}
+                  placeholder="Chọn trạng thái..."
+                  className="min-w-[180px] z-10"
+                  styles={{
+                    control: (base) => ({
+                      ...base,
+                      padding: "2px 0",
+                      borderRadius: "0.5rem",
+                      borderColor: "#1e293b",
+                      boxShadow: "none",
+                      minHeight: "40px",
+                    }),
+                    option: (base, state) => ({
+                      ...base,
+                      backgroundColor: state.isSelected
+                        ? "#f0fdf4"
+                        : state.isFocused
+                        ? "#f3f4f6"
+                        : "white",
+                      color: "inherit",
+                      fontWeight: state.isSelected ? "bold" : "normal",
+                      fontSize: "1rem",
+                    }),
+                  }}
+                />
+                {/* Sắp xếp */}
+                <Select
+                  options={sortOptions}
+                  value={sortOptions.find(
+                    (opt) => opt.value === `${sortBy}-${sortOrder}`
+                  )}
+                  onChange={(opt) => {
+                    const [field, order] = opt.value.split("-");
+                    setSortBy(field);
+                    setSortOrder(order);
+                  }}
+                  placeholder="Chọn cách sắp xếp..."
+                  className="min-w-[180px] z-10"
+                  styles={{
+                    control: (base) => ({
+                      ...base,
+                      padding: "2px 0",
+                      borderRadius: "0.5rem",
+                      borderColor: "#1e293b",
+                      boxShadow: "none",
+                      minHeight: "40px",
+                    }),
+                    option: (base, state) => ({
+                      ...base,
+                      backgroundColor: state.isSelected
+                        ? "#f0fdf4"
+                        : state.isFocused
+                        ? "#f3f4f6"
+                        : "white",
+                      color: "inherit",
+                      fontWeight: state.isSelected ? "bold" : "normal",
+                      fontSize: "1rem",
+                    }),
+                  }}
+                />
+              </div>
 
-                    {/* Status */}
-                    <td className="p-3">
-                      <span
-                        className={`px-2 py-1 text-sm rounded font-semibold ${
-                          category.status === "available"
-                            ? "text-green-700 bg-green-100"
-                            : "text-red-700 bg-red-100"
-                        }`}
-                      >
-                        {category.status === "available"
-                          ? "Đang sử dụng"
-                          : "Ngừng sử dụng"}
-                      </span>
-                    </td>
+              {/* Phân trang */}
+              <div className="flex gap-3">
+                <Select
+                  options={itemsPerPageOptions}
+                  defaultValue={itemsPerPageOptions[0]} // Mặc định là 10 sản phẩm một trang
+                  value={itemsPerPageOptions.find(
+                    (opt) => opt.value === itemsPerPage
+                  )}
+                  onChange={(opt) => {
+                    setItemsPerPage(opt.value);
+                    loadCategories(1, opt.value); // Load page 1 với limit mới
+                  }}
+                  placeholder="Chọn số lượng..."
+                  className="min-w-[180px] z-10"
+                  styles={{
+                    control: (base) => ({
+                      ...base,
+                      padding: "2px 0",
+                      borderRadius: "0.5rem",
+                      borderColor: "#d1d5db",
+                      boxShadow: "none",
+                      minHeight: "40px",
+                    }),
+                    option: (base, state) => ({
+                      ...base,
+                      backgroundColor: state.isSelected
+                        ? "#f0fdf4"
+                        : state.isFocused
+                        ? "#f3f4f6"
+                        : "white",
+                      color: "inherit",
+                      fontWeight: state.isSelected ? "bold" : "normal",
+                      fontSize: "1rem",
+                    }),
+                  }}
+                />
+              </div>
+            </div>
+          </div>
 
-                    {/* Created At */}
-                    <td className="p-3 text-lg text-gray-900">
-                      {new Date(category.createdAt).toLocaleDateString("vi-VN")}
-                    </td>
+          {/* Trạng thái tải */}
+          {isLoading && categories.length === 0 && (
+            <div className="flex justify-center items-center py-8">
+              <div className="flex items-center">
+                <svg
+                  className="animate-spin h-6 w-6 mr-3 text-green_starbuck"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v8H4z"
+                  />
+                </svg>
+                Đang tải danh mục...
+              </div>
+            </div>
+          )}
 
-                    {/* Actions */}
-                    <td className="p-3">
-                      <div className="flex items-center justify-center space-x-2">
+          {/* Bảng danh mục */}
+          <div className="overflow-x-auto">
+            {/* Container bảng, hỗ trợ cuộn ngang nếu bảng quá rộng */}
+            {categories.length === 0 && !isLoading ? (
+              <p className="text-center text-gray-600 text-lg py-8">
+                {searchTerm
+                  ? "Không tìm thấy danh mục nào"
+                  : "Chưa có danh mục"}
+              </p>
+            ) : (
+              <table className="min-w-full divide-y divide-gray-200">
+                {" "}
+                {/* Phần tiêu đề bảng */}
+                <thead>
+                  <tr className="border-b-2 border-gray-200">
+                    <th className="w-12 px-3 py-4 text-left">
+                      {/* Chọn tất cả */}
+                      <label className="inline-flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={isAllSelected()}
+                          onChange={toggleSelectAll}
+                          className="w-4 h-4 rounded border-gray-300 text-green_starbuck focus:ring-green_starbuck"
+                        />
+                      </label>
+                    </th>
+                    <th className="p-3 text-md text-start font-semibold text-green_starbuck">
+                      Tên
+                    </th>
+                    <th className="p-3 text-md text-start font-semibold text-green_starbuck">
+                      Mô tả
+                    </th>
+                    <th className="p-3 text-md font-semibold text-green_starbuck">
+                      Trạng thái
+                    </th>
+                    <th className="p-3 text-md font-semibold text-green_starbuck">
+                      Ngày tạo
+                    </th>
+                    <th className="p-3 text-md font-semibold text-green_starbuck">
+                      <div className="flex items-center justify-center">
+                        <Settings className="w-6 h-6" />
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                {/* Phần thân bảng */}
+                <tbody className="divide-y divide-gray-100 border-b-2 border-gray-200">
+                  {categories.map((category) => (
+                    <tr
+                      key={category._id}
+                      className="hover:bg-gray-50 text-center"
+                    >
+                      {/* Hiển thị tickbox từng danh mục */}
+                      <td className="p-3">
                         <button
-                          onClick={() => handleEditCategory(category)}
-                          className="text-blue-600 hover:text-blue-800"
-                          disabled={isLoading}
-                          title="Chỉnh sửa"
+                          onClick={() => toggleSelectItem(category._id)}
+                          className="flex items-center justify-center w-full"
                         >
-                          <Pencil className="w-4 h-4" />
+                          {isItemSelected(category._id) ? (
+                            <CheckSquare className="w-5 h-5 text-blue-600" />
+                          ) : (
+                            <Square className="w-5 h-5 text-gray-400" />
+                          )}
                         </button>
+                      </td>
 
-                        <Switch
-                          checked={category.status === "available"}
-                          onChange={() => handleToggleStatus(category)}
-                          className={`${
+                      {/* Tên */}
+                      <td className="p-3 text-sm text-dark_blue font-semibold text-left">
+                        {category.name || "Không có tên"}
+                      </td>
+
+                      {/* Mô tả */}
+                      <td className="p-3 text-md text-start text-gray-900 max-w-xs">
+                        <div>
+                          <div
+                            className={
+                              expandedDescriptions.has(category._id)
+                                ? ""
+                                : "line-clamp-2"
+                            }
+                          >
+                            {category.description || "Không có mô tả"}
+                          </div>
+                          {category.description &&
+                            category.description.length > 100 && (
+                              <button
+                                onClick={() => toggleDescription(category._id)}
+                                className="text-blue-600 hover:underline text-sm mt-1"
+                              >
+                                {expandedDescriptions.has(category._id)
+                                  ? "Thu gọn"
+                                  : "Xem thêm"}
+                              </button>
+                            )}
+                        </div>
+                      </td>
+
+                      {/* Trạng thái */}
+                      <td className="p-3 min-w-[140px]">
+                        <span
+                          className={`px-2 py-1 text-sm rounded font-semibold ${
                             category.status === "available"
-                              ? "bg-green-500"
-                              : "bg-red-400"
-                          } relative inline-flex h-6 w-11 items-center rounded-full transition`}
+                              ? "text-green-700 bg-green-100"
+                              : "text-red-700 bg-red-100"
+                          }`}
                         >
-                          <span className="sr-only">Chuyển trạng thái bán</span>
-                          <span
+                          {category.status === "available"
+                            ? "Đang sử dụng"
+                            : "Ngừng sử dụng"}
+                        </span>
+                      </td>
+
+                      {/* Hiển thị ngày */}
+                      <td className="p-3 text-md text-dark_blue">
+                        {formatNiceDate(category.createdAt)}
+                      </td>
+
+                      {/* Hành động */}
+                      <td className="p-3">
+                        <div className="flex items-center justify-center space-x-2">
+                          <button
+                            onClick={() => handleEditCategory(category)}
+                            className="text-blue-600 hover:text-blue-800"
+                            disabled={isLoading}
+                            title="Chỉnh sửa"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+
+                          <Switch
+                            checked={category.status === "available"}
+                            onChange={() => handleToggleStatus(category)}
                             className={`${
                               category.status === "available"
-                                ? "translate-x-6"
-                                : "translate-x-1"
-                            } inline-block h-4 w-4 transform bg-white rounded-full transition`}
-                          />
-                        </Switch>
+                                ? "bg-green-500"
+                                : "bg-red-400"
+                            } relative inline-flex h-6 w-11 items-center rounded-full transition`}
+                          >
+                            <span className="sr-only">
+                              Chuyển trạng thái bán
+                            </span>
+                            <span
+                              className={`${
+                                category.status === "available"
+                                  ? "translate-x-6"
+                                  : "translate-x-1"
+                              } inline-block h-4 w-4 transform bg-white rounded-full transition`}
+                            />
+                          </Switch>
 
+                          <button
+                            onClick={() => handleDeleteCategory(category)}
+                            className="text-red-600 hover:text-red-800"
+                            disabled={isLoading}
+                            title="Thay đổi trạng thái"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {/* Phân trang */}
+          {pagination.totalPages > 1 && (
+            <div className="flex justify-between items-center mt-4 flex-col border-t border-gray-200 px-5 py-4 sm:flex-row dark:border-gray-800">
+              <button
+                onClick={prevPage}
+                disabled={!pagination.hasPrevPage || isLoading}
+                className="px-4 py-2 bg-green_starbuck text-white rounded hover:bg-green_starbuck/80 disabled:bg-gray-400 font-semibold"
+              >
+                Trang trước
+              </button>
+
+              {/* Số trang */}
+              <div className="flex gap-2">
+                {Array.from(
+                  { length: Math.min(5, pagination.totalPages) },
+                  (_, i) => {
+                    const pageNum = pagination.currentPage - 2 + i;
+                    if (pageNum > 0 && pageNum <= pagination.totalPages) {
+                      return (
                         <button
-                          onClick={() => handleDeleteCategory(category)}
-                          className="text-red-600 hover:text-red-800"
+                          key={pageNum}
+                          onClick={() => handlePageChange(pageNum)}
                           disabled={isLoading}
-                          title="Thay đổi trạng thái"
+                          className={`px-3 py-1 rounded font-semibold ${
+                            pagination.currentPage === pageNum
+                              ? "bg-green_starbuck text-white"
+                              : "bg-gray-200 hover:bg-gray-300"
+                          }`}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          {pageNum}
                         </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      );
+                    }
+                    return null;
+                  }
+                )}
+              </div>
+
+              {/* Thông tin kết quả */}
+              <div className="flex items-center gap-4">
+                <div className="mb-4 text-sm text-gray-600 font-semibold flex items-center">
+                  Hiển thị {categories.length} /{" "}
+                  {pagination.totalCategories || 0} danh mục (Trang{" "}
+                  {pagination.currentPage || 1} / {pagination.totalPages || 1})
+                </div>
+                <button
+                  onClick={nextPage}
+                  disabled={!pagination.hasNextPage || isLoading}
+                  className="px-4 py-2 bg-green_starbuck text-white rounded hover:bg-green_starbuck/80 disabled:bg-gray-400 font-semibold"
+                >
+                  Trang sau
+                </button>
+              </div>
+            </div>
           )}
         </div>
       </div>
 
-      {/* Pagination */}
-      {pagination.totalPages > 1 && (
-        <div className="flex justify-between items-center mx-auto max-w-full p-6">
-          <button
-            onClick={() => handlePageChange(pagination.currentPage - 1)}
-            disabled={!pagination.hasPrevPage || isLoading}
-            className="px-4 py-2 bg-green_starbuck text-white rounded hover:bg-green_starbuck/80 disabled:bg-gray-400 font-semibold"
-          >
-            Trang trước
-          </button>
-
-          <div className="flex gap-2">
-            {Array.from(
-              { length: Math.min(5, pagination.totalPages) },
-              (_, i) => {
-                const pageNum = pagination.currentPage - 2 + i;
-                if (pageNum > 0 && pageNum <= pagination.totalPages) {
-                  return (
-                    <button
-                      key={pageNum}
-                      onClick={() => handlePageChange(pageNum)}
-                      disabled={isLoading}
-                      className={`px-3 py-1 rounded font-semibold ${
-                        pagination.currentPage === pageNum
-                          ? "bg-green_starbuck text-white"
-                          : "bg-gray-200 hover:bg-gray-300"
-                      }`}
-                    >
-                      {pageNum}
-                    </button>
-                  );
-                }
-                return null;
-              }
-            )}
-          </div>
-
-          {/* Result Info */}
-          <div className="flex items-center gap-4">
-            <div className="mb-4 text-sm text-gray-600 font-semibold flex items-center">
-              Hiển thị {categories.length} / {pagination.totalCategories} danh
-              mục (Trang {pagination.currentPage} / {pagination.totalPages})
-            </div>
-            <button
-              onClick={() => handlePageChange(pagination.currentPage + 1)}
-              disabled={!pagination.hasNextPage || isLoading}
-              className="px-4 py-2 bg-green_starbuck text-white rounded hover:bg-green_starbuck/80 disabled:bg-gray-400 font-semibold"
-            >
-              Trang sau
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Modals */}
+      {/* Modal thêm/sửa/xóa */}
       {showAddModal && (
         <AddCategoryModal
           onAdd={handleAddCategory}
@@ -539,6 +928,80 @@ const AdminCategory = () => {
         />
       )}
 
+      {/* Modal xác nhận xóa bulk */}
+      {showBulkDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              <div className="ml-3">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Xác nhận xóa vĩnh viễn
+                </h3>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <p className="text-sm text-gray-500">
+                Bạn có chắc chắn muốn <span className="font-bold text-red-600">XÓA VĨNH VIỄN</span>{" "}
+                <span className="font-semibold text-red-600">
+                  {selectedCount}
+                </span>{" "}
+                danh mục được chọn không?
+              </p>
+              <p className="text-xs text-gray-400 mt-2">
+                <span className="font-semibold text-red-600">Cảnh báo:</span> Hành động này KHÔNG THỂ hoàn tác!
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowBulkDeleteModal(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                disabled={isLoading}
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleConfirmBulkDelete}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <span className="flex items-center">
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v8H4z"
+                      />
+                    </svg>
+                    Đang xử lý...
+                  </span>
+                ) : (
+                  "Xóa vĩnh viễn"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal xác nhận xóa */}
       <ConfirmDeleteModal
         isOpen={showDeleteModal}
         onClose={handleCloseDeleteModal}

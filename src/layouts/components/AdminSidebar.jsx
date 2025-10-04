@@ -125,14 +125,12 @@ const AdminSidebar = () => {
       {/* Sidebar */}
       <div
         className={`fixed left-0 top-0 h-full bg-white border-r border-gray-200 shadow-lg z-50 transition-all duration-300 ease-in-out ${
-          isOpen
-            ? "w-64 translate-x-0"
-            : "w-16 translate-x-0"
+          isOpen ? "w-64 translate-x-0" : "w-16 translate-x-0"
         }`}
       >
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-center p-4 border-b border-gray-200">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200">
             {isOpen ? (
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -159,13 +157,19 @@ const AdminSidebar = () => {
                   <div>
                     <button
                       onClick={() => toggleMenu(item.id)}
-                      className={`w-full flex items-center justify-between p-3 rounded-lg text-left transition-colors ${
+                      className={`w-full flex items-center ${
+                        isOpen ? "justify-between" : "justify-center"
+                      } p-3 rounded-lg text-left transition-colors ${
                         openMenus.has(item.id)
-                          ? "bg-blue-600/10 text-blue-600"
+                          ? "bg-green_starbuck/10 text-green_starbuck"
                           : "text-gray-700 hover:bg-gray-100"
                       }`}
                     >
-                      <div className="flex items-center space-x-3">
+                      <div
+                        className={`flex items-center ${
+                          isOpen ? "space-x-3" : "justify-center"
+                        }`}
+                      >
                         <item.icon className="w-5 h-5" />
                         {isOpen && (
                           <span className="font-medium">{item.title}</span>
@@ -208,17 +212,25 @@ const AdminSidebar = () => {
                   <NavLink
                     to={item.path}
                     className={({ isActive }) =>
-                      `flex items-center space-x-3 p-3 rounded-lg transition-colors ${
+                      `w-full flex items-center ${
+                        isOpen ? "justify-between" : "justify-center"
+                      } p-3 rounded-lg transition-colors ${
                         isActive
-                          ? "bg-blue-600 text-white"
+                          ? "bg-green_starbuck text-white"
                           : "text-gray-700 hover:bg-gray-100"
                       }`
                     }
                   >
-                    <item.icon className="w-5 h-5" />
-                    {isOpen && (
-                      <span className="font-medium">{item.title}</span>
-                    )}
+                    <div
+                      className={`flex items-center ${
+                        isOpen ? "space-x-3" : "justify-center"
+                      }`}
+                    >
+                      <item.icon className="w-5 h-5" />
+                      {isOpen && (
+                        <span className="font-medium">{item.title}</span>
+                      )}
+                    </div>
                   </NavLink>
                 )}
               </div>
@@ -229,10 +241,18 @@ const AdminSidebar = () => {
           <div className="p-4 border-t border-gray-200">
             <button
               onClick={handleLogout}
-              className="w-full flex items-center space-x-3 p-3 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+              className={`w-full flex items-center ${
+                isOpen ? "justify-between" : "justify-center"
+              } p-3 rounded-lg text-red-600 hover:bg-red-50 transition-colors`}
             >
-              <LogOut className="w-5 h-5" />
-              {isOpen && <span className="font-medium">Đăng xuất</span>}
+              <div
+                className={`flex items-center ${
+                  isOpen ? "space-x-3" : "justify-center"
+                }`}
+              >
+                <LogOut className="w-5 h-5" />
+                {isOpen && <span className="font-medium">Đăng xuất</span>}
+              </div>
             </button>
           </div>
         </div>

@@ -29,11 +29,10 @@ const CheckoutPage = () => {
       item.toppings || []
     )}`;
 
-  const checkoutItems = items.filter(
-    (it) =>
-      selectedItems && selectedItems.length > 0
-        ? selectedItems.includes(getItemKey(it))
-        : true
+  const checkoutItems = items.filter((it) =>
+    selectedItems && selectedItems.length > 0
+      ? selectedItems.includes(getItemKey(it))
+      : true
   );
 
   const [formData, setFormData] = useState({
@@ -67,18 +66,19 @@ const CheckoutPage = () => {
     }
   };
 
-
   const validateForm = () => {
     const newErrors = {};
-  
-    if (!formData.fullName.trim()) newErrors.fullName = "Vui lòng nhập họ và tên";
+
+    if (!formData.fullName.trim())
+      newErrors.fullName = "Vui lòng nhập họ và tên";
     if (!formData.email.trim()) newErrors.email = "Vui lòng nhập email";
     if (!formData.phone.trim()) newErrors.phone = "Vui lòng nhập số điện thoại";
-    if (!formData.address.trim()) newErrors.address = "Vui lòng nhập địa chỉ cụ thể";
+    if (!formData.address.trim())
+      newErrors.address = "Vui lòng nhập địa chỉ cụ thể";
     if (!formData.city.trim()) newErrors.city = "Vui lòng chọn tỉnh/thành phố";
-  
+
     setErrors(newErrors);
-  
+
     return Object.keys(newErrors).length === 0; // true nếu form hợp lệ
   };
 
@@ -89,7 +89,7 @@ const CheckoutPage = () => {
       toast.error("Vui lòng điền đầy đủ thông tin nhận hàng"); // hoặc dùng alert()
     }
   };
-  
+
   const paymentMethods = [
     {
       id: "cod",
@@ -110,7 +110,6 @@ const CheckoutPage = () => {
       icon: Shield,
     },
   ];
-
 
   const handleConfirm = async () => {
     setModalOpen(false);
@@ -208,18 +207,18 @@ const CheckoutPage = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-gradient-to-b from-[#447484]  to-transparent rounded-lg shadow-sm p-6"
               >
-                 <h2 className="text-2xl font-extrabold text-[#e2cda2] mb-6 flex items-center gap-2">
+                <h2 className="text-2xl font-extrabold text-[#e2cda2] mb-6 flex items-center gap-2">
                   <MapPin className="w-5 h-5 text-[#e2cda2]" />
                   Thông tin giao hàng
-                 </h2>
+                </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-white mb-2">
                       Họ và tên *
-                     </label>
-                     <div className="relative">
-                       <User className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                       <input
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                      <input
                         type="text"
                         name="fullName"
                         value={formData.fullName}
@@ -368,11 +367,11 @@ const CheckoutPage = () => {
                 className="bg-gradient-to-b from-[#447484]  rounded-lg shadow-sm p-6"
               >
                 <h2 className="text-2xl font-extrabold text-[#e2cda2] mb-6 flex items-center gap-2">
-                   <CreditCard className="w-5 h-5 text-[#e2cda2]" />
-                   Phương thức thanh toán
-                 </h2>
+                  <CreditCard className="w-5 h-5 text-[#e2cda2]" />
+                  Phương thức thanh toán
+                </h2>
 
-                 <div className="space-y-3">
+                <div className="space-y-3">
                   {paymentMethods.map((method) => {
                     const Icon = method.icon;
                     return (
@@ -437,10 +436,10 @@ const CheckoutPage = () => {
                 transition={{ delay: 0.2 }}
                 className="bg-gradient-to-b from-[#447484]  rounded-lg shadow-sm p-6"
               >
-              <h2 className="text-2xl font-extrabold text-[#e2cda2] mb-4">
+                <h2 className="text-2xl font-extrabold text-[#e2cda2] mb-4">
                   Ghi chú đơn hàng
-               </h2>
-                 <textarea
+                </h2>
+                <textarea
                   name="notes"
                   value={formData.notes}
                   onChange={handleInputChange}
@@ -459,11 +458,11 @@ const CheckoutPage = () => {
                 className="bg-gradient-to-b from-[#447484]  rounded-lg shadow-sm p-6 sticky top-24"
               >
                 <h2 className="text-2xl font-extrabold text-[#e2cda2] mb-6">
-                   Đơn hàng của bạn
-                 </h2>
+                  Đơn hàng của bạn
+                </h2>
 
-                 <div className="space-y-4 mb-6">
-                   {checkoutItems.map((item) => (
+                <div className="space-y-4 mb-6">
+                  {checkoutItems.map((item) => (
                     <div key={item.productId} className="flex justify-between">
                       <div className="flex-1">
                         <p className="font-medium text-white truncate">
@@ -499,13 +498,13 @@ const CheckoutPage = () => {
                 </div>
 
                 <button
-  type="button"
-  disabled={isProcessing}
-  onClick={handleCheckoutClick} // <-- dùng hàm mới
-  className="w-full bg-[#044c5c] text-white hover:scale-105 font-medium py-4 rounded-lg transition-colors flex items-center justify-center gap-2 mt-4"
->
-  {isProcessing ? "Đang xử lý..." : "Đặt hàng"}
-</button>
+                  type="button"
+                  disabled={isProcessing}
+                  onClick={handleCheckoutClick} // <-- dùng hàm mới
+                  className="w-full bg-[#044c5c] text-white hover:scale-105 font-medium py-4 rounded-lg transition-colors flex items-center justify-center gap-2 mt-4"
+                >
+                  {isProcessing ? "Đang xử lý..." : "Đặt hàng"}
+                </button>
               </motion.div>
             </div>
           </div>
@@ -517,7 +516,11 @@ const CheckoutPage = () => {
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         onConfirm={handleConfirm}
-        orderInfo={{ ...formData, items: checkoutItems, total: getSelectedTotal() }}
+        orderInfo={{
+          ...formData,
+          items: checkoutItems,
+          total: getSelectedTotal(),
+        }}
       />
     </>
   );

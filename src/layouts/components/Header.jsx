@@ -56,9 +56,9 @@ function Header() {
   return (
     <>
       <header className="bg-green_starbuck shadow-md py-4 px-6 sticky top-0 z-50 border-b-8 border-camel">
-        <div className="max-w-7xl mx-auto flex justify-evenly items-center px-4">
+        <div className="max-w-[110rem] mx-auto flex">
           {/* Logo & Button Sidebar */}
-          <div className="flex font-bold text-camel text-lg focus:outline-none">
+          <div className="flex flex-1 font-bold text-camel items-center text-lg focus:outline-none">
             <button
               type="button"
               onClick={toggleSidebar}
@@ -71,10 +71,14 @@ function Header() {
               )}
             </button>
 
-            <img src={logo} alt="Logo" className="w-full h-[130px]" />
+            <img src={logo} alt="Logo" className="h-[130px]" />
           </div>
+
+          {/* Empty Space */}
+          <div className="flex-1"></div>
+
           {/* Image & Name & Role */}
-          <div className="flex w-[70%] items-center justify-around">
+          <div className="flex items-center flex-1 justify-end pr-3">
             {user ? (
               <div className="relative">
                 {/* Avatar button */}

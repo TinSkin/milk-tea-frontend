@@ -108,7 +108,56 @@ export const useToppingStore = create((set, get) => ({
         }
     },
 
-    //! 8. Các hàm quản lý trạng thái
+    //! 8. Hàm xóa vĩnh viễn topping (hard delete)
+    deleteTopping: async (toppingId) => {
+        set({ isLoading: true, error: null });
+        try {
+            console.log("Đang xóa vĩnh viễn topping:", toppingId);
+            const response = await api.delete(`${API_ENDPOINT}/${toppingId}`);
+
+            // Xóa khỏi trạng thái local
+            const currentToppings = get().toppings;
+            const filteredToppings = currentToppings.filter(topping => topping._id !== toppingId);
+            set({
+                toppings: filteredToppings,
+                isLoading: false
+            });
+
+            return response.data;
+        } catch (error) {
+            const errorMessage = error.response?.data?.message || "Lỗi xóa topping";
+            set({ error: errorMessage, isLoading: false });
+            throw error;
+        }
+    },
+
+    //! 9. Hàm xóa mềm topping (soft delete)
+    softDeleteTopping: async (toppingId) => {
+        set({ isLoading: true, error: null });
+        try {
+            console.log("Đang thay đổi trạng thái topping:", toppingId);
+            const response = await api.post(`${API_ENDPOINT}/${toppingId}/soft-delete`);
+            const updatedTopping = response.data.success ? response.data.topping : response.data;
+
+            // Cập nhật trạng thái local
+            const currentToppings = get().toppings;
+            const updatedToppings = currentToppings.map(topping =>
+                topping._id === toppingId ? updatedTopping : topping
+            );
+            set({
+                toppings: updatedToppings,
+                isLoading: false
+            });
+
+            return updatedTopping;
+        } catch (error) {
+            const errorMessage = error.response?.data?.message || "Lỗi thay đổi trạng thái topping";
+            set({ error: errorMessage, isLoading: false });
+            throw error;
+        }
+    },
+
+    //! 10. Các hàm quản lý trạng thái
     setToppings: (toppings) => set({ toppings }),
     setLoading: (isLoading) => set({ isLoading }),
     setError: (error) => set({ error }),
@@ -133,7 +182,7 @@ export const useToppingStore = create((set, get) => ({
         set({ error: null });
     },
 
-    //! 9. Các hàm helper sử dụng get() để truy cập trạng thái hiện tại
+    //! 11. Các hàm helper sử dụng get() để truy cập trạng thái hiện tại
     getCurrentToppings: () => {
         const { toppings } = get();
         return toppings;

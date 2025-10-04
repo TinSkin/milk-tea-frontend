@@ -33,9 +33,10 @@ export const useStoreStore = create((set, get) => ({
 
             const response = await api.get(`${API_ENDPOINT}?${queryParams}`);
             
+            // ✅ SỬA: Truy cập đúng cấu trúc response từ backend
             set({
-                stores: response.data.stores || [],
-                pagination: response.data.pagination || {},
+                stores: response.data.data?.stores || [],
+                pagination: response.data.data?.pagination || {},
                 isLoading: false,
                 error: null
             });
@@ -53,10 +54,11 @@ export const useStoreStore = create((set, get) => ({
         set({ isLoading: true, error: null });
         
         try {
-            const response = await api.get(`${API_ENDPOINT}/city/${cityName}`);
+            const response = await api.get(`${API_ENDPOINT}/city?city=${cityName}`);
             
+            // ✅ SỬA: Truy cập đúng cấu trúc response và endpoint từ backend
             set({
-                stores: response.data.stores || [],
+                stores: response.data.data?.stores || [],
                 isLoading: false,
                 error: null
             });
@@ -76,8 +78,9 @@ export const useStoreStore = create((set, get) => ({
         try {
             const response = await api.get(`${API_ENDPOINT}/${storeId}`);
             
+            // ✅ SỬA: Truy cập đúng cấu trúc response từ backend
             set({
-                currentStore: response.data.store,
+                currentStore: response.data.data,
                 isLoading: false,
                 error: null
             });
@@ -97,11 +100,12 @@ export const useStoreStore = create((set, get) => ({
         try {
             const response = await api.post(API_ENDPOINT, storeData);
             
+            // ✅ SỬA: Truy cập đúng cấu trúc response từ backend
             // Thêm cửa hàng mới vào danh sách hiện tại
             const { stores } = get();
             set({
-                stores: [response.data.store, ...stores],
-                currentStore: response.data.store,
+                stores: [response.data.data, ...stores],
+                currentStore: response.data.data,
                 isLoading: false,
                 error: null
             });
@@ -121,15 +125,16 @@ export const useStoreStore = create((set, get) => ({
         try {
             const response = await api.put(`${API_ENDPOINT}/${storeId}`, updateData);
             
+            // ✅ SỬA: Truy cập đúng cấu trúc response từ backend
             // Cập nhật cửa hàng trong danh sách
             const { stores } = get();
             const updatedStores = stores.map(store => 
-                store._id === storeId ? response.data.store : store
+                store._id === storeId ? response.data.data : store
             );
             
             set({
                 stores: updatedStores,
-                currentStore: response.data.store,
+                currentStore: response.data.data,
                 isLoading: false,
                 error: null
             });
@@ -192,10 +197,11 @@ export const useStoreStore = create((set, get) => ({
         try {
             const response = await api.put(`${API_ENDPOINT}/${storeId}/products`, { products: productIds });
             
+            // ✅ SỬA: Truy cập đúng cấu trúc response từ backend
             // Cập nhật cửa hàng hiện tại nếu trùng khớp
             const { currentStore } = get();
             if (currentStore && currentStore._id === storeId) {
-                set({ currentStore: response.data.store });
+                set({ currentStore: response.data.data });
             }
             
             set({ isLoading: false, error: null });
