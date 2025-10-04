@@ -14,26 +14,34 @@ import {
 import Header from "../components/layout/Header";
 import CheckoutModal from "../components/features/ecommerce/CheckoutModal";
 import { useCartStore } from "../store/cartStore";
+import { useAuthStore } from "../store/authStore";
+import api from "../api/axios";
 
 const CheckoutPage = () => {
+  const { user, isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);  
+  const [errors, setErrors] = useState({});
   const items = useCartStore((s) => s.items);
   const selectedItems = useCartStore((s) => s.selectedItems);
   const getSelectedTotal = useCartStore((s) => s.getSelectedTotal);
 
-  const user = { name: "Nguyễn Văn A", email: "nguyenvana@example.com" };
+
+
 
   const getItemKey = (item) =>
     `${item.id}__${item.sizeOption || "M"}__${JSON.stringify(
       item.toppings || []
     )}`;
 
+
   const checkoutItems = items.filter((it) =>
     selectedItems && selectedItems.length > 0
       ? selectedItems.includes(getItemKey(it))
       : true
   );
+
 
   const [formData, setFormData] = useState({
     fullName: user?.name || "",
@@ -47,8 +55,8 @@ const CheckoutPage = () => {
     notes: "",
   });
 
-  const [errors, setErrors] = useState({});
-  const [isProcessing, setIsProcessing] = useState(false);
+
+
 
   const formatPrice = (price) =>
     new Intl.NumberFormat("vi-VN", {
@@ -57,6 +65,7 @@ const CheckoutPage = () => {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(price);
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -69,6 +78,7 @@ const CheckoutPage = () => {
   const validateForm = () => {
     const newErrors = {};
 
+
     if (!formData.fullName.trim())
       newErrors.fullName = "Vui lòng nhập họ và tên";
     if (!formData.email.trim()) newErrors.email = "Vui lòng nhập email";
@@ -77,10 +87,13 @@ const CheckoutPage = () => {
       newErrors.address = "Vui lòng nhập địa chỉ cụ thể";
     if (!formData.city.trim()) newErrors.city = "Vui lòng chọn tỉnh/thành phố";
 
+
     setErrors(newErrors);
+
 
     return Object.keys(newErrors).length === 0; // true nếu form hợp lệ
   };
+
 
   const handleCheckoutClick = () => {
     if (validateForm()) {
@@ -89,6 +102,7 @@ const CheckoutPage = () => {
       toast.error("Vui lòng điền đầy đủ thông tin nhận hàng"); // hoặc dùng alert()
     }
   };
+
 
   const paymentMethods = [
     {
@@ -114,8 +128,7 @@ const CheckoutPage = () => {
   const handleConfirm = async () => {
     setModalOpen(false);
     setIsProcessing(true);
-
-    // Tạo payload gửi lên backend
+  
     const orderData = {
       customerInfo: { name: formData.fullName, email: formData.email },
       shippingAddress: {
@@ -139,28 +152,35 @@ const CheckoutPage = () => {
       })),
       totalAmount: getSelectedTotal(),
     };
-
+  
     try {
-      // Lấy token nếu có
-      const token = localStorage.getItem("token");
-
-      const res = await fetch("http://localhost:5000/api/orders", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-        body: JSON.stringify(orderData),
-      });
-
-      if (!res.ok) throw new Error("Đặt hàng thất bại");
-
-      const result = await res.json();
-
+      // 📌 Gọi API và lấy newOrder
+      const res = await api.post("/orders", orderData);
+      const newOrder = res.data.order;
+  
       alert("Đặt hàng thành công!");
-      // Xóa giỏ hàng đã chọn sau khi đặt thành công
-      // useCartStore.getState().clearSelectedItems(); // nếu bạn có hàm clearSelectedItems
-      navigate("/order-tracking"); // chuyển sang trang theo dõi đơn hàng
+  
+      // ===============================
+      // Xóa các sản phẩm đã chọn khỏi giỏ
+      // ===============================
+      const { items, selectedItems, removeFromCart, setSelectedItems } = useCartStore.getState();
+      const getItemKey = (item) =>
+        `${item.id}__${item.sizeOption || "M"}__${JSON.stringify(item.toppings || [])}`;
+  
+      items.forEach((item) => {
+        if (selectedItems.includes(getItemKey(item))) {
+          removeFromCart(item.id, {
+            sizeOption: item.sizeOption,
+            sugarLevel: item.sugarLevel,
+            iceOption: item.iceOption,
+            toppings: item.toppings,
+          });
+        }
+      });  
+
+      console.log("newOrder:", newOrder); 
+      // Clear selectedItems sau khi xóa
+      navigate(`/order-tracking/${newOrder._id}`);
     } catch (error) {
       console.error(error);
       alert("Đặt hàng thất bại, vui lòng thử lại!");
@@ -168,7 +188,9 @@ const CheckoutPage = () => {
       setIsProcessing(false);
     }
   };
+ 
   // ========================================================
+
 
   if (items.length === 0) {
     return (
@@ -177,6 +199,7 @@ const CheckoutPage = () => {
       </div>
     );
   }
+
 
   return (
     <>
@@ -196,6 +219,7 @@ const CheckoutPage = () => {
               Vui lòng điền thông tin để hoàn tất đơn hàng
             </p>
           </motion.div>
+
 
           {/* Form + Order Summary */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -236,6 +260,7 @@ const CheckoutPage = () => {
                     )}
                   </div>
 
+
                   <div>
                     <label className="block text-sm font-medium text-white mb-2">
                       Email *
@@ -259,6 +284,7 @@ const CheckoutPage = () => {
                       </p>
                     )}
                   </div>
+
 
                   <div>
                     <label className="block text-sm font-medium text-white mb-2">
@@ -284,6 +310,7 @@ const CheckoutPage = () => {
                     )}
                   </div>
 
+
                   <div>
                     <label className="block text-sm font-medium text-white mb-2">
                       Tỉnh/Thành phố *
@@ -308,6 +335,7 @@ const CheckoutPage = () => {
                     )}
                   </div>
 
+
                   <div>
                     <label className="block text-sm font-medium text-white mb-2">
                       Quận/Huyện
@@ -321,6 +349,7 @@ const CheckoutPage = () => {
                       placeholder="Nhập quận/huyện"
                     />
                   </div>
+
 
                   <div>
                     <label className="block text-sm font-medium text-white mb-2">
@@ -336,6 +365,7 @@ const CheckoutPage = () => {
                     />
                   </div>
                 </div>
+
 
                 <div className="mt-4">
                   <label className="block text-sm font-medium text-white mb-2">
@@ -359,6 +389,7 @@ const CheckoutPage = () => {
                 </div>
               </motion.div>
 
+
               {/* Payment Method */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -370,6 +401,7 @@ const CheckoutPage = () => {
                   <CreditCard className="w-5 h-5 text-[#e2cda2]" />
                   Phương thức thanh toán
                 </h2>
+
 
                 <div className="space-y-3">
                   {paymentMethods.map((method) => {
@@ -394,7 +426,7 @@ const CheckoutPage = () => {
                           className="sr-only"
                         />
                         <Icon
-                          className={`w-5 h-5 mr-3 transition-colors duration-200 
+                          className={`w-5 h-5 mr-3 transition-colors duration-200
       ${
         formData.paymentMethod === method.id
           ? "text-white"
@@ -403,7 +435,7 @@ const CheckoutPage = () => {
                         />
                         <div className="flex-1">
                           <p
-                            className={`font-medium transition-colors duration-200 
+                            className={`font-medium transition-colors duration-200
         ${
           formData.paymentMethod === method.id
             ? "text-white"
@@ -413,7 +445,7 @@ const CheckoutPage = () => {
                             {method.name}
                           </p>
                           <p
-                            className={`text-sm transition-colors duration-200 
+                            className={`text-sm transition-colors duration-200
         ${
           formData.paymentMethod === method.id
             ? "text-white"
@@ -428,6 +460,7 @@ const CheckoutPage = () => {
                   })}
                 </div>
               </motion.div>
+
 
               {/* Notes */}
               <motion.div
@@ -450,6 +483,7 @@ const CheckoutPage = () => {
               </motion.div>
             </div>
 
+
             {/* Order Summary */}
             <div className="lg:col-span-1">
               <motion.div
@@ -460,6 +494,7 @@ const CheckoutPage = () => {
                 <h2 className="text-2xl font-extrabold text-[#e2cda2] mb-6">
                   Đơn hàng của bạn
                 </h2>
+
 
                 <div className="space-y-4 mb-6">
                   {checkoutItems.map((item) => (
@@ -479,11 +514,13 @@ const CheckoutPage = () => {
                   ))}
                 </div>
 
+
                 <div className="space-y-3 border-t border-gray-200 pt-4">
                   <div className="flex justify-between text-white">
                     <span>Tạm tính</span>
                     <span>{formatPrice(getSelectedTotal())}</span>
                   </div>
+
 
                   <div className="flex justify-between text-white">
                     <span>Phí vận chuyển</span>
@@ -496,6 +533,7 @@ const CheckoutPage = () => {
                     </span>
                   </div>
                 </div>
+
 
                 <button
                   type="button"
@@ -511,19 +549,23 @@ const CheckoutPage = () => {
         </div>
       </div>
 
+
       {/* Modal */}
       <CheckoutModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onConfirm={handleConfirm}
-        orderInfo={{
-          ...formData,
-          items: checkoutItems,
-          total: getSelectedTotal(),
-        }}
-      />
+  isOpen={modalOpen}
+  onClose={() => setModalOpen(false)}
+  onConfirm={handleConfirm} // <-- đây
+  orderInfo={{
+    ...formData,
+    items: checkoutItems,
+    total: getSelectedTotal(),
+  }}
+/>
     </>
   );
 };
 
+
 export default CheckoutPage;
+
+

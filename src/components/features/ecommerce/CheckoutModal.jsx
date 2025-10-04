@@ -2,8 +2,24 @@ import { Fragment, useEffect, useState } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { XCircle, Clock, DollarSign, CreditCard } from "lucide-react";
 
+
 const CheckoutModal = ({ isOpen, onClose, onConfirm, orderInfo }) => {
   const [countdown, setCountdown] = useState(15);
+
+  useEffect(() => {
+    if (isOpen) {
+      const now = new Date();
+      const formatted = now.toLocaleString("vi-VN", {
+        hour12: false,
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      setOrderTime(formatted);
+    }
+  }, [isOpen]);
 
   //hàm format số tiền
   const formatPrice = (price) =>
@@ -13,8 +29,8 @@ const CheckoutModal = ({ isOpen, onClose, onConfirm, orderInfo }) => {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(price);
-
-
+//lấy thời gian thực
+    const [orderTime, setOrderTime] = useState("");
   useEffect(() => {
     if (!isOpen) return;
     setCountdown(15); // reset countdown
@@ -81,9 +97,9 @@ const CheckoutModal = ({ isOpen, onClose, onConfirm, orderInfo }) => {
     <div>{orderInfo.address}</div>
   </div>
   <div className="flex items-center gap-3">
-    <Clock className="w-5 h-5 text-gray-400" />
-    <div>{orderInfo.date || "Hôm nay 17:15"}</div>
-  </div>
+  <Clock className="w-5 h-5 text-gray-400" />
+  <div>{orderTime}</div>
+</div>
   <div className="flex flex-col gap-4">
     {/* Tổng tiền */}
     <div className="flex items-center gap-3 font-semibold">
