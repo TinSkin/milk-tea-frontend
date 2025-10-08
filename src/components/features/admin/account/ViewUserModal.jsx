@@ -4,7 +4,7 @@ import { X, User, Mail, Phone, Shield, CheckCircle2, Clock, Calendar } from "luc
 function ViewUserModal({ user, onClose }) {
   if (!user) return null;
 
-  // Format date helper
+  //! Format date helper
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleString("vi-VN", {
       day: "2-digit",
@@ -15,7 +15,7 @@ function ViewUserModal({ user, onClose }) {
     });
   };
 
-  // Get role display info
+  //! Get role display info
   const getRoleInfo = (role) => {
     switch (role) {
       case "admin":

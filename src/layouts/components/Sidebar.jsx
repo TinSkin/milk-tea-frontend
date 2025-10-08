@@ -8,22 +8,22 @@ import {
   Settings,
   LogOut,
   Menu,
-  Store,
+  Shield,
   Tag,
   Coffee,
   MapPin,
   ChevronDown,
   ChevronRight,
+  Store,
+  Globe,
 } from "lucide-react";
-import { useStoreSelectionStore } from "../../store/storeSelectionStore";
-import { useAuthStore } from "../../store/authStore";
-import { useSidebar } from "../hooks/useSidebar";
+import { useAuthStore } from "../../store/authStore.js";
+import { useSidebar } from "../hooks/useSidebar.jsx";
 
 const Sidebar = () => {
   const { isOpen, toggleSidebar } = useSidebar();
   const [openMenus, setOpenMenus] = useState(new Set());
   const navigate = useNavigate();
-  const { selectedStore } = useStoreSelectionStore();
   const { logout } = useAuthStore();
 
   const toggleMenu = (menuId) => {
@@ -48,7 +48,7 @@ const Sidebar = () => {
       id: "dashboard",
       title: "Dashboard",
       icon: BarChart3,
-      path: "/store-manager/dashboard",
+      path: "/admin/dashboard",
     },
     {
       id: "products",
@@ -57,11 +57,11 @@ const Sidebar = () => {
       children: [
         {
           title: "Danh sách sản phẩm",
-          path: "/store-manager/products",
+          path: "/admin/products",
         },
         {
           title: "Thêm sản phẩm",
-          path: "/store-manager/products/add",
+          path: "/admin/products/add",
         },
       ],
     },
@@ -69,31 +69,46 @@ const Sidebar = () => {
       id: "categories",
       title: "Danh mục",
       icon: Tag,
-      path: "/store-manager/categories",
+      path: "/admin/categories",
     },
     {
       id: "toppings",
       title: "Topping",
       icon: Coffee,
-      path: "/store-manager/toppings",
+      path: "/admin/toppings",
+    },
+    {
+      id: "stores",
+      title: "Cửa hàng",
+      icon: Store,
+      path: "/admin/stores",
     },
     {
       id: "orders",
       title: "Đơn hàng",
       icon: ShoppingCart,
-      path: "/store-manager/orders",
+      path: "/admin/orders",
     },
     {
-      id: "customers",
-      title: "Khách hàng",
+      id: "accounts",
+      title: "Tài khoản",
       icon: Users,
-      path: "/store-manager/customers",
+      path: "/admin/accounts",
     },
     {
-      id: "settings",
-      title: "Cài đặt",
-      icon: Settings,
-      path: "/store-manager/settings",
+      id: "system",
+      title: "Hệ thống",
+      icon: Globe,
+      children: [
+        {
+          title: "Cài đặt chung",
+          path: "/admin/system/settings",
+        },
+        {
+          title: "Phân quyền",
+          path: "/admin/system/permissions",
+        },
+      ],
     },
   ];
 
@@ -110,9 +125,7 @@ const Sidebar = () => {
       {/* Sidebar */}
       <div
         className={`fixed left-0 top-0 h-full bg-white border-r border-gray-200 shadow-lg z-50 transition-all duration-300 ease-in-out ${
-          isOpen
-            ? "w-64 translate-x-0"
-            : "w-16 translate-x-0"
+          isOpen ? "w-64 translate-x-0" : "w-16 translate-x-0"
         }`}
       >
         <div className="flex flex-col h-full">
@@ -120,21 +133,17 @@ const Sidebar = () => {
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
             {isOpen ? (
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-green_starbuck rounded-lg flex items-center justify-center">
-                  <Store className="w-5 h-5 text-white" />
+                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="font-semibold text-gray-800">Store Manager</h2>
-                  {selectedStore && (
-                    <p className="text-xs text-gray-500 truncate max-w-[150px]">
-                      {selectedStore.storeName || selectedStore.name}
-                    </p>
-                  )}
+                  <h2 className="font-semibold text-gray-800">Admin Panel</h2>
+                  <p className="text-xs text-gray-500">Quản trị hệ thống</p>
                 </div>
               </div>
             ) : (
-              <div className="w-8 h-8 bg-green_starbuck rounded-lg flex items-center justify-center">
-                <Store className="w-5 h-5 text-white" />
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <Shield className="w-5 h-5 text-white" />
               </div>
             )}
           </div>
@@ -148,13 +157,19 @@ const Sidebar = () => {
                   <div>
                     <button
                       onClick={() => toggleMenu(item.id)}
-                      className={`w-full flex items-center ${isOpen ? 'justify-between' : 'justify-center'} p-3 rounded-lg text-left transition-colors ${
+                      className={`w-full flex items-center ${
+                        isOpen ? "justify-between" : "justify-center"
+                      } p-3 rounded-lg text-left transition-colors ${
                         openMenus.has(item.id)
                           ? "bg-green_starbuck/10 text-green_starbuck"
                           : "text-gray-700 hover:bg-gray-100"
                       }`}
                     >
-                      <div className={`flex items-center ${isOpen ? 'space-x-3' : 'justify-center'}`}>
+                      <div
+                        className={`flex items-center ${
+                          isOpen ? "space-x-3" : "justify-center"
+                        }`}
+                      >
                         <item.icon className="w-5 h-5" />
                         {isOpen && (
                           <span className="font-medium">{item.title}</span>
@@ -181,7 +196,7 @@ const Sidebar = () => {
                             className={({ isActive }) =>
                               `block p-2 rounded-lg text-sm transition-colors ${
                                 isActive
-                                  ? "bg-green_starbuck text-white"
+                                  ? "bg-blue-600 text-white"
                                   : "text-gray-600 hover:bg-gray-100"
                               }`
                             }
@@ -197,14 +212,20 @@ const Sidebar = () => {
                   <NavLink
                     to={item.path}
                     className={({ isActive }) =>
-                      `w-full flex items-center ${isOpen ? 'justify-between' : 'justify-center'} p-3 rounded-lg transition-colors ${
+                      `w-full flex items-center ${
+                        isOpen ? "justify-between" : "justify-center"
+                      } p-3 rounded-lg transition-colors ${
                         isActive
                           ? "bg-green_starbuck text-white"
                           : "text-gray-700 hover:bg-gray-100"
                       }`
                     }
                   >
-                    <div className={`flex items-center ${isOpen ? 'space-x-3' : 'justify-center'}`}>
+                    <div
+                      className={`flex items-center ${
+                        isOpen ? "space-x-3" : "justify-center"
+                      }`}
+                    >
                       <item.icon className="w-5 h-5" />
                       {isOpen && (
                         <span className="font-medium">{item.title}</span>
@@ -220,9 +241,15 @@ const Sidebar = () => {
           <div className="p-4 border-t border-gray-200">
             <button
               onClick={handleLogout}
-              className={`w-full flex items-center ${isOpen ? 'justify-between' : 'justify-center'} p-3 rounded-lg text-red-600 hover:bg-red-50 transition-colors`}
+              className={`w-full flex items-center ${
+                isOpen ? "justify-between" : "justify-center"
+              } p-3 rounded-lg text-red-600 hover:bg-red-50 transition-colors`}
             >
-              <div className={`flex items-center ${isOpen ? 'space-x-3' : 'justify-center'}`}>
+              <div
+                className={`flex items-center ${
+                  isOpen ? "space-x-3" : "justify-center"
+                }`}
+              >
                 <LogOut className="w-5 h-5" />
                 {isOpen && <span className="font-medium">Đăng xuất</span>}
               </div>

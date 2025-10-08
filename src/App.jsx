@@ -7,7 +7,7 @@ import {
 } from "react-router-dom";
 import { Toaster } from "sonner";
 
-// Import Store Manager Layout
+// Import Layout
 import StoreManagerLayout from "./layouts/StoreManagerLayout";
 import AdminLayout from "./layouts/AdminLayout";
 
@@ -43,14 +43,14 @@ import AdminAccount from "./pages/admin/AdminAccount";
 import AdminStore from "./pages/admin/AdminStore";
 
 // Import Store Manager Pages
-import ManagerDashboard from "./pages/store-manager/ManagerDashboard";
-import ManagerProduct from "./pages/store-manager/ManagerProduct";
-import ManagerCategory from "./pages/store-manager/ManagerCategory";
-import ManagerTopping from "./pages/store-manager/ManagerTopping";
-import ManagerOrders from "./pages/store-manager/ManagerOrders";
-import ManagerCustomers from "./pages/store-manager/ManagerCustomers";
-import ManagerAccount from "./pages/store-manager/ManagerAccount";
-import ManagerSettings from "./pages/store-manager/ManagerSettings";
+import ManagerDashboard from "./pages/manager/ManagerDashboard";
+import ManagerProduct from "./pages/manager/ManagerProduct";
+import ManagerCategory from "./pages/manager/ManagerCategory";
+import ManagerTopping from "./pages/manager/ManagerTopping";
+import ManagerOrders from "./pages/manager/ManagerOrders";
+import ManagerCustomers from "./pages/manager/ManagerCustomers";
+import ManagerAccount from "./pages/manager/ManagerAccount";
+import ManagerSettings from "./pages/manager/ManagerSettings";
 
 // Import Protected Route
 import PrivateRoute from "./routes/PrivateRoute";

@@ -26,7 +26,7 @@ import { Switch } from "@headlessui/react";
 import Select from "react-select";
 
 // Import stores để quản lý trạng thái
-import { useCategoryStore } from "../../store/categoryStore";
+import { useManagerStore } from "../../store/managerStore";
 
 // Import component
 import Notification from "../../components/ui/Notification";
@@ -148,22 +148,12 @@ const itemsPerPageOptions = [
   },
 ];
 
-const AdminCategory = () => {
+const ManagerCategory = () => {
   const isInitLoaded = useRef(false);
 
   // Store quản lý danh mục
-  const {
-    categories,
-    isLoading,
-    pagination,
-    getAllCategories,
-    createCategory,
-    updateCategory,
-    deleteCategory,
-    softDeleteCategory,
-    clearError,
-    syncCategoriesWithProducts,
-  } = useCategoryStore();
+  const { categories, pagination, isLoading, fetchMyStoreCategories, clearError } =
+    useManagerStore();
 
   // Trạng thái các modal
   const [showAddModal, setShowAddModal] = useState(false);
@@ -341,10 +331,10 @@ const AdminCategory = () => {
         sortOrder,
       };
 
-      const result = await getAllCategories(params);
-      if (result && result.categories) {
+      const result = await fetchMyStoreCategories(params);
+      if (result.data && result.data.categories) {
         Notification.success(
-          `Tải thành công ${result.categories.length} danh mục.`
+          `Tải thành công ${result.data.categories.length} danh mục.`
         );
       }
     } catch (error) {
@@ -429,8 +419,8 @@ const AdminCategory = () => {
   //! Tải dữ liệu ban đầu khi component mount
   useEffect(() => {
     if (!isInitLoaded.current) {
-      loadCategoriesInit();
       isInitLoaded.current = true;
+      loadCategoriesInit(1);
     }
   }, []); // Chỉ chạy một lần khi component mount
 
@@ -706,10 +696,16 @@ const AdminCategory = () => {
                       Mô tả
                     </th>
                     <th className="p-3 text-md font-semibold text-green_starbuck">
-                      Trạng thái
+                      Hệ thống
                     </th>
                     <th className="p-3 text-md font-semibold text-green_starbuck">
-                      Ngày tạo
+                      Cửa hàng
+                    </th>
+                    <th className="p-3 text-md font-semibold text-green_starbuck">
+                      Ngày thêm
+                    </th>
+                    <th className="p-3 text-md font-semibold text-green_starbuck">
+                      Cập nhật
                     </th>
                     <th className="p-3 text-md font-semibold text-green_starbuck">
                       <div className="flex items-center justify-center">
@@ -770,7 +766,7 @@ const AdminCategory = () => {
                         </div>
                       </td>
 
-                      {/* Trạng thái */}
+                      {/* Trạng thái (Admin) */}
                       <td className="p-3 min-w-[140px]">
                         <span
                           className={`px-2 py-1 text-sm rounded font-semibold ${
@@ -785,9 +781,29 @@ const AdminCategory = () => {
                         </span>
                       </td>
 
-                      {/* Hiển thị ngày */}
+                      {/* Trạng thái (Store Manager) */}
+                      <td className="p-3 min-w-[140px]">
+                        <span
+                          className={`px-2 py-1 text-sm rounded font-semibold ${
+                            category.storeStatus === "available"
+                              ? "text-green-700 bg-green-100"
+                              : "text-red-700 bg-red-100"
+                          }`}
+                        >
+                          {category.storeStatus === "available"
+                            ? "Đang sử dụng"
+                            : "Ngừng sử dụng"}
+                        </span>
+                      </td>
+
+                      {/* Hiển thị ngày thêm */}
                       <td className="p-3 text-md text-dark_blue">
-                        {formatNiceDate(category.createdAt)}
+                        {formatNiceDate(category.addedAt)}
+                      </td>
+
+                      {/* Hiển thị ngày cập nhật */}
+                      <td className="p-3 text-md text-dark_blue">
+                        {formatNiceDate(category.lastUpdated)}
                       </td>
 
                       {/* Hành động */}
@@ -1017,4 +1033,4 @@ const AdminCategory = () => {
   );
 };
 
-export default AdminCategory;
+export default ManagerCategory;

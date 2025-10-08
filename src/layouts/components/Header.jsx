@@ -1,14 +1,14 @@
 import React from "react";
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { Menu, X, UserRound } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
 import { useSidebar } from "../hooks/useSidebar";
 import logo from "../../img/logo.png";
 
 function Header() {
   const navigate = useNavigate();
-  const location = useLocation(); // Get current path
+  const location = useLocation(); // Lấy thông tin đường dẫn hiện tại
   const { isOpen, toggleSidebar } = useSidebar();
 
   const { user, logout, isCheckingAuth } = useAuthStore();
@@ -18,12 +18,12 @@ function Header() {
     setOpenMenu(false);
   }, [location.pathname]);
 
-  //! Handle login click
+  //! Xử lí nút đăng nhập
   const handleLoginClick = () => {
     navigate("/login");
   };
 
-  //! Handle logout click
+  //! Xử lí nút đăng xuất
   const handleLogout = async () => {
     try {
       await logout();
@@ -33,7 +33,7 @@ function Header() {
     }
   };
 
-  //! Loading state for checking authentication
+  //! Đang tải trạng thái xác thực (nếu chưa xác thực xong)
   if (isCheckingAuth) {
     return (
       <header className="bg-dark_blue shadow-md py-4 px-6 sticky top-0 z-50 border-b-8 border-camel">
@@ -49,9 +49,6 @@ function Header() {
       </header>
     );
   }
-
-  const isActive = (path) =>
-    location.pathname === path ? "border-b-2 border-camel" : "hover:text-camel";
 
   return (
     <>
