@@ -1,38 +1,33 @@
+import React from "react";
 // Import các hook useEffect, useState từ React để quản lý trạng thái và side-effect
 import { useEffect, useState, useRef } from "react";
 
 // Import các icon từ thư viện lucide-react để dùng trong giao diện
 import {
+  Coffee,
+  Store,
+  MapPin,
   Pencil,
-  Eye,
-  Trash2,
-  Search,
-  Filter,
+  CupSoda,
   SortAsc,
   SortDesc,
-  DollarSign,
   CheckCircle2,
   Ban,
   ListOrdered,
-  ChevronDown,
-  ChevronUp,
-  Check,
-  Square,
-  CheckSquare,
+  Search,
+  Trash2,
   Settings,
-  Tags,
+  CheckSquare,
+  Square,
 } from "lucide-react";
 import { Switch } from "@headlessui/react";
 import Select from "react-select";
 
 // Import stores để quản lý trạng thái
-import { useCategoryStore } from "../../store/categoryStore";
+import { useManagerStore } from "../../store/managerStore";
 
 // Import component
 import Notification from "../../components/ui/Notification";
-import AddCategoryModal from "../../components/features/admin/category/AddCategoryModal";
-import EditCategoryModal from "../../components/features/admin/category/EditCategoryModal";
-import ConfirmDeleteModal from "../../components/features/admin/ConfirmDeleteModal";
 
 // Import utilities và hooks
 import { formatNiceDate } from "../../utils/helpers/dateFormatter";
@@ -76,6 +71,24 @@ const sortOptions = [
       </span>
     ),
   },
+  {
+    value: "extraPrice-asc",
+    label: (
+      <span className="flex items-center gap-2">
+        <SortAsc className="w-4 h-4 text-orange-600" />
+        Giá thấp đến cao
+      </span>
+    ),
+  },
+  {
+    value: "extraPrice-desc",
+    label: (
+      <span className="flex items-center gap-2">
+        <SortDesc className="w-4 h-4 text-orange-600" />
+        Giá cao đến thấp
+      </span>
+    ),
+  },
 ];
 
 // Tùy chọn trạng thái
@@ -84,7 +97,7 @@ const statusOptions = [
     value: "all",
     label: (
       <span className="flex items-center gap-2">
-        <Tags className="w-4 h-4 text-gray-600" />
+        <CupSoda className="w-4 h-4 text-gray-600" />
         Tất cả trạng thái
       </span>
     ),
@@ -94,7 +107,7 @@ const statusOptions = [
     label: (
       <span className="flex items-center gap-2">
         <CheckCircle2 className="w-4 h-4 text-green-600" />
-        Đang sử dụng
+        Đang bán
       </span>
     ),
   },
@@ -103,7 +116,7 @@ const statusOptions = [
     label: (
       <span className="flex items-center gap-2">
         <Ban className="w-4 h-4 text-red-600" />
-        Ngừng sử dụng
+        Ngừng bán
       </span>
     ),
   },
@@ -148,177 +161,14 @@ const itemsPerPageOptions = [
   },
 ];
 
-const AdminCategory = () => {
+const ManagerTopping = () => {
   const isInitLoaded = useRef(false);
 
-  // Store quản lý danh mục
-  const {
-    categories,
-    isLoading,
-    pagination,
-    getAllCategories,
-    createCategory,
-    updateCategory,
-    deleteCategory,
-    softDeleteCategory,
-    clearError,
-    syncCategoriesWithProducts,
-  } = useCategoryStore();
+  // Store quản lý topping
+  const { toppings, isLoading, pagination, fetchMyStoreToppings, clearError } =
+    useManagerStore();
 
-  // Trạng thái các modal
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingCategory, setEditingCategory] = useState(null);
-
-  //! Hàm xử lý thêm danh mục
-  const handleAddCategory = async (categoryData) => {
-    try {
-      await createCategory(categoryData);
-      setShowAddModal(false);
-      Notification.success("Thêm danh mục thành công!");
-      loadCategories(pagination.currentPage);
-    } catch (error) {
-      Notification.error("Thêm danh mục thất bại", error.message);
-    }
-  };
-
-  //! Hàm xử lý khi bấm chỉnh sửa danh mục
-  const handleEditCategory = (category) => {
-    setEditingCategory(category);
-    setShowEditModal(true);
-  };
-
-  //! Hàm xử lý cập nhật danh mục
-  const handleUpdateCategory = async (categoryData) => {
-    try {
-      await updateCategory(editingCategory._id, categoryData);
-      await handleSyncCategoriesWithProducts();
-      setShowEditModal(false);
-      setEditingCategory(null);
-      Notification.success("Cập nhật danh mục thành công!");
-      loadCategories(pagination.currentPage);
-    } catch (error) {
-      Notification.error("Cập nhật thất bại", error.message);
-    }
-  };
-
-  // Trạng thái modal xóa
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleteModalConfig, setDeleteModalConfig] = useState({
-    type: "soft",
-    categoryId: null,
-    categoryName: "",
-    action: null,
-  });
-
-  // Trạng thái modal xóa hàng loạt
-  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
-
-  //! Hàm xử lý xóa hẳn các danh mục được chọn
-  const handleDeleteSelectedCategories = async () => {
-    if (!hasSelection) {
-      Notification.warning("Vui lòng chọn ít nhất một danh mục để xóa");
-      return;
-    }
-
-    // Mở modal xác nhận thay vì dùng window.confirm
-    setShowBulkDeleteModal(true);
-  };
-
-  //! Xác nhận xóa bulk categories (HARD DELETE)
-  const handleConfirmBulkDelete = async () => {
-    try {
-      // getSelectedItems() trả về objects, cần extract IDs
-      const selectedCategoryObjects = getSelectedItems();
-      const selectedCategoryIds = selectedCategoryObjects.map(
-        (category) => category._id
-      );
-
-      // Thêm vào logic xóa vĩnh viễn ở store
-      for (const categoryId of selectedCategoryIds) {
-        await deleteCategory(categoryId); // Hard delete thay vì soft delete
-      }
-
-      await handleSyncCategoriesWithProducts(); // Đồng bộ sau khi xóa
-      Notification.success(`Đã xóa vĩnh viễn ${selectedCount} danh mục`);
-      clearSelection();
-      setShowBulkDeleteModal(false);
-      loadCategories(pagination.currentPage);
-    } catch (error) {
-      console.error("Bulk delete error:", error);
-      Notification.error("Xóa danh mục thất bại", error.message);
-    }
-  };
-
-  //! Hàm xử lý xóa vĩnh viễn danh mục (mở modal xác nhận xóa vĩnh viễn)
-  const handleDeleteCategory = (category) => {
-    setDeleteModalConfig({
-      type: "hard",
-      categoryId: category._id,
-      categoryName: category.name,
-      action: "hardDelete",
-    });
-    setShowDeleteModal(true);
-  };
-
-  //! Hàm xử lý xóa mềm danh mục (mở modal xác nhận chuyển trạng thái)
-  const handleSoftDeleteCategory = (category) => {
-    setDeleteModalConfig({
-      type: "soft",
-      categoryId: category._id,
-      categoryName: category.name,
-      action: "softDelete",
-    });
-    setShowDeleteModal(true);
-  };
-
-  //! Hàm xác nhận hành động xóa
-  const handleConfirmDelete = async () => {
-    try {
-      const { categoryId, action } = deleteModalConfig;
-
-      if (action === "softDelete") {
-        await softDeleteCategory(categoryId);
-        Notification.success("Đã thay đổi trạng thái danh mục!");
-        await handleSyncCategoriesWithProducts();
-      } else if (action === "hardDelete") {
-        await deleteCategory(categoryId);
-        Notification.success("Đã xóa danh mục vĩnh viễn!");
-        await handleSyncCategoriesWithProducts();
-      }
-
-      // Đóng modal và tải lại danh sách
-      setShowDeleteModal(false);
-      setDeleteModalConfig({
-        type: "soft",
-        categoryId: null,
-        categoryName: "",
-        action: null,
-      });
-      loadCategories(pagination.currentPage);
-    } catch (error) {
-      const errorMsg =
-        deleteModalConfig.action === "softDelete"
-          ? "Thay đổi trạng thái thất bại"
-          : "Xóa danh mục thất bại";
-      Notification.error(errorMsg, error.message);
-    }
-  };
-
-  //! Hàm đóng modal xóa
-  const handleCloseDeleteModal = () => {
-    if (!isLoading) {
-      setShowDeleteModal(false);
-      setDeleteModalConfig({
-        type: "soft",
-        categoryId: null,
-        categoryName: "",
-        action: null,
-      });
-    }
-  };
-
-  // Trạng thái lọc
+  // Trạng thái bộ lọc
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState("createdAt");
@@ -327,11 +177,10 @@ const AdminCategory = () => {
   // Phân trang
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  //! Hàm tải danh sách danh mục cho lần đầu (có notification)
-  const loadCategoriesInit = async (page = 1, limit = itemsPerPage) => {
+  //! Hàm tải danh sách topping cho lần đầu (có notification)
+  const loadToppingsInit = async (page = 1, limit = itemsPerPage) => {
     try {
       clearError();
-
       const params = {
         page,
         limit,
@@ -340,23 +189,23 @@ const AdminCategory = () => {
         sortBy,
         sortOrder,
       };
-
-      const result = await getAllCategories(params);
-      if (result && result.categories) {
+      const result = await fetchMyStoreToppings(params);
+      console.log("Fetched toppings:", result);
+      if (result.data && result.data.categories) {
         Notification.success(
-          `Tải thành công ${result.categories.length} danh mục.`
+          `Tải thành công ${result.data.toppings.length} topping.`
         );
       }
     } catch (error) {
       Notification.error(
-        "Không thể tải danh sách danh mục",
+        "Không thể tải danh sách topping",
         error?.message || "Đã xảy ra lỗi khi kết nối đến server."
       );
     }
   };
 
-  //! Hàm tải danh sách danh mục cho search/filter/pagination (không notification)
-  const loadCategories = async (page = 1, limit = itemsPerPage) => {
+  //! Hàm tải danh sách topping cho search/filter/pagination (không notification)
+  const loadToppings = async (page = 1, limit = itemsPerPage) => {
     try {
       clearError();
 
@@ -369,49 +218,28 @@ const AdminCategory = () => {
         sortOrder,
       };
 
-      const result = await getAllCategories(params);
+      const result = await fetchMyStoreToppings(params);
     } catch (error) {
       Notification.error(
-        "Không thể tải danh sách danh mục",
+        "Không thể tải danh sách topping",
         error?.message || "Đã xảy ra lỗi khi kết nối đến server."
       );
     }
   };
 
-  //! Hàm xử lý đồng bộ danh mục với sản phẩm
-  const handleSyncCategoriesWithProducts = async () => {
-    try {
-      await syncCategoriesWithProducts();
-      Notification.success("Đồng bộ danh mục với sản phẩm thành công!");
-    } catch (error) {
-      Notification.error(
-        "Đồng bộ danh mục với sản phẩm thất bại",
-        error.message
-      );
-    }
-  };
-
-  //! Xử lý chuyển trạng thái danh mục
-  const handleToggleStatus = async (category) => {
-    try {
-      handleSoftDeleteCategory(category);
-    } catch (error) {
-      Notification.error("Cập nhật trạng thái thất bại", error.message);
-    }
-  };
-
-  //! Xử lý tìm kiếm với debounce
+  //! Load data lần đầu khi component mount (với protection)
   useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      loadCategories(1);
-    }, 500);
-
-    return () => clearTimeout(debounceTimer);
-  }, [searchTerm, statusFilter, sortBy, sortOrder]);
+    if (!isInitLoaded.current) {
+      isInitLoaded.current = true;
+      loadToppingsInit(1);
+    } else {
+      console.log("⚠️ Prevented duplicate load");
+    }
+  }, []); // Chỉ chạy một lần khi component mount
 
   //! Xử lý chuyển trang
   const handlePageChange = (newPage) => {
-    loadCategories(newPage);
+    loadToppings(newPage);
   };
 
   const nextPage = () => {
@@ -426,14 +254,6 @@ const AdminCategory = () => {
     }
   };
 
-  //! Tải dữ liệu ban đầu khi component mount
-  useEffect(() => {
-    if (!isInitLoaded.current) {
-      loadCategoriesInit();
-      isInitLoaded.current = true;
-    }
-  }, []); // Chỉ chạy một lần khi component mount
-
   // Checkbox selection hook
   const {
     selectedItems,
@@ -445,19 +265,19 @@ const AdminCategory = () => {
     isItemSelected,
     isAllSelected,
     getSelectedItems,
-  } = useTableCheckbox(categories, "_id");
+  } = useTableCheckbox(toppings, "_id");
 
   // State cho expand description
   const [expandedDescriptions, setExpandedDescriptions] = useState(new Set());
 
   //! Xử lý expand/collapse description
-  const toggleDescription = (categoryId) => {
+  const toggleDescription = (toppingId) => {
     setExpandedDescriptions((prev) => {
       const newSet = new Set(prev);
-      if (newSet.has(categoryId)) {
-        newSet.delete(categoryId);
+      if (newSet.has(toppingId)) {
+        newSet.delete(toppingId);
       } else {
-        newSet.add(categoryId);
+        newSet.add(toppingId);
       }
       return newSet;
     });
@@ -473,32 +293,32 @@ const AdminCategory = () => {
             {/* Title */}
             <div>
               <h3 className="text-lg font-semibold text-gray-800">
-                Danh sách danh mục
+                Danh sách topping
               </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Theo dõi danh mục của bạn để thêm vào sản phẩm.
+                Theo dõi topping của bạn để thêm vào sản phẩm.
               </p>
             </div>
             {/* Nút tác vụ */}
             <div className="flex gap-4 flex-wrap">
-              {/* Xóa danh mục */}
+              {/* Xóa topping */}
               <div className="flex gap-2">
                 <button
-                  onClick={handleDeleteSelectedCategories}
+                  // onClick={handleDeleteSelectedToppings}
                   className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 font-semibold flex items-center gap-2"
                   disabled={isLoading}
                 >
                   <Trash2 className="w-4 h-4" />
-                  Xóa danh mục đã chọn ({selectedCount})
+                  Xóa topping đã chọn ({selectedCount})
                 </button>
               </div>
-              {/* Thêm danh mục */}
+              {/* Thêm topping */}
               <button
                 onClick={() => setShowAddModal(true)}
                 className="bg-green_starbuck text-white px-4 py-2 rounded hover:bg-green_starbuck/80 flex items-center gap-2"
               >
-                <Tags className="w-4 h-4" />
-                Thêm danh mục
+                <CupSoda className="w-4 h-4" />
+                Thêm topping
               </button>
             </div>
           </div>
@@ -508,7 +328,7 @@ const AdminCategory = () => {
               <div className="flex items-center justify-around p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <div className="flex items-center gap-3">
                   <span className="text-blue-700 font-medium">
-                    Đã chọn {selectedCount} danh mục
+                    Đã chọn {selectedCount} topping
                   </span>
                   <button
                     onClick={clearSelection}
@@ -530,7 +350,7 @@ const AdminCategory = () => {
                 <div className="relative flex-1 sm:flex-auto">
                   <input
                     type="text"
-                    placeholder="Tìm kiếm tên danh mục..."
+                    placeholder="Tìm kiếm tên topping..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="px-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pl-10"
@@ -615,7 +435,7 @@ const AdminCategory = () => {
                   )}
                   onChange={(opt) => {
                     setItemsPerPage(opt.value);
-                    loadCategories(1, opt.value); // Load page 1 với limit mới
+                    loadToppings(1, opt.value); // Load page 1 với limit mới
                   }}
                   placeholder="Chọn số lượng..."
                   className="min-w-[180px] z-10"
@@ -646,7 +466,7 @@ const AdminCategory = () => {
           </div>
 
           {/* Trạng thái tải */}
-          {isLoading && categories.length === 0 && (
+          {isLoading && toppings.length === 0 && (
             <div className="flex justify-center items-center py-8">
               <div className="flex items-center">
                 <svg
@@ -668,19 +488,17 @@ const AdminCategory = () => {
                     d="M4 12a8 8 0 018-8v8H4z"
                   />
                 </svg>
-                Đang tải danh mục...
+                Đang tải topping...
               </div>
             </div>
           )}
 
-          {/* Bảng danh mục */}
+          {/* Bảng topping */}
           <div className="overflow-x-auto">
             {/* Container bảng, hỗ trợ cuộn ngang nếu bảng quá rộng */}
-            {categories.length === 0 && !isLoading ? (
+            {toppings.length === 0 && !isLoading ? (
               <p className="text-center text-gray-600 text-lg py-8">
-                {searchTerm
-                  ? "Không tìm thấy danh mục nào"
-                  : "Chưa có danh mục"}
+                {searchTerm ? "Không tìm thấy topping nào" : "Chưa có topping"}
               </p>
             ) : (
               <table className="min-w-full divide-y divide-gray-200">
@@ -703,13 +521,22 @@ const AdminCategory = () => {
                       Tên
                     </th>
                     <th className="p-3 text-md text-start font-semibold text-green_starbuck">
+                      Giá thêm
+                    </th>
+                    <th className="p-3 text-md text-start font-semibold text-green_starbuck">
                       Mô tả
                     </th>
                     <th className="p-3 text-md font-semibold text-green_starbuck">
-                      Trạng thái
+                      Hệ thống
                     </th>
                     <th className="p-3 text-md font-semibold text-green_starbuck">
-                      Ngày tạo
+                      Cửa hàng
+                    </th>
+                    <th className="p-3 text-md font-semibold text-green_starbuck">
+                      Ngày thêm
+                    </th>
+                    <th className="p-3 text-md font-semibold text-green_starbuck">
+                      Cập nhật
                     </th>
                     <th className="p-3 text-md font-semibold text-green_starbuck">
                       <div className="flex items-center justify-center">
@@ -720,18 +547,18 @@ const AdminCategory = () => {
                 </thead>
                 {/* Phần thân bảng */}
                 <tbody className="divide-y divide-gray-100 border-b-2 border-gray-200">
-                  {categories.map((category) => (
+                  {toppings.map((topping) => (
                     <tr
-                      key={category._id}
+                      key={topping._id}
                       className="hover:bg-gray-50 text-center"
                     >
-                      {/* Hiển thị tickbox từng danh mục */}
+                      {/* Hiển thị tickbox từng topping */}
                       <td className="p-3">
                         <button
-                          onClick={() => toggleSelectItem(category._id)}
+                          onClick={() => toggleSelectItem(topping._id)}
                           className="flex items-center justify-center w-full"
                         >
-                          {isItemSelected(category._id) ? (
+                          {isItemSelected(topping._id) ? (
                             <CheckSquare className="w-5 h-5 text-blue-600" />
                           ) : (
                             <Square className="w-5 h-5 text-gray-400" />
@@ -741,7 +568,12 @@ const AdminCategory = () => {
 
                       {/* Tên */}
                       <td className="p-3 text-sm text-dark_blue font-semibold text-left">
-                        {category.name || "Không có tên"}
+                        {topping.name || "Không có tên"}
+                      </td>
+
+                      {/* Giá thêm */}
+                      <td className="p-3 text-lg text-orange-600 text-start font-bold">
+                        {topping.extraPrice.toLocaleString()} VNĐ
                       </td>
 
                       {/* Mô tả */}
@@ -749,20 +581,20 @@ const AdminCategory = () => {
                         <div>
                           <div
                             className={
-                              expandedDescriptions.has(category._id)
+                              expandedDescriptions.has(topping._id)
                                 ? ""
                                 : "line-clamp-2"
                             }
                           >
-                            {category.description || "Không có mô tả"}
+                            {topping.description || "Không có mô tả"}
                           </div>
-                          {category.description &&
-                            category.description.length > 100 && (
+                          {topping.description &&
+                            topping.description.length > 100 && (
                               <button
-                                onClick={() => toggleDescription(category._id)}
+                                onClick={() => toggleDescription(topping._id)}
                                 className="text-blue-600 hover:underline text-sm mt-1"
                               >
-                                {expandedDescriptions.has(category._id)
+                                {expandedDescriptions.has(topping._id)
                                   ? "Thu gọn"
                                   : "Xem thêm"}
                               </button>
@@ -770,31 +602,51 @@ const AdminCategory = () => {
                         </div>
                       </td>
 
-                      {/* Trạng thái */}
+                      {/* Trạng thái (Admin) */}
                       <td className="p-3 min-w-[140px]">
                         <span
                           className={`px-2 py-1 text-sm rounded font-semibold ${
-                            category.status === "available"
+                            topping.status === "available"
                               ? "text-green-700 bg-green-100"
                               : "text-red-700 bg-red-100"
                           }`}
                         >
-                          {category.status === "available"
+                          {topping.status === "available"
                             ? "Đang sử dụng"
                             : "Ngừng sử dụng"}
                         </span>
                       </td>
 
-                      {/* Hiển thị ngày */}
+                      {/* Trạng thái (Store Manager) */}
+                      <td className="p-3 min-w-[140px]">
+                        <span
+                          className={`px-2 py-1 text-sm rounded font-semibold ${
+                            topping.storeStatus === "available"
+                              ? "text-green-700 bg-green-100"
+                              : "text-red-700 bg-red-100"
+                          }`}
+                        >
+                          {topping.storeStatus === "available"
+                            ? "Đang sử dụng"
+                            : "Ngừng sử dụng"}
+                        </span>
+                      </td>
+
+                      {/* Hiển thị ngày thêm */}
                       <td className="p-3 text-md text-dark_blue">
-                        {formatNiceDate(category.createdAt)}
+                        {formatNiceDate(topping.addedAt)}
+                      </td>
+
+                      {/* Hiển thị ngày cập nhật */}
+                      <td className="p-3 text-md text-dark_blue">
+                        {formatNiceDate(topping.lastUpdatedAt) || "Chưa cập nhật"}
                       </td>
 
                       {/* Hành động */}
                       <td className="p-3">
                         <div className="flex items-center justify-center space-x-2">
                           <button
-                            onClick={() => handleEditCategory(category)}
+                            onClick={() => handleEditTopping(topping)}
                             className="text-blue-600 hover:text-blue-800"
                             disabled={isLoading}
                             title="Chỉnh sửa"
@@ -803,10 +655,10 @@ const AdminCategory = () => {
                           </button>
 
                           <Switch
-                            checked={category.status === "available"}
-                            onChange={() => handleToggleStatus(category)}
+                            checked={topping.status === "available"}
+                            onChange={() => handleToggleStatus(topping)}
                             className={`${
-                              category.status === "available"
+                              topping.status === "available"
                                 ? "bg-green-500"
                                 : "bg-red-400"
                             } relative inline-flex h-6 w-11 items-center rounded-full transition`}
@@ -816,7 +668,7 @@ const AdminCategory = () => {
                             </span>
                             <span
                               className={`${
-                                category.status === "available"
+                                topping.status === "available"
                                   ? "translate-x-6"
                                   : "translate-x-1"
                               } inline-block h-4 w-4 transform bg-white rounded-full transition`}
@@ -824,10 +676,10 @@ const AdminCategory = () => {
                           </Switch>
 
                           <button
-                            onClick={() => handleDeleteCategory(category)}
+                            onClick={() => handleDeleteTopping(topping)}
                             className="text-red-600 hover:text-red-800"
                             disabled={isLoading}
-                            title="Thay đổi trạng thái"
+                            title="Xóa vĩnh viễn"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -842,7 +694,7 @@ const AdminCategory = () => {
 
           {/* Phân trang */}
           {pagination.totalPages > 1 && (
-            <div className="flex justify-between items-center mt-4 flex-col border-t border-gray-200 px-5 py-4 sm:flex-row dark:border-gray-800">
+            <div className="flex justify-between items-center mt-4 flex-col border-t border-gray-200 px-5 py-4 sm:flex-row">
               <button
                 onClick={prevPage}
                 disabled={!pagination.hasPrevPage || isLoading}
@@ -881,9 +733,9 @@ const AdminCategory = () => {
               {/* Thông tin kết quả */}
               <div className="flex items-center gap-4">
                 <div className="mb-4 text-sm text-gray-600 font-semibold flex items-center">
-                  Hiển thị {categories.length} /{" "}
-                  {pagination.totalCategories || 0} danh mục (Trang{" "}
-                  {pagination.currentPage || 1} / {pagination.totalPages || 1})
+                  Hiển thị {toppings.length} / {pagination.totalToppings || 0}{" "}
+                  topping (Trang {pagination.currentPage || 1} /{" "}
+                  {pagination.totalPages || 1})
                 </div>
                 <button
                   onClick={nextPage}
@@ -897,124 +749,8 @@ const AdminCategory = () => {
           )}
         </div>
       </div>
-
-      {/* Modal thêm/sửa/xóa */}
-      {showAddModal && (
-        <AddCategoryModal
-          onAdd={handleAddCategory}
-          onClose={() => setShowAddModal(false)}
-          isLoading={isLoading}
-        />
-      )}
-
-      {showEditModal && editingCategory && (
-        <EditCategoryModal
-          category={editingCategory}
-          onUpdate={handleUpdateCategory}
-          onClose={() => {
-            setShowEditModal(false);
-            setEditingCategory(null);
-          }}
-          isLoading={isLoading}
-        />
-      )}
-
-      {/* Modal xác nhận xóa bulk */}
-      {showBulkDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-center mb-4">
-              <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                <Trash2 className="w-6 h-6 text-red-600" />
-              </div>
-              <div className="ml-3">
-                <h3 className="text-lg font-medium text-gray-900">
-                  Xác nhận xóa vĩnh viễn
-                </h3>
-              </div>
-            </div>
-
-            <div className="mb-4">
-              <p className="text-sm text-gray-500">
-                Bạn có chắc chắn muốn{" "}
-                <span className="font-bold text-red-600">XÓA VĨNH VIỄN</span>{" "}
-                <span className="font-semibold text-red-600">
-                  {selectedCount}
-                </span>{" "}
-                danh mục được chọn không?
-              </p>
-              <p className="text-xs text-gray-400 mt-2">
-                <span className="font-semibold text-red-600">Cảnh báo:</span>{" "}
-                Hành động này KHÔNG THỂ hoàn tác!
-              </p>
-            </div>
-
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowBulkDeleteModal(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                disabled={isLoading}
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleConfirmBulkDelete}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <span className="flex items-center">
-                    <svg
-                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8v8H4z"
-                      />
-                    </svg>
-                    Đang xử lý...
-                  </span>
-                ) : (
-                  "Xóa vĩnh viễn"
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal xác nhận xóa */}
-      <ConfirmDeleteModal
-        isOpen={showDeleteModal}
-        onClose={handleCloseDeleteModal}
-        onConfirm={handleConfirmDelete}
-        isLoading={isLoading}
-        deleteType={deleteModalConfig.type}
-        itemName={deleteModalConfig.categoryName}
-        message={
-          deleteModalConfig.type === "soft"
-            ? "Bạn có chắc muốn thay đổi trạng thái danh mục này không?"
-            : "Bạn có chắc muốn XÓA VĨNH VIỄN danh mục này không?"
-        }
-        confirmText={
-          deleteModalConfig.type === "soft"
-            ? "Thay đổi trạng thái"
-            : "Xóa vĩnh viễn"
-        }
-      />
     </>
   );
 };
 
-export default AdminCategory;
+export default ManagerTopping;

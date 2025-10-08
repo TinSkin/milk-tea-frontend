@@ -4,13 +4,9 @@ import { useEffect, useState, useRef } from "react";
 // Import các icon từ thư viện lucide-react để dùng trong giao diện
 import {
   Pencil,
-  Plus,
   CupSoda,
-  Clock,
   SortAsc,
   SortDesc,
-  Tag,
-  DollarSign,
   CheckCircle2,
   Ban,
   ListOrdered,
@@ -19,9 +15,6 @@ import {
   Settings,
   CheckSquare,
   Square,
-  Eye,
-  Check,
-  Tags,
 } from "lucide-react";
 import { Switch } from "@headlessui/react";
 import Select from "react-select";
@@ -332,11 +325,13 @@ const AdminTopping = () => {
     }
   };
 
-  // Trạng thái bộ lọc và phân trang
+  // Trạng thái bộ lọc
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState("desc");
+
+  // Phân trang
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   //! Hàm tải danh sách topping cho lần đầu (có notification)
@@ -469,19 +464,6 @@ const AdminTopping = () => {
 
   return (
     <>
-      {/* Tiêu đề */}
-      <div className="bg-green_starbuck/80 text-white px-5 py-4 shadow-md -mt-6 -mx-6 mb-6">
-        <div className="max-w-[110rem] mx-auto flex">
-          {/* Title */}
-          <div className="flex items-center gap-3 flex-1 pl-3">
-            <CupSoda className="w-5 h-5" />
-            <h1 className="text-md font-montserrat font-semibold capitalize tracking-tight pb-1 border-b-2 border-camel inline-block">
-              Quản lý topping
-            </h1>
-          </div>
-        </div>
-      </div>
-
       {/* Content chính */}
       <div className="px-5 pt-4 pb-6">
         <div className="font-roboto max-w-[110rem] mx-auto mt-10 bg-white rounded-lg shadow border-2">

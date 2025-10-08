@@ -14,8 +14,6 @@ import {
   DollarSign,
   ListOrdered,
   ChevronDown,
-  ChevronUp,
-  Check,
   Square,
   CheckSquare,
   Settings,
@@ -657,19 +655,6 @@ const AdminProduct = () => {
 
   return (
     <>
-      {/* Tiêu đề */}
-      <div className="bg-green_starbuck/80 text-white px-5 py-4 shadow-md -mt-6 -mx-6 mb-6">
-        <div className="max-w-[110rem] mx-auto flex">
-          {/* Tiêu đề */}
-          <div className="flex items-center gap-3 flex-1 pl-3">
-            <Package className="w-5 h-5" />
-            <h1 className="text-md font-montserrat font-semibold capitalize tracking-tight pb-1 border-b-2 border-camel inline-block">
-              Quản lý sản phẩm
-            </h1>
-          </div>
-        </div>
-      </div>
-
       {/* Content chính */}
       <div className="px-5 pt-4 pb-6">
         <div className="font-roboto max-w-[110rem] mx-auto mt-10 bg-white rounded-lg shadow border-2">

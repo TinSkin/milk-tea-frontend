@@ -1,4 +1,3 @@
-// components/Admin/ConfirmDeleteModal.jsx
 import React from "react";
 import { X, Trash2, AlertTriangle } from "lucide-react";
 

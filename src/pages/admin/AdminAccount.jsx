@@ -27,6 +27,8 @@ import {
   SortDesc,
   SortAsc,
   ListOrdered,
+  CheckSquare,
+  Square,
 } from "lucide-react";
 
 // Import stores để quản lý trạng thái
@@ -34,7 +36,10 @@ import { useUserStore } from "../../store/userStore";
 
 // Import component
 import Notification from "../../components/ui/Notification";
-import ViewUserModal from "../../components/features/admin/account/ViewUserModal";
+import ViewUserModal from "../../components/features/ecommerce/accounts/ViewUserModal";
+
+// Import utilities và hooks
+import { useTableCheckbox } from "../../utils/hooks/useCheckboxSelection";
 
 // Tùy chọn sắp xếp
 const sortOptions = [
@@ -238,23 +243,17 @@ const itemsPerPageOptions = [
 const AdminAccount = () => {
   const isInitLoaded = useRef(false);
 
-  // Trạng thái thống kê
-  const [stats, setStats] = useState({
-    totalCustomers: 0,
-    activeCustomers: 0,
-    inactiveCustomers: 0,
-  });
-
   // Store quản lý tài khoản
   const { users, isLoading, pagination, getAllUsers, clearError } =
     useUserStore();
 
-  // Trạng thái các modal
-  const [showViewModal, setShowViewModal] = useState(false);
+  // Trạng thái xem thông tin user modal
   const [viewingUser, setViewingUser] = useState(null);
+  const [showViewModal, setShowViewModal] = useState(false);
 
   //! Xử lý xem chi tiết người dùng
   const handleViewUser = (user) => {
+    console.log("user to view:", user.role);
     setViewingUser(user);
     setShowViewModal(true);
   };
@@ -350,6 +349,13 @@ const AdminAccount = () => {
   const [sortOrder, setSortOrder] = useState("desc");
   const [verifiedFilter, setVerifiedFilter] = useState("all");
 
+  // Trạng thái thống kê
+  const [stats, setStats] = useState({
+    totalCustomers: 0,
+    activeCustomers: 0,
+    inactiveCustomers: 0,
+  });
+
   // Phân trang
   const [itemsPerPage, setItemsPerPage] = useState(5);
 
@@ -406,13 +412,12 @@ const AdminAccount = () => {
       };
 
       const result = await getAllUsers(params); // Gọi API để lấy danh sách người dùng
-      setStats(
-        result.stats || {
-          totalCustomers: 0,
-          activeCustomers: 0,
-          inactiveCustomers: 0,
-        }
-      );
+      const fetchStats = result.stats || {
+        totalCustomers: 0,
+        activeCustomers: 0,
+        inactiveCustomers: 0,
+      };
+      setStats(fetchStats);
     } catch (error) {
       Notification.error(
         "Không thể tải danh sách tài khoản",
@@ -424,7 +429,8 @@ const AdminAccount = () => {
   //! Xử lý tìm kiếm với debounce
   useEffect(() => {
     const debounceTimer = setTimeout(() => {
-      loadUsers(1); // Reset to page 1 when searching
+      // Trở về trang 1 khi tìm kiếm
+      loadUsers(1);
     }, 500);
 
     return () => clearTimeout(debounceTimer);
@@ -447,30 +453,30 @@ const AdminAccount = () => {
     }
   };
 
+  // Checkbox selection hook
+  const {
+    selectedItems,
+    selectedCount,
+    hasSelection,
+    toggleSelectItem,
+    toggleSelectAll,
+    clearSelection,
+    isItemSelected,
+    isAllSelected,
+    getSelectedItems,
+  } = useTableCheckbox(users, "_id");
+
   //! Tải dữ liệu ban đầu khi component mount
   useEffect(() => {
-    // Load initial data
+    // Gọi hàm loadUsersInit để tải danh sách tài khoản (gọi 1 lần và sẽ không gọi lại)
     if (!isInitLoaded.current) {
       isInitLoaded.current = true;
       loadUsersInit(1);
-    } // Gọi hàm loadUsersInit để tải danh sách tài khoản (Gọi 1 lần)
+    }
   }, []); // Chạy lại khi navigate thay đổi
 
   return (
     <>
-      {/* Tiêu đề */}
-      <div className="bg-green_starbuck/80 text-white px-5 py-4 shadow-md -mt-6 -mx-6 mb-6">
-        <div className="max-w-[110rem] mx-auto flex">
-          {/* Title */}
-          <div className="flex items-center gap-3 flex-1 pl-3">
-            <UserRound className="w-5 h-5" />
-            <h1 className="text-md font-montserrat font-semibold capitalize tracking-tight pb-1 border-b-2 border-camel inline-block">
-              Quản lý tài khoản
-            </h1>
-          </div>
-        </div>
-      </div>
-
       {/* Content chính */}
       <div className="px-5 pt-4 pb-6">
         <div className="font-roboto max-w-[110rem] mx-auto mt-10 bg-white rounded-lg shadow border-2">
@@ -788,6 +794,17 @@ const AdminAccount = () => {
                 <thead>
                   {/* Phần tiêu đề bảng */}
                   <tr className="border-b-2 border-gray-200">
+                    <th className="w-12 px-3 py-4 text-left">
+                      {/* Chọn tất cả */}
+                      <label className="inline-flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={isAllSelected()}
+                          onChange={toggleSelectAll}
+                          className="w-4 h-4 rounded border-gray-300 text-green_starbuck focus:ring-green_starbuck"
+                        />
+                      </label>
+                    </th>
                     <th className="p-3 text-md text-start font-semibold text-green_starbuck">
                       Tên đăng nhập
                     </th>
@@ -823,6 +840,20 @@ const AdminAccount = () => {
                         key={user._id}
                         className="hover:bg-gray-50 text-center"
                       >
+                        {/* Hiển thị tickbox từng topping */}
+                        <td className="p-3">
+                          <button
+                            onClick={() => toggleSelectItem(user._id)}
+                            className="flex items-center justify-center w-full"
+                          >
+                            {isItemSelected(user._id) ? (
+                              <CheckSquare className="w-5 h-5 text-blue-600" />
+                            ) : (
+                              <Square className="w-5 h-5 text-gray-400" />
+                            )}
+                          </button>
+                        </td>
+
                         {/* Hiển thị tên tài khoản */}
                         <td className="p-3 text-sm text-dark_blue font-semibold text-left">
                           {user.userName || "-"}
@@ -1005,13 +1036,16 @@ const AdminAccount = () => {
         </div>
       </div>
 
+      {/* Modal xem thông tin người dùng */}
       {showViewModal && viewingUser && (
         <ViewUserModal
           user={viewingUser}
+          viewerRole="admin"
           onClose={() => {
             setShowViewModal(false);
             setViewingUser(null);
           }}
+          className=""
         />
       )}
     </>
