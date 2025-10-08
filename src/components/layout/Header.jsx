@@ -133,14 +133,22 @@ function Header() {
                     {user.email}
                   </div>
                 </div>
-                <div className="py-2">
+                <div className="">
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="block w-full bg-camel text-white px-4 py-2 rounded hover:bg-logo_color transition font-semibold"
+                    className="block w-full bg-camel text-white px-4 py-2  hover:bg-logo_color transition font-semibold"
                   >
                     Đăng xuất
                   </button>
+                </div>
+                <div>
+                  <Link
+                    to="/orderhistory"
+                    className="block w-full bg-camel text-white px-4 py-2 hover:bg-logo_color transition font-semibold text-center"
+                  >
+                    Lịch sử đơn hàng
+                  </Link>
                 </div>
               </div>
             </div>

@@ -20,6 +20,8 @@ import Cart from "./pages/Cart";
 import Promotion from "./pages/Promotion";
 import Checkout from "./pages/Checkout";
 import OrderTracking from "./pages/OrderTracking";
+import OrderHistory from "./pages/OrderHistory";
+
 
 // Verification Pages
 import VerificationChoice from "./pages/verification/VerificationChoice";
@@ -135,6 +137,7 @@ function App() {
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/unauthorized" element={<Unauthorized />} />{" "}
         <Route path="*" element={<NotFound />} />{" "}
+        <Route path="/order-history-test" element={<OrderHistory />} />
         {/* //* ------ Customer Route (Registered Customer access is required) ------*/}
         <Route element={<PrivateRoute permittedRole="customer" />}>
           {/* Trang giỏ hàng */}
@@ -143,6 +146,8 @@ function App() {
           <Route path="/checkout" element={<Checkout />} />
           {/* Trang theo dõi đơn hàng*/}
           <Route path="/order-tracking/:id" element={<OrderTracking />} />
+             {/* Trang xem lịch sử đơn hàng*/}
+          <Route path="/order-history" element={<OrderHistory />} />
         </Route>
         {/* //* ------ Manager Route (Manager access is required) ------ */}
         <Route element={<PrivateRoute permittedRole="storeManager" />}>
