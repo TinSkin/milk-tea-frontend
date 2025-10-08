@@ -137,7 +137,7 @@ export default function OrderTracking() {
             <h2 className="text-2xl font-extrabold text-[#e2cda2] mb-4">
               Địa chỉ giao hàng
             </h2>
-            <p className="font-medium text-white">
+            <p className="font-medium text-white mb-4">
               {order.shippingAddress?.fullName || "Người nhận"} -{" "}
               {order.shippingAddress?.phone || "Số điện thoại"}
             </p>
@@ -162,10 +162,10 @@ export default function OrderTracking() {
                   className="w-20 h-20 rounded-lg object-cover"
                 />
                 <div>
-                  <p className="font-medium text-white">
+                  <p className="font-medium text-white mb-4">
                     {item.productName || "Sản phẩm"}
                   </p>
-                  <p className="font-medium text-white">
+                  <p className="font-medium text-white mb-4">
                     Số lượng: {item.quantity || 0}
                   </p>
                   <p className="font-medium text-white">
@@ -203,8 +203,8 @@ export default function OrderTracking() {
             </button>
           </div>
 
-          <Footer />
         </div>
+        <Footer />
       </div>
     </>
   );
