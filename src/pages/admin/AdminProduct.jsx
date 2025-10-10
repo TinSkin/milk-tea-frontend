@@ -39,6 +39,10 @@ import EditProductModal from "../../components/features/admin/product/EditProduc
 import ConfirmDeleteModal from "../../components/features/admin/ConfirmDeleteModal";
 import ViewToppingsModal from "../../components/features/admin/product/ViewToppingsModal";
 
+//Import component layouts
+import LoadingSpinner from "../../layouts/components/LoadingSpinner";
+import Pagination from "../../layouts/components/Pagination";
+
 // Import utilities và hooks
 import { formatNiceDate } from "../../utils/helpers/dateFormatter";
 import { useTableCheckbox } from "../../utils/hooks/useCheckboxSelection";
@@ -105,7 +109,7 @@ const itemsPerPageOptions = [
 
 const AdminProduct = () => {
   const isInitLoaded = useRef(false);
-  
+
   // Trạng thái của stores
   const {
     products,
@@ -263,6 +267,11 @@ const AdminProduct = () => {
 
   // Trạng thái modal xóa hàng loạt
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+
+  //! Xử lý chuyển trang
+  const handlePageChange = (newPage) => {
+    loadProducts(newPage);
+  };
 
   //! Hàm xử lý xóa mềm các sản phẩm được chọn
   const handleSoftDeleteSelectedProducts = async () => {
@@ -545,23 +554,6 @@ const AdminProduct = () => {
     return () => clearTimeout(timer);
   }, [searchTerm2, statusFilter2, categoryFilter2, sortOption2, itemsPerPage2]);
 
-  //! Xử lý phân trang
-  const handlePageChange = (page) => {
-    loadProducts(page);
-  };
-
-  const nextPage = () => {
-    if (pagination.hasNextPage) {
-      handlePageChange(pagination.currentPage + 1);
-    }
-  };
-
-  const prevPage = () => {
-    if (pagination.hasPrevPage) {
-      handlePageChange(pagination.currentPage - 1);
-    }
-  };
-
   //! Xử lý chuyển trạng thái sản phẩm
   const handleToggleStatus = async (product) => {
     try {
@@ -623,35 +615,6 @@ const AdminProduct = () => {
       clearError();
     }
   }, [error, clearError]);
-
-  //! Hàm render các nút số trang
-  const renderPaginationNumbers = () => {
-    const pages = [];
-    const totalPages = pagination.totalPages;
-    const currentPage = pagination.currentPage;
-
-    // Hiển thị tối đa 5 số trang
-    const startPage = Math.max(1, currentPage - 2);
-    const endPage = Math.min(totalPages, startPage + 4);
-
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(
-        <button
-          key={i}
-          onClick={() => handlePageChange(i)}
-          className={`px-3 py-1 rounded font-semibold ${
-            currentPage === i
-              ? "bg-green_starbuck text-white"
-              : "bg-gray-200 hover:bg-gray-300"
-          }`}
-        >
-          {i}
-        </button>
-      );
-    }
-
-    return pages;
-  };
 
   return (
     <>
@@ -978,30 +941,7 @@ const AdminProduct = () => {
 
           {/* Trạng thái tải */}
           {isLoading && products.length === 0 && (
-            <div className="flex justify-center items-center py-8">
-              <div className="flex items-center">
-                <svg
-                  className="animate-spin h-6 w-6 mr-3 text-green_starbuck"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8v8H4z"
-                  />
-                </svg>
-                Đang tải sản phẩm...
-              </div>
-            </div>
+            <LoadingSpinner message="Đang tải danh sách sản phẩm..." />
           )}
 
           {/* Bảng sản phẩm */}
@@ -1253,36 +1193,14 @@ const AdminProduct = () => {
           </div>
 
           {/* Phân trang */}
-          {pagination.totalPages > 1 && (
-            <div className="flex justify-between items-center mt-4 flex-col border-t border-gray-200 px-5 py-4 sm:flex-row dark:border-gray-800">
-              <button
-                onClick={prevPage}
-                disabled={!pagination.hasPrevPage || isLoading}
-                className="px-4 py-2 bg-green_starbuck text-white rounded hover:bg-green_starbuck/80 disabled:bg-gray-400 font-semibold"
-              >
-                Trang trước
-              </button>
-
-              {/* Số trang */}
-              <div className="flex gap-2">{renderPaginationNumbers()}</div>
-
-              {/* Thông tin kết quả */}
-              <div className="flex items-center gap-4">
-                <div className="mb-4 text-sm text-gray-600 font-semibold flex items-center">
-                  Hiển thị {products.length} / {pagination.totalProducts || 0}{" "}
-                  sản phẩm (Trang {pagination.currentPage || 1} /{" "}
-                  {pagination.totalPages || 1})
-                </div>
-                <button
-                  onClick={nextPage}
-                  disabled={!pagination.hasNextPage || isLoading}
-                  className="px-4 py-2 bg-green_starbuck text-white rounded hover:bg-green_starbuck/80 disabled:bg-gray-400 font-semibold"
-                >
-                  Trang sau
-                </button>
-              </div>
-            </div>
-          )}
+          <Pagination
+            pagination={pagination}
+            isLoading={isLoading}
+            onPageChange={handlePageChange}
+            label="sản phẩm"
+            currentItemsCount={products.length}
+            totalItemsKey="totalProducts" 
+          />
         </div>
       </div>
 

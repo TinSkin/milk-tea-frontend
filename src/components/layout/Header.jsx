@@ -144,7 +144,7 @@ function Header() {
                 </div>
                 <div>
                   <Link
-                    to="/orderhistory"
+                    to="/order-history"
                     className="block w-full bg-camel text-white px-4 py-2 hover:bg-logo_color transition font-semibold text-center"
                   >
                     Lịch sử đơn hàng
