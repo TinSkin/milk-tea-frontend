@@ -28,6 +28,9 @@ import Select from "react-select";
 // Import stores để quản lý trạng thái
 import { useCategoryStore } from "../../store/categoryStore";
 
+//Import component layouts
+import LoadingSpinner from "../../layouts/components/LoadingSpinner";
+import Pagination from "../../layouts/components/Pagination";
 // Import component
 import Notification from "../../components/ui/Notification";
 import AddCategoryModal from "../../components/features/admin/category/AddCategoryModal";
@@ -414,18 +417,6 @@ const AdminCategory = () => {
     loadCategories(newPage);
   };
 
-  const nextPage = () => {
-    if (pagination.hasNextPage) {
-      handlePageChange(pagination.currentPage + 1);
-    }
-  };
-
-  const prevPage = () => {
-    if (pagination.hasPrevPage) {
-      handlePageChange(pagination.currentPage - 1);
-    }
-  };
-
   //! Tải dữ liệu ban đầu khi component mount
   useEffect(() => {
     if (!isInitLoaded.current) {
@@ -647,30 +638,7 @@ const AdminCategory = () => {
 
           {/* Trạng thái tải */}
           {isLoading && categories.length === 0 && (
-            <div className="flex justify-center items-center py-8">
-              <div className="flex items-center">
-                <svg
-                  className="animate-spin h-6 w-6 mr-3 text-green_starbuck"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8v8H4z"
-                  />
-                </svg>
-                Đang tải danh mục...
-              </div>
-            </div>
+             <LoadingSpinner message="Đang tải danh mục..." />
           )}
 
           {/* Bảng danh mục */}
@@ -841,60 +809,14 @@ const AdminCategory = () => {
           </div>
 
           {/* Phân trang */}
-          {pagination.totalPages > 1 && (
-            <div className="flex justify-between items-center mt-4 flex-col border-t border-gray-200 px-5 py-4 sm:flex-row dark:border-gray-800">
-              <button
-                onClick={prevPage}
-                disabled={!pagination.hasPrevPage || isLoading}
-                className="px-4 py-2 bg-green_starbuck text-white rounded hover:bg-green_starbuck/80 disabled:bg-gray-400 font-semibold"
-              >
-                Trang trước
-              </button>
-
-              {/* Số trang */}
-              <div className="flex gap-2">
-                {Array.from(
-                  { length: Math.min(5, pagination.totalPages) },
-                  (_, i) => {
-                    const pageNum = pagination.currentPage - 2 + i;
-                    if (pageNum > 0 && pageNum <= pagination.totalPages) {
-                      return (
-                        <button
-                          key={pageNum}
-                          onClick={() => handlePageChange(pageNum)}
-                          disabled={isLoading}
-                          className={`px-3 py-1 rounded font-semibold ${
-                            pagination.currentPage === pageNum
-                              ? "bg-green_starbuck text-white"
-                              : "bg-gray-200 hover:bg-gray-300"
-                          }`}
-                        >
-                          {pageNum}
-                        </button>
-                      );
-                    }
-                    return null;
-                  }
-                )}
-              </div>
-
-              {/* Thông tin kết quả */}
-              <div className="flex items-center gap-4">
-                <div className="mb-4 text-sm text-gray-600 font-semibold flex items-center">
-                  Hiển thị {categories.length} /{" "}
-                  {pagination.totalCategories || 0} danh mục (Trang{" "}
-                  {pagination.currentPage || 1} / {pagination.totalPages || 1})
-                </div>
-                <button
-                  onClick={nextPage}
-                  disabled={!pagination.hasNextPage || isLoading}
-                  className="px-4 py-2 bg-green_starbuck text-white rounded hover:bg-green_starbuck/80 disabled:bg-gray-400 font-semibold"
-                >
-                  Trang sau
-                </button>
-              </div>
-            </div>
-          )}
+          <Pagination
+  pagination={pagination}
+  isLoading={isLoading}
+  onPageChange={handlePageChange}
+  label="danh mục"
+  currentItemsCount={categories.length}
+  totalItemsKey="totalCategories" 
+/>
         </div>
       </div>
 
