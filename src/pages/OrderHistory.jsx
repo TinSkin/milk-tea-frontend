@@ -19,12 +19,12 @@ export default function OrderHistory() {
         setError(null);
         const res = await api.get("/orders/my-orders"); // backend cần route này
         // ✅ THÊM DEBUG
-      console.log("API Response:", res);
-      console.log("res.data:", res.data);
-      console.log("Type of res.data:", typeof res.data);
-      console.log("Is array?", Array.isArray(res.data));
-      
-      setOrders(res.data);
+        console.log("API Response:", res);
+        console.log("res.data:", res.data);
+        console.log("Type of res.data:", typeof res.data);
+        console.log("Is array?", Array.isArray(res.data));
+
+        setOrders(res.data.orders || []);
       } catch (err) {
         console.error("Lỗi lấy danh sách đơn hàng:", err);
         setError("Không thể tải lịch sử đơn hàng. Vui lòng thử lại!");
@@ -65,7 +65,9 @@ export default function OrderHistory() {
             <h1 className="text-4xl font-extrabold text-[#e2cda2] mb-2">
               Lịch sử đơn hàng
             </h1>
-            <p className="text-white">Theo dõi tất cả đơn hàng của bạn tại đây</p>
+            <p className="text-white">
+              Theo dõi tất cả đơn hàng của bạn tại đây
+            </p>
           </motion.div>
 
           {orders.length === 0 ? (
@@ -98,6 +100,24 @@ export default function OrderHistory() {
                         <Package className="h-5 w-5 text-[#e2cda2]" />
                         <span className="text-[#e2cda2] font-semibold">
                           Đơn hàng #{order.orderNumber || order._id.slice(-8)}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-3 mb-3">
+                        <Package className="h-5 w-5 text-[#e2cda2]" />
+                        <span className="text-white font-semibold">
+                          Trạng thái:{" "}
+                          <span
+                            className={`font-semibold ${
+                              order.status === "delivered"
+                                ? "text-green-400"
+                                : order.status === "cancelled"
+                                ? "text-red-400"
+                                : "text-yellow-300"
+                            }`}
+                          >
+                            {order.status}
+                          </span>
                         </span>
                       </div>
 

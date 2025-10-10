@@ -40,6 +40,9 @@ import EditStoreModal from "../../components/features/admin/store/EditStoreModal
 import ViewStoreModal from "../../components/features/admin/store/ViewStoreModal";
 import ConfirmDeleteModal from "../../components/features/admin/ConfirmDeleteModal";
 
+//Import component layouts
+import LoadingSpinner from "../../layouts/components/LoadingSpinner";
+
 // Import utilities và hooks
 import { formatNiceDate } from "../../utils/helpers/dateFormatter";
 import { useTableCheckbox } from "../../utils/hooks/useCheckboxSelection";
@@ -684,30 +687,7 @@ const AdminStore = () => {
 
           {/* Trạng thái tải */}
           {isLoading && stores.length === 0 && (
-            <div className="flex justify-center items-center py-8">
-              <div className="flex items-center">
-                <svg
-                  className="animate-spin h-6 w-6 mr-3 text-green_starbuck"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8v8H4z"
-                  />
-                </svg>
-                Đang tải cửa hàng...
-              </div>
-            </div>
+            <LoadingSpinner message="Đang tải cửa hàng..." />
           )}
 
           {/* Bảng cửa hàng */}
