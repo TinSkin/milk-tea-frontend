@@ -12,13 +12,13 @@ const useCartStore = create(
       //! 3. Khởi tạo các trạng thái mặc định
       items: [], // Mảng lưu trữ các sản phẩm trong giỏ hàng
       
-      // ✅ Thêm trạng thái lưu id các sản phẩm được tick chọn
+      // Thêm trạng thái lưu id các sản phẩm được tick chọn
       selectedItems: [],
 
-      // ✅ Set sản phẩm đã chọn
+      // Set sản phẩm đã chọn
       setSelectedItems: (selected) => set({ selectedItems: selected }),
 
-      // ✅ Lấy danh sách sản phẩm đã chọn
+      // Lấy danh sách sản phẩm đã chọn
       getSelectedItems: () => get().selectedItems,
 
       // helper: chuẩn hoá topping để so sánh
@@ -192,7 +192,7 @@ const useCartStore = create(
               mapToppingsForCompare(item.toppings) ===
               mapToppingsForCompare(oldItem.toppings)
             ) {
-              // 👉 Tính lại giá mới chỉ dựa vào size + topping
+              // Tính lại giá mới chỉ dựa vào size + topping
               const newSizePrice = updatedItem.sizeOptionPrice || 0;
               const toppingTotal = (updatedItem.toppings || []).reduce(
                 (s, t) => s + (t.extraPrice || 0),

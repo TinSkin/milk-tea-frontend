@@ -41,7 +41,7 @@ const itemsPerPageOptions = [
     value: 3,
     label: (
       <span className="flex items-center gap-2">
-        <ListOrdered className="w-4 h-4 text-camel" />3 / Trang
+        <ListOrdered className="w-4 h-4 text-camel" />4 / Trang
       </span>
     ),
   },
@@ -49,7 +49,7 @@ const itemsPerPageOptions = [
     value: 6,
     label: (
       <span className="flex items-center gap-2">
-        <ListOrdered className="w-4 h-4 text-camel" />6 / Trang
+        <ListOrdered className="w-4 h-4 text-camel" />8 / Trang
       </span>
     ),
   },
@@ -57,7 +57,7 @@ const itemsPerPageOptions = [
     value: 9,
     label: (
       <span className="flex items-center gap-2">
-        <ListOrdered className="w-4 h-4 text-camel" />9 / Trang
+        <ListOrdered className="w-4 h-4 text-camel" />12 / Trang
       </span>
     ),
   },
@@ -66,14 +66,14 @@ const itemsPerPageOptions = [
     label: (
       <span className="flex items-center gap-2">
         <ListOrdered className="w-4 h-4 text-camel" />
-        12 / Trang
+        16 / Trang
       </span>
     ),
   },
 ];
 
 function Menu() {
-  // Store selection
+  // Dữ liệu cửa hàng đã chọn
   const {
     selectedStore,
     loadStoreCategories,
@@ -82,7 +82,7 @@ function Menu() {
     isLoading: storeLoading,
   } = useStoreSelectionStore();
 
-  // Local state for UI - store-specific data management
+  // Trạng thái sản phẩm và danh mục - quản lý theo cửa hàng đã chọn
   const [productsList, setProductsList] = useState([]);
   const [allProducts, setAllProducts] = useState([]); // Tất cả sản phẩm để tính category count
   const [productsLoading, setProductsLoading] = useState(false);
@@ -95,7 +95,7 @@ function Menu() {
   const [sortOption, setSortOption] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(6); // Sync với defaultValue
+  const [itemsPerPage, setItemsPerPage] = useState(8); // Sync với defaultValue
   const [totalPages, setTotalPages] = useState(0);
   const [totalProducts, setTotalProducts] = useState(0);
 
@@ -265,7 +265,7 @@ function Menu() {
     return pages;
   };
 
-  //! Handle category selection
+  //! Xử lý khi chọn danh mục
   const handleCategorySelect = (categoryId) => {
     setSelectedCategory(categoryId);
     setCurrentPage(1);
@@ -296,7 +296,7 @@ function Menu() {
   // Kết hợp loading của products và categories
   const isLoading = productsLoading || categoriesLoading;
 
-  //! Load initial data on mount
+  //! Tải dữ liệu ban đầu khi component mount
   useEffect(() => {
     loadInitialData();
   }, []);
@@ -311,8 +311,9 @@ function Menu() {
 
   useEffect(() => {
     console.log(
-      "ProductsList & Categories state updated:",
+      "ProductsList state updated:",
       productsList,
+      "& Categories state updated:",
       categories
     );
   }, [productsList, categories]);
@@ -428,7 +429,7 @@ function Menu() {
                       {/* Categories Sidebar */}
                       {categories && categories.length > 0 ? (
                         categories
-                          .filter((cat) => cat.status === "available")
+                          .filter((cat) => cat.status === "active" || cat.status === "available") // Support both status types
                           .map((category) => {
                             const categoryProductCount = allProducts.filter(
                               (product) => {

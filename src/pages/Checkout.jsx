@@ -15,33 +15,40 @@ import Header from "../components/layout/Header";
 import CheckoutModal from "../components/features/ecommerce/CheckoutModal";
 import { useCartStore } from "../store/cartStore";
 import { useAuthStore } from "../store/authStore";
+import { useAddressStore } from "../store/addressStore";
 import api from "../api/axios";
 
+import AddressSelector from "../components/features/logistic/address/AddressSelector";
+
 const CheckoutPage = () => {
+  // Lấy thông tin từ Zustand store
   const { user, isAuthenticated } = useAuthStore();
+  const {
+    selectedProvince,
+    selectedDistrict,
+    selectedWard,
+    street,
+    coordinates,
+  } = useAddressStore();
   const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);  
+  const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState({});
   const items = useCartStore((s) => s.items);
   const selectedItems = useCartStore((s) => s.selectedItems);
   const getSelectedTotal = useCartStore((s) => s.getSelectedTotal);
 
-
-
-
+  //! Hàm tạo key duy nhất cho mỗi item (dùng để lọc selectedItems)
   const getItemKey = (item) =>
     `${item.id}__${item.sizeOption || "M"}__${JSON.stringify(
       item.toppings || []
     )}`;
-
 
   const checkoutItems = items.filter((it) =>
     selectedItems && selectedItems.length > 0
       ? selectedItems.includes(getItemKey(it))
       : true
   );
-
 
   const [formData, setFormData] = useState({
     fullName: user?.name || "",
@@ -55,9 +62,7 @@ const CheckoutPage = () => {
     notes: "",
   });
 
-
-
-
+  //!  Định dạng tiền tệ
   const formatPrice = (price) =>
     new Intl.NumberFormat("vi-VN", {
       style: "currency",
@@ -66,7 +71,7 @@ const CheckoutPage = () => {
       maximumFractionDigits: 0,
     }).format(price);
 
-
+  //! Xử lí khi thay đổi input
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -75,26 +80,38 @@ const CheckoutPage = () => {
     }
   };
 
+  //! Validate form trước khi mở modal
   const validateForm = () => {
     const newErrors = {};
 
-
+    // Validate thông tin cơ bản
     if (!formData.fullName.trim())
       newErrors.fullName = "Vui lòng nhập họ và tên";
-    if (!formData.email.trim()) newErrors.email = "Vui lòng nhập email";
-    if (!formData.phone.trim()) newErrors.phone = "Vui lòng nhập số điện thoại";
-    if (!formData.address.trim())
-      newErrors.address = "Vui lòng nhập địa chỉ cụ thể";
-    if (!formData.city.trim()) newErrors.city = "Vui lòng chọn tỉnh/thành phố";
+    if (!formData.email.trim()) 
+      newErrors.email = "Vui lòng nhập email";
+    if (!formData.phone.trim()) 
+      newErrors.phone = "Vui lòng nhập số điện thoại";
 
+    // Validate địa chỉ từ AddressSelector - chi tiết từng field
+    if (!selectedProvince) 
+      newErrors.province = "Vui lòng chọn tỉnh/thành phố";
+    if (!selectedDistrict) 
+      newErrors.district = "Vui lòng chọn quận/huyện";
+    if (!selectedWard) 
+      newErrors.ward = "Vui lòng chọn phường/xã";
+    if (!street?.trim()) 
+      newErrors.street = "Vui lòng nhập tên đường";
+
+    // Tùy chọn: Yêu cầu có tọa độ GPS (nếu cần)
+    // if (!coordinates) 
+    //   newErrors.coordinates = "Vui lòng lấy tọa độ GPS cho địa chỉ";
 
     setErrors(newErrors);
-
 
     return Object.keys(newErrors).length === 0; // true nếu form hợp lệ
   };
 
-
+  //! Xử lí khi nhấn nút Đặt hàng
   const handleCheckoutClick = () => {
     if (validateForm()) {
       setModalOpen(true); // mở modal nếu form hợp lệ
@@ -102,7 +119,6 @@ const CheckoutPage = () => {
       toast.error("Vui lòng điền đầy đủ thông tin nhận hàng"); // hoặc dùng alert()
     }
   };
-
 
   const paymentMethods = [
     {
@@ -125,19 +141,21 @@ const CheckoutPage = () => {
     },
   ];
 
+  //! Xử lí khi xác nhận đặt hàng trong modal
   const handleConfirm = async () => {
     setModalOpen(false);
     setIsProcessing(true);
-  
+
     const orderData = {
       customerInfo: { name: formData.fullName, email: formData.email },
       shippingAddress: {
         fullName: formData.fullName,
         phone: formData.phone,
-        address: formData.address,
-        city: formData.city,
-        district: formData.district,
-        ward: formData.ward,
+        address: street || "",
+        city: selectedProvince?.name || "",
+        district: selectedDistrict?.name || "",
+        ward: selectedWard?.name || "",
+        coordinates: coordinates || null,
       },
       paymentMethod: formData.paymentMethod,
       notes: formData.notes,
@@ -152,21 +170,24 @@ const CheckoutPage = () => {
       })),
       totalAmount: getSelectedTotal(),
     };
-  
+
     try {
-      // 📌 Gọi API và lấy newOrder
+      // Gọi API và lấy newOrder
       const res = await api.post("/orders", orderData);
       const newOrder = res.data.order;
-  
+
       alert("Đặt hàng thành công!");
-  
+
       // ===============================
       // Xóa các sản phẩm đã chọn khỏi giỏ
       // ===============================
-      const { items, selectedItems, removeFromCart, setSelectedItems } = useCartStore.getState();
+      const { items, selectedItems, removeFromCart, setSelectedItems } =
+        useCartStore.getState();
       const getItemKey = (item) =>
-        `${item.id}__${item.sizeOption || "M"}__${JSON.stringify(item.toppings || [])}`;
-  
+        `${item.id}__${item.sizeOption || "M"}__${JSON.stringify(
+          item.toppings || []
+        )}`;
+
       items.forEach((item) => {
         if (selectedItems.includes(getItemKey(item))) {
           removeFromCart(item.id, {
@@ -176,9 +197,9 @@ const CheckoutPage = () => {
             toppings: item.toppings,
           });
         }
-      });  
+      });
 
-      console.log("newOrder:", newOrder); 
+      console.log("newOrder:", newOrder);
       // Clear selectedItems sau khi xóa
       navigate(`/order-tracking/${newOrder._id}`);
     } catch (error) {
@@ -188,9 +209,6 @@ const CheckoutPage = () => {
       setIsProcessing(false);
     }
   };
- 
-  // ========================================================
-
 
   if (items.length === 0) {
     return (
@@ -200,13 +218,12 @@ const CheckoutPage = () => {
     );
   }
 
-
   return (
     <>
       <Header />
       <div className="bg-[#151d2d]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header */}
+          {/* Tiêu đề */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -220,12 +237,11 @@ const CheckoutPage = () => {
             </p>
           </motion.div>
 
-
-          {/* Form + Order Summary */}
+          {/* Tổng quan đơn hàng */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main Form */}
             <div className="lg:col-span-2 space-y-8">
-              {/* Shipping Information */}
+              {/* Thông tin giao hàng */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -236,6 +252,7 @@ const CheckoutPage = () => {
                   Thông tin giao hàng
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Họ và tên */}
                   <div>
                     <label className="block text-sm font-medium text-white mb-2">
                       Họ và tên *
@@ -260,7 +277,7 @@ const CheckoutPage = () => {
                     )}
                   </div>
 
-
+                  {/* Email */}
                   <div>
                     <label className="block text-sm font-medium text-white mb-2">
                       Email *
@@ -285,7 +302,7 @@ const CheckoutPage = () => {
                     )}
                   </div>
 
-
+                  {/* Số điện thoại */}
                   <div>
                     <label className="block text-sm font-medium text-white mb-2">
                       Số điện thoại *
@@ -310,87 +327,20 @@ const CheckoutPage = () => {
                     )}
                   </div>
 
-
-                  <div>
-                    <label className="block text-sm font-medium text-white mb-2">
-                      Tỉnh/Thành phố *
-                    </label>
-                    <select
-                      name="city"
-                      value={formData.city}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                        errors.city ? "border-red-500" : "border-gray-300"
-                      }`}
-                    >
-                      <option value="">Chọn tỉnh/thành phố</option>
-                      <option value="Hồ Chí Minh">TP. Hồ Chí Minh</option>
-                      <option value="Hà Nội">Hà Nội</option>
-                      <option value="Đà Nẵng">Đà Nẵng</option>
-                      <option value="Cần Thơ">Cần Thơ</option>
-                      <option value="Khác">Tỉnh/thành khác</option>
-                    </select>
-                    {errors.city && (
-                      <p className="text-red-500 text-sm mt-1">{errors.city}</p>
-                    )}
-                  </div>
-
-
-                  <div>
-                    <label className="block text-sm font-medium text-white mb-2">
-                      Quận/Huyện
-                    </label>
-                    <input
-                      type="text"
-                      name="district"
-                      value={formData.district}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Nhập quận/huyện"
-                    />
-                  </div>
-
-
-                  <div>
-                    <label className="block text-sm font-medium text-white mb-2">
-                      Phường/Xã
-                    </label>
-                    <input
-                      type="text"
-                      name="ward"
-                      value={formData.ward}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Nhập phường/xã"
-                    />
-                  </div>
-                </div>
-
-
-                <div className="mt-4">
-                  <label className="block text-sm font-medium text-white mb-2">
-                    Địa chỉ cụ thể *
-                  </label>
-                  <textarea
-                    name="address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    rows={3}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      errors.address ? "border-red-500" : "border-gray-300"
-                    }`}
-                    placeholder="Nhập địa chỉ cụ thể (số nhà, tên đường...)"
+                  {/* Chọn địa chỉ */}
+                  <AddressSelector 
+                    errors={{
+                      province: errors.province,
+                      district: errors.district,
+                      ward: errors.ward,
+                      street: errors.street,
+                      coordinates: errors.coordinates
+                    }}
                   />
-                  {errors.address && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.address}
-                    </p>
-                  )}
                 </div>
               </motion.div>
 
-
-              {/* Payment Method */}
+              {/* Phương thức thanh toán */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -401,7 +351,6 @@ const CheckoutPage = () => {
                   <CreditCard className="w-5 h-5 text-[#e2cda2]" />
                   Phương thức thanh toán
                 </h2>
-
 
                 <div className="space-y-3">
                   {paymentMethods.map((method) => {
@@ -461,8 +410,7 @@ const CheckoutPage = () => {
                 </div>
               </motion.div>
 
-
-              {/* Notes */}
+              {/* Ghi chú đơn hàng */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -483,8 +431,7 @@ const CheckoutPage = () => {
               </motion.div>
             </div>
 
-
-            {/* Order Summary */}
+            {/* Tổng kết đơn hàng */}
             <div className="lg:col-span-1">
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
@@ -495,10 +442,12 @@ const CheckoutPage = () => {
                   Đơn hàng của bạn
                 </h2>
 
-
                 <div className="space-y-4 mb-6">
                   {checkoutItems.map((item) => (
-                    <div key={item.productId} className="flex justify-between">
+                    <div
+                      key={item._id || item.id}
+                      className="flex justify-between"
+                    >
                       <div className="flex-1">
                         <p className="font-medium text-white truncate">
                           {item.name}
@@ -514,13 +463,11 @@ const CheckoutPage = () => {
                   ))}
                 </div>
 
-
                 <div className="space-y-3 border-t border-gray-200 pt-4">
                   <div className="flex justify-between text-white">
                     <span>Tạm tính</span>
                     <span>{formatPrice(getSelectedTotal())}</span>
                   </div>
-
 
                   <div className="flex justify-between text-white">
                     <span>Phí vận chuyển</span>
@@ -534,11 +481,10 @@ const CheckoutPage = () => {
                   </div>
                 </div>
 
-
                 <button
                   type="button"
                   disabled={isProcessing}
-                  onClick={handleCheckoutClick} // <-- dùng hàm mới
+                  onClick={handleCheckoutClick}
                   className="w-full bg-[#044c5c] text-white hover:scale-105 font-medium py-4 rounded-lg transition-colors flex items-center justify-center gap-2 mt-4"
                 >
                   {isProcessing ? "Đang xử lý..." : "Đặt hàng"}
@@ -549,23 +495,19 @@ const CheckoutPage = () => {
         </div>
       </div>
 
-
-      {/* Modal */}
+      {/* Thanh toán Modal */}
       <CheckoutModal
-  isOpen={modalOpen}
-  onClose={() => setModalOpen(false)}
-  onConfirm={handleConfirm} // <-- đây
-  orderInfo={{
-    ...formData,
-    items: checkoutItems,
-    total: getSelectedTotal(),
-  }}
-/>
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onConfirm={handleConfirm} // <-- đây
+        orderInfo={{
+          ...formData,
+          items: checkoutItems,
+          total: getSelectedTotal(),
+        }}
+      />
     </>
   );
 };
 
-
 export default CheckoutPage;
-
-

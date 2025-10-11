@@ -1,7 +1,5 @@
 import { useCartStore } from "../../../store/cartStore";
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import "swiper/css";
@@ -15,26 +13,22 @@ import { addOrderSchema } from "../../../utils/addOrderSchema";
 
 // Import Component
 import Notification from "../../ui/Notification";
-import AddToCartAddressModal from "./../location/LocationSelection/AddToCartAddressModal";
 
 // Import Store
 import { useAuthStore } from "../../../store/authStore";
 import { useStoreSelectionStore } from "../../../store/storeSelectionStore";
 
 function ProductCard(props) {
-  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showAddressModal, setShowAddressModal] = useState(false);
-  const [productToAdd, setProductToAdd] = useState(null);
 
   //! Lấy trạng thái đăng nhập từ store
   const { user } = useAuthStore();
-  
+
   //! Lấy store đã chọn
   const { selectedStore } = useStoreSelectionStore();
 
-  //! Using props.image (array) for Swiper
+  //! Sử dụng props.image (mảng) cho Swiper
   const images =
     Array.isArray(props.image) && props.image.length > 0
       ? props.image
@@ -44,17 +38,17 @@ function ProductCard(props) {
     ? Math.min(...props.sizeOptions.map((opt) => Number(opt.price) || 0))
     : 0;
 
-  //! Handle add product to cart
+  //! Xử lý thêm sản phẩm vào giỏ hàng
   const addToCart = useCartStore((state) => state.addToCart);
 
-  //! Handle add product click
+  //! Xử lý hiển thị modal thêm sản phẩm
   const handleAddClick = () => {
-    
     setShowAddModal(true);
   };
 
   return (
     <>
+      {/* Content chính */}
       <div className="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition cursor-pointer">
         {/* Product Swiper */}
         <Swiper
@@ -64,7 +58,7 @@ function ProductCard(props) {
             disableOnInteraction: false,
           }}
           loop={images.length > 1}
-          className="rounded-md"
+          className="rounded-md transition-transform duration-300 hover:scale-90"
         >
           {images.map((img, idx) => (
             <SwiperSlide key={idx}>
@@ -94,7 +88,9 @@ function ProductCard(props) {
           </button>
         </div>
       </div>
-      {showAddModal && ( // Hiển thị modal thêm sản phẩm
+
+      {/* Hiển thị modal thêm sản phẩm */}
+      {showAddModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
           <Formik
             initialValues={{
@@ -108,9 +104,16 @@ function ProductCard(props) {
               iceOption: "Chung", // Mặc định đá chung
             }}
             validationSchema={addOrderSchema}
-            // inside Formik onSubmit in ProductCard.jsx
             onSubmit={(values) => {
-              // lấy price size, toppings như bạn đã làm
+              // Kiểm tra store đã được chọn chưa
+              if (!selectedStore?._id) {
+                Notification.error(
+                  "Vui lòng chọn cửa hàng trước khi đặt hàng!"
+                );
+                return;
+              }
+
+              // Tính toán giá
               const selectedSize = props.sizeOptions?.find(
                 (opt) => opt.size === values.sizeOption
               );
@@ -123,18 +126,15 @@ function ProductCard(props) {
                 (sizePrice + toppingsPrice) * (values.quantity || 1);
 
               const newProduct = {
-
                 _id: props._id,
                 name: props.name,
                 images: props.image || props.images || [],
-                // lưu price ban đầu (frontend của bạn dùng price field), nhưng store sẽ dùng price khi hiển thị
-                price: total, // giữ như trước (bạn có thể thay bằng props.price nếu muốn base)
+                price: total,
                 sizeOption: values.sizeOption,
                 sizeOptionPrice: sizePrice,
                 sugarLevel: values.sugarLevel,
                 iceOption: values.iceOption,
-                toppings: values.toppings || [], // toppings đã chọn
-                // ✅ quan trọng: truyền full list topping từ product (props.toppings) để store có availableToppings
+                toppings: values.toppings || [],
                 availableToppings: (props.toppings || []).map((t) => ({
                   _id: t._id,
                   name: t.name,
@@ -142,14 +142,19 @@ function ProductCard(props) {
                 })),
                 sizeOptions: props.sizeOptions || [],
                 quantity: values.quantity || 1,
+                storeId: selectedStore._id, // Thêm store info
+                storeName: selectedStore.storeName || selectedStore.name,
               };
 
-          
-              // Lưu sản phẩm và chuyển sang bước nhập địa chỉ
-              setProductToAdd(newProduct);
+              // Thêm trực tiếp vào giỏ hàng (không cần đăng nhập)
+              addToCart(newProduct);
               setShowAddModal(false);
-              setShowAddressModal(true);
 
+              // Thông báo cho Cart component cập nhật
+              window.dispatchEvent(new CustomEvent("cartUpdated"));
+
+              // Hiển thị thông báo thành công
+              Notification.success("Đã thêm sản phẩm vào giỏ hàng!");
             }}
           >
             {({ values, setFieldValue }) => {
@@ -357,7 +362,10 @@ function ProductCard(props) {
                           (t) => t.name === topping.name
                         );
                         return (
-                          <label key={index} className="flex items-center mb-1 text-sm">
+                          <label
+                            key={index}
+                            className="flex items-center mb-1 text-sm"
+                          >
                             <input
                               type="checkbox"
                               checked={isChecked}
@@ -372,7 +380,8 @@ function ProductCard(props) {
                               className="mr-2"
                             />
                             <span className="flex-1 whitespace-nowrap">
-                              {topping.name} (+{(topping.extraPrice).toLocaleString("vi-VN")}₫)
+                              {topping.name} (+
+                              {topping.extraPrice.toLocaleString("vi-VN")}₫)
                             </span>
                           </label>
                         );
@@ -433,35 +442,6 @@ function ProductCard(props) {
             }}
           </Formik>
         </div>
-      )}
-
-      {/* Address Modal - Hiển thị sau khi chọn xong sản phẩm */}
-      {showAddressModal && productToAdd && (
-        <AddToCartAddressModal
-          onClose={() => {
-            setShowAddressModal(false);
-            setProductToAdd(null);
-          }}
-          onAddressConfirmed={(address, deliveryInfo) => {
-            // Thêm sản phẩm vào giỏ hàng với thông tin địa chỉ
-            const productWithAddress = {
-              ...productToAdd,
-              deliveryAddress: address,
-              deliveryInfo: deliveryInfo
-            };
-            
-            console.log("Adding to cart with address:", productWithAddress);
-            addToCart(productWithAddress);
-            
-            // Đóng modal và reset state
-            setShowAddressModal(false);
-            setProductToAdd(null);
-            
-            Notification.success("Đã thêm sản phẩm vào giỏ hàng!");
-          }}
-          selectedStore={selectedStore}
-          product={productToAdd}
-        />
       )}
     </>
   );

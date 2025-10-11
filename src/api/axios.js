@@ -1,10 +1,10 @@
 import axios from "axios";
 import { useAuthStore } from "../store/authStore";
 
-// Base API URLs
+// Base API URLs - Sử dụng environment variables có sẵn
 const BASE_URL = import.meta.env.MODE === "development"
-  ? "http://localhost:5000/api"
-  : "https://milk-tea-backend-s4s2.onrender.com/api";
+  ? `${import.meta.env.VITE_API_BASE}/api`
+  : `${import.meta.env.VITE_API_BASE_PROD}/api`;
 
 // Tạo instance axios với cấu hình chung
 const api = axios.create({
