@@ -1,4 +1,3 @@
-// components/Notify.jsx
 import { toast } from 'sonner';
 
 const Notification = {
@@ -13,7 +12,7 @@ const Notification = {
     }),
 
   info: (message = "Thông báo", description = "") =>
-    toast.message(message, {
+    toast.info(message, {
       description,
     }),
 

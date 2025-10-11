@@ -14,8 +14,6 @@ import {
   Store,
 } from "lucide-react";
 import Select from "react-select";
-
-//! Import Stores
 import { useStoreSelectionStore } from "../store/storeSelectionStore";
 
 const sortOptions = [
@@ -43,7 +41,7 @@ const itemsPerPageOptions = [
     value: 3,
     label: (
       <span className="flex items-center gap-2">
-        <ListOrdered className="w-4 h-4 text-camel" />3 / Trang
+        <ListOrdered className="w-4 h-4 text-camel" />4 / Trang
       </span>
     ),
   },
@@ -51,7 +49,7 @@ const itemsPerPageOptions = [
     value: 6,
     label: (
       <span className="flex items-center gap-2">
-        <ListOrdered className="w-4 h-4 text-camel" />6 / Trang
+        <ListOrdered className="w-4 h-4 text-camel" />8 / Trang
       </span>
     ),
   },
@@ -59,7 +57,7 @@ const itemsPerPageOptions = [
     value: 9,
     label: (
       <span className="flex items-center gap-2">
-        <ListOrdered className="w-4 h-4 text-camel" />9 / Trang
+        <ListOrdered className="w-4 h-4 text-camel" />12 / Trang
       </span>
     ),
   },
@@ -68,14 +66,14 @@ const itemsPerPageOptions = [
     label: (
       <span className="flex items-center gap-2">
         <ListOrdered className="w-4 h-4 text-camel" />
-        12 / Trang
+        16 / Trang
       </span>
     ),
   },
 ];
 
 function Menu() {
-  //! Store selection
+  // Dữ liệu cửa hàng đã chọn
   const {
     selectedStore,
     loadStoreCategories,
@@ -84,7 +82,7 @@ function Menu() {
     isLoading: storeLoading,
   } = useStoreSelectionStore();
 
-  // Local state for UI - store-specific data management
+  // Trạng thái sản phẩm và danh mục - quản lý theo cửa hàng đã chọn
   const [productsList, setProductsList] = useState([]);
   const [allProducts, setAllProducts] = useState([]); // Tất cả sản phẩm để tính category count
   const [productsLoading, setProductsLoading] = useState(false);
@@ -92,35 +90,14 @@ function Menu() {
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
 
-  // Pagination & filtering - now handled by backend
+  // Bộ lọc và phân trang
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(6); // Sync với defaultValue
+  const [itemsPerPage, setItemsPerPage] = useState(8); // Sync với defaultValue
   const [totalPages, setTotalPages] = useState(0);
   const [totalProducts, setTotalProducts] = useState(0);
-
-  //! Load initial data on mount
-  useEffect(() => {
-    loadInitialData();
-  }, []);
-
-  //! Reload data khi selectedStore thay đổi
-  useEffect(() => { 
-    console.log("Selected Store changed:", selectedStore);
-    if (selectedStore?._id) {
-      loadInitialData();
-    }
-  }, [selectedStore?._id]);
-
-  useEffect(() => {
-    console.log("Categories state updated:", categories);
-  }, [categories]);
-
-  useEffect(() => {
-    console.log("ProductsList state updated:", productsList);
-  }, [productsList]);
 
   //! Load categories và all products từ store đã chọn
   const loadInitialData = async () => {
@@ -136,10 +113,10 @@ function Menu() {
       const storeCategories = await loadStoreCategories(selectedStore._id);
       const categoriesArray = storeCategories.categories || [];
       setCategories(categoriesArray);
-      
+
       // Load tất cả sản phẩm để tính category count
       await loadAllProducts();
-      
+
       setCategoriesLoading(false);
 
       // Load products với pagination sau khi có categories
@@ -158,10 +135,10 @@ function Menu() {
       // Load tất cả sản phẩm với limit cao
       const allProductsAPI = await loadStoreProducts(
         selectedStore._id,
-        1, 
-        1000, 
+        1,
+        1000,
         "",
-        "", 
+        "",
         "createdAt",
         "desc"
       );
@@ -172,7 +149,7 @@ function Menu() {
     }
   };
 
-  //! Load products với backend pagination
+  //! Hàm tải danh sách sản phẩm theo trang, tìm kiếm, lọc danh mục, sắp xếp và theo cửa hàng người dùng chọn
   const loadProducts = async (
     page = currentPage,
     limit = itemsPerPage,
@@ -227,7 +204,7 @@ function Menu() {
     }
   };
 
-  //! Trigger load products when filters change
+  //! Reset về trang 1 khi filter thay đổi và load sản phẩm khi chọn lại cửa hàng
   useEffect(() => {
     if (selectedStore?._id) {
       loadProducts(1); // Reset to page 1 when filters change
@@ -240,6 +217,12 @@ function Menu() {
     sortOption,
     itemsPerPage,
   ]);
+
+  //! Phân trang
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    loadProducts(pageNumber);
+  };
 
   const nextPage = () => {
     if (currentPage < totalPages) {
@@ -257,12 +240,7 @@ function Menu() {
     }
   };
 
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
-    loadProducts(pageNumber);
-  };
-
-  //! Generate page numbers for pagination
+  //! Tạo danh sách nút số trang
   const renderPaginationNumbers = () => {
     const pages = [];
     const maxVisible = 5; // Show max 5 page numbers
@@ -287,25 +265,25 @@ function Menu() {
     return pages;
   };
 
-  //! Handle category selection
+  //! Xử lý khi chọn danh mục
   const handleCategorySelect = (categoryId) => {
     setSelectedCategory(categoryId);
     setCurrentPage(1);
   };
 
-  //! Get category name by ID
+  //! Hàm lấy tên danh mục
   const getCategoryName = (categoryId) => {
     if (categoryId === "all") return "Tất cả sản phẩm";
     const category = categories.find((cat) => cat._id === categoryId);
     return category ? category.name : "Không xác định";
   };
 
-  //! Clear products error
+  //! Xóa lỗi sản phẩm
   const clearProductsError = () => {
     setProductsError(null);
   };
 
-  //! Clear errors after 5 seconds
+  //! Xóa thông báo lỗi sau 5 giây
   useEffect(() => {
     if (productsError) {
       const timer = setTimeout(() => {
@@ -315,8 +293,30 @@ function Menu() {
     }
   }, [productsError, clearProductsError]);
 
-  //! Show loading state
+  // Kết hợp loading của products và categories
   const isLoading = productsLoading || categoriesLoading;
+
+  //! Tải dữ liệu ban đầu khi component mount
+  useEffect(() => {
+    loadInitialData();
+  }, []);
+
+  //! Reload data khi selectedStore thay đổi
+  useEffect(() => {
+    console.log("Selected Store changed:", selectedStore);
+    if (selectedStore?._id) {
+      loadInitialData();
+    }
+  }, [selectedStore?._id]);
+
+  useEffect(() => {
+    console.log(
+      "ProductsList state updated:",
+      productsList,
+      "& Categories state updated:",
+      categories
+    );
+  }, [productsList, categories]);
 
   return (
     <div>
@@ -429,17 +429,18 @@ function Menu() {
                       {/* Categories Sidebar */}
                       {categories && categories.length > 0 ? (
                         categories
-                          .filter((cat) => cat.status === "available")
+                          .filter((cat) => cat.status === "active" || cat.status === "available") // Support both status types
                           .map((category) => {
-                            const categoryProductCount =
-                              allProducts.filter((product) => {
+                            const categoryProductCount = allProducts.filter(
+                              (product) => {
                                 const productCategory =
                                   product.category &&
                                   typeof product.category === "object"
                                     ? product.category._id
                                     : product.category;
                                 return productCategory === category._id;
-                              }).length;
+                              }
+                            ).length;
 
                             return (
                               <li

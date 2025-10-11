@@ -1,110 +1,53 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useStoreSelectionStore } from "../../../store/storeSelectionStore";
+import { useCartStore } from "../../../store/cartStore";
+import Notification from "../../ui/Notification";
 
 function Cart() {
-  const [cartItems, setCartItems] = useState([]);
   const [lastStoreId, setLastStoreId] = useState(null);
-  
+
+  // Lấy thông tin cửa hàng đã chọn
   const { selectedStore } = useStoreSelectionStore();
+  
+  // Lấy cartItems và clearCart từ Zustand store
+  const { items: cartItems, clearCart: clearCartStore } = useCartStore();
 
-  //! Xử lí giỏ hàng từ localStorage
-  const loadCart = () => {
-    try {
-      const storedCart = localStorage.getItem("cart-storage");
-      
-      // Nếu không có key hoặc key bị xóa
-      if (!storedCart) {
-        console.log("No cart found in localStorage");
-        setCartItems([]);
-        return;
-      }
-      
-      const parsedCart = JSON.parse(storedCart);
-      const cartItems = parsedCart?.state?.items || [];
-      console.log("Loaded cart items:", cartItems);
-      setCartItems(cartItems);
-    } catch (error) {
-      console.error("Error loading cart:", error);
-      setCartItems([]);
-      // Xóa corrupted data
-      localStorage.removeItem("cart-storage");
-    }
-  };
-
-  //! Clear cart when store changes
+  //! Xóa hoàn toàn giỏ hàng (cả Zustand và localStorage)
   const clearCart = () => {
-    // Xóa hoàn toàn localStorage key để tránh cache issue
-    localStorage.removeItem("cart-storage");
-    setCartItems([]);
-    
-    // Dispatch multiple events để đảm bảo tất cả components được update
-    window.dispatchEvent(new Event('cartUpdated'));
-    window.dispatchEvent(new StorageEvent('storage', {
-      key: 'cart-storage',
-      oldValue: null,
-      newValue: null,
-      storageArea: localStorage
-    }));
-    
-    console.log("Cart cleared completely - localStorage key removed");
+    // Xóa trong Zustand store (sẽ tự động xóa localStorage)
+    clearCartStore();
+
+    // Dispatch events để đảm bảo tất cả components được update
+    window.dispatchEvent(new Event("cartUpdated"));
+    window.dispatchEvent(
+      new StorageEvent("storage", {
+        key: "cart-storage",
+        oldValue: null,
+        newValue: null,
+        storageArea: localStorage,
+      })
+    );
+
+    console.log("Cart cleared completely - both Zustand and localStorage");
   };
 
-  useEffect(() => {
-    loadCart();
-    
-    // Lắng nghe event "cartUpdated" để cập nhật lại cartItems
-    const handleCartUpdate = () => {
-      loadCart();
-    };
-
-    // Lắng nghe localStorage changes từ tabs khác
-    const handleStorageChange = (e) => {
-      if (e.key === "cart-storage") {
-        loadCart();
-      }
-    };
-
-    // Lắng nghe focus event để cập nhật khi quay lại tab
-    const handleFocus = () => {
-      loadCart();
-    };
-
-    // Polling mechanism - check localStorage every 2 seconds
-    const pollInterval = setInterval(() => {
-      loadCart();
-    }, 2000);
-
-    window.addEventListener("cartUpdated", handleCartUpdate);
-    window.addEventListener("storage", handleStorageChange);
-    window.addEventListener("focus", handleFocus);
-
-    return () => {
-      window.removeEventListener("cartUpdated", handleCartUpdate);
-      window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener("focus", handleFocus);
-      clearInterval(pollInterval);
-    };
-  }, []);
-
-  //! Clear cart when store changes
+  //! Xóa giỏ hàng khi cửa hàng thay đổi
   useEffect(() => {
     if (selectedStore?._id) {
-      // First time setting store - just track it
+      // Lần đầu tiên thiết lập cửa hàng - chỉ theo dõi nó
       if (lastStoreId === null) {
         setLastStoreId(selectedStore._id);
         return;
       }
-      
-      // Store changed - clear cart for guest users
-      if (lastStoreId !== selectedStore._id) {        
+
+      // Cửa hàng thay đổi - xóa giỏ hàng cho người dùng khách
+      if (lastStoreId !== selectedStore._id) {
         clearCart();
         setLastStoreId(selectedStore._id);
-        
-        // Show notification to user
-        if (window.showNotification) {
-          window.showNotification("Giỏ hàng đã được làm trống do thay đổi cửa hàng", "info");
-        }
+
+        // Hiển thị thông báo cho người dùng
+        Notification.info("Giỏ hàng đã được làm trống do thay đổi cửa hàng");
       }
     }
   }, [selectedStore?._id, lastStoreId]);

@@ -22,7 +22,6 @@ import Checkout from "./pages/Checkout";
 import OrderTracking from "./pages/OrderTracking";
 import OrderHistory from "./pages/OrderHistory";
 
-
 // Verification Pages
 import VerificationChoice from "./pages/verification/VerificationChoice";
 import EmailVerification from "./pages/verification/EmailVerification";
@@ -139,15 +138,15 @@ function App() {
         <Route path="/unauthorized" element={<Unauthorized />} />{" "}
         <Route path="*" element={<NotFound />} />{" "}
         <Route path="/order-history-test" element={<OrderHistory />} />
+        {/* //* Cart - Guest có thể sử dụng, không cần đăng nhập */}
+        <Route path="/cart" element={<Cart />} />
         {/* //* ------ Customer Route (Registered Customer access is required) ------*/}
         <Route element={<PrivateRoute permittedRole="customer" />}>
-          {/* Trang giỏ hàng */}
-          <Route path="/cart" element={<Cart />} />
-          {/* Trang thanh toán */}
+          {/* Trang thanh toán - YÊU CẦU ĐĂNG NHẬP */}
           <Route path="/checkout" element={<Checkout />} />
           {/* Trang theo dõi đơn hàng*/}
           <Route path="/order-tracking/:id" element={<OrderTracking />} />
-             {/* Trang xem lịch sử đơn hàng*/}
+          {/* Trang xem lịch sử đơn hàng*/}
           <Route path="/order-history" element={<OrderHistory />} />
         </Route>
         {/* //* ------ Manager Route (Manager access is required) ------ */}
@@ -184,10 +183,7 @@ function App() {
         <Route element={<PrivateRoute permittedRole="admin" />}>
           <Route path="/admin" element={<AdminLayout />}>
             {/* Khi truy cập /admin → điều hướng tới /admin/products */}
-            <Route
-              index
-              element={<Navigate to="/admin/products" replace />}
-            />
+            <Route index element={<Navigate to="/admin/products" replace />} />
             {/* Trang quản lý sản phẩm dành riêng cho admin */}
             <Route path="products" element={<AdminProduct />} />
             <Route path="categories" element={<AdminCategory />} />
