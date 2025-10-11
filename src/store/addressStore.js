@@ -2,8 +2,14 @@
 import { create } from "zustand"; // Zustand tạo store để quản lý state toàn cục
 import { persist } from "zustand/middleware"; // Persist middleware cho localStorage
 
-//! API endpoint cho xác thực
-const API_ENDPOINT = import.meta.env.VITE_API_BASE || ''; // Nếu KHÔNG dùng proxy Vite, có thể tạo client/.env: VITE_API_BASE=http://localhost:5000
+//! API endpoint - tương tự logic trong axios.js
+const API_ENDPOINT = import.meta.env.MODE === "development"
+  ? import.meta.env.VITE_API_BASE || 'http://localhost:5000'
+  : import.meta.env.VITE_API_BASE_PROD || 'https://milk-tea-backend.onrender.com';
+
+// Debug logging
+console.log('🏪 AddressStore Environment:', import.meta.env.MODE);
+console.log('🌐 AddressStore API Endpoint:', API_ENDPOINT);
 
 // ——— Debounce nhỏ cho UX mượt ———
 let debounceTimer;
@@ -41,6 +47,7 @@ export const useAddressStore = create((set, get) => ({
             const data = await res.json();
             set({ provinces: data.sort((a, b) => a.name.localeCompare(b.name)) }); // Sắp xếp theo tên
         } catch (e) {
+            console.error('🚨 LoadProvinces Error:', e);
             set({ error: e.message || 'Lỗi tải danh sách tỉnh/thành' });
         } finally {
             set({ loading: false });
@@ -78,6 +85,7 @@ export const useAddressStore = create((set, get) => ({
                 coordinates: null,
             });
         } catch (e) {
+            console.error('🚨 SelectProvince Error:', e);
             set({ error: 'Không tải được danh sách quận/huyện' });
         } finally {
             set({ loading: false });
@@ -110,6 +118,7 @@ export const useAddressStore = create((set, get) => ({
                 coordinates: null,
             });
         } catch (e) {
+            console.error('🚨 SelectDistrict Error:', e);
             set({ error: 'Không tải được danh sách phường/xã' });
         } finally {
             set({ loading: false });
@@ -156,6 +165,7 @@ export const useAddressStore = create((set, get) => ({
             // Server trả { lat, lng }
             set({ coordinates: data });
         } catch (e) {
+            console.error('🚨 Geocode Error:', e);
             set({ error: 'Không tìm được toạ độ cho địa chỉ đã nhập', coordinates: null });
         } finally {
             set({ loading: false });
@@ -197,7 +207,7 @@ export const useAddressStore = create((set, get) => ({
                 console.log('Request aborted');
                 throw e; // Re-throw to handle in component
             }
-            console.error('Autocomplete error:', e);
+            console.error('🚨 Autocomplete error:', e);
             return { suggestions: [] };
         }
     },
