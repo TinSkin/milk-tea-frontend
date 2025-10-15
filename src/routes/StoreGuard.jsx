@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useStoreSelectionStore } from "../store/storeSelectionStore";
 import CitySelectionModal from "../components/features/location/LocationSelection/CitySelectionModal";
-import StoreSelectionFlow from "../components/features/location/LocationSelection/StoreSelectionFlow";
+// import StoreSelectionFlow from "../components/features/location/LocationSelection/StoreSelectionFlow";
 
 const StoreGuard = ({ children }) => {
   const { isStoreSelectionRequired, isStoreModalOpen, selectedStore } =
@@ -22,11 +22,13 @@ const StoreGuard = ({ children }) => {
     }
   }, [isStoreSelectionRequired, openStoreModal]);
 
-  // Debug modal state changes
+  //! Debug modal state changes
   useEffect(() => {
-    console.log("StoreGuard - Modal Open/Close:", {
-      selectedStore,
-    });
+    if (!selectedStore) {
+      console.log("StoreGuard - Modal Open/Close:", {
+        selectedStore,
+      });
+    }
   }, [isStoreModalOpen, selectedStore]);
 
   return (
@@ -43,6 +45,7 @@ const StoreGuard = ({ children }) => {
         />
       )}
 
+      {/* Flow chọn store */}
       {/* {isStoreModalOpen && (
         <StoreSelectionFlow
           isOpen={isStoreModalOpen}

@@ -15,15 +15,11 @@ import { addOrderSchema } from "../../../utils/addOrderSchema";
 import Notification from "../../ui/Notification";
 
 // Import Store
-import { useAuthStore } from "../../../store/authStore";
 import { useStoreSelectionStore } from "../../../store/storeSelectionStore";
 
 function ProductCard(props) {
   const [isLoading, setIsLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
-
-  //! Lấy trạng thái đăng nhập từ store
-  const { user } = useAuthStore();
 
   //! Lấy store đã chọn
   const { selectedStore } = useStoreSelectionStore();
@@ -81,7 +77,7 @@ function ProductCard(props) {
             Từ {minPrice.toLocaleString()}đ
           </p>
           <button
-            onClick={() => handleAddClick(true)}
+            onClick={handleAddClick}
             className="bg-dark_blue hover:bg-camel text-white py-1 px-2 rounded text-sm flex items-center justify-center w-full"
           >
             <span className="mr-1">+</span> Thêm
@@ -91,7 +87,13 @@ function ProductCard(props) {
 
       {/* Hiển thị modal thêm sản phẩm */}
       {showAddModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+        <div
+          onClick={(e) => {
+            // chỉ đóng khi click đúng overlay (vùng tối), không phải panel
+            if (e.target === e.currentTarget) setShowAddModal(false);
+          }}
+          className="fixed inset-0 flex items-center justify-center bg-black/40 z-50"
+        >
           <Formik
             initialValues={{
               name: props.name || "",
@@ -158,119 +160,134 @@ function ProductCard(props) {
             }}
           >
             {({ values, setFieldValue }) => {
-              useEffect(() => {
-                const selectedSize = props.sizeOptions.find(
-                  (opt) => opt.size === values.sizeOption
-                );
-                const sizePrice = selectedSize ? selectedSize.price : 0;
-                const toppingsPrice = values.toppings.reduce(
-                  (sum, t) => sum + (t.extraPrice || 0),
-                  0
-                );
-                const total = (sizePrice + toppingsPrice) * values.quantity;
-
-                if (values.price !== total) {
-                  setFieldValue("price", total);
-                }
-              }, [values.sizeOption, values.toppings, values.quantity]);
+              const selectedSize = props.sizeOptions?.find(
+                (opt) => opt.size === values.sizeOption
+              );
+              const sizePrice = selectedSize ? selectedSize.price : 0;
+              const toppingsTotal = (values.toppings || []).reduce(
+                (sum, t) => sum + (t.extraPrice || 0),
+                0
+              );
+              const total =
+                (sizePrice + toppingsTotal) * (values.quantity || 1);
               return (
-                <Form className="bg-white p-6 rounded shadow-md w-[700px] space-y-4">
-                  <div className="flex justify-start">
-                    {/* Product Swiper */}
-                    <Swiper
-                      modules={[Autoplay]} // Sử dụng module Autoplay
-                      autoplay={{
-                        delay: 2000,
-                        disableOnInteraction: false,
-                      }} // Tự động chuyển ảnh sau 2 giây
-                      loop={
-                        Array.isArray(props.image) && props.image.length > 1 // Lặp lại nếu có nhiều hơn 1 ảnh
-                      }
-                      className="rounded-md w-1/3"
-                    >
-                      {Array.isArray(props.image) &&
-                        props.image.map(
-                          (
-                            img,
-                            idx // Duyệt qua danh sách ảnh
-                          ) => (
+                <Form
+                  onClick={(e) => e.stopPropagation()}
+                  className="bg-white p-6 rounded-2xl shadow-xl w-[720px] max-w-[95vw] space-y-4"
+                >
+                  {/* Header: Ảnh + thông tin nhanh */}
+                  <div className="flex flex-col sm:flex-row gap-6">
+                    {/* Cột trái: Ảnh / Swiper */}
+                    <div className="sm:w-1/3 w-full">
+                      {Array.isArray(props.image) && props.image.length > 1 ? (
+                        <Swiper
+                          modules={[Autoplay]}
+                          autoplay={{
+                            delay: 2000,
+                            disableOnInteraction: false,
+                          }}
+                          loop
+                          className="rounded-xl overflow-hidden shadow-sm"
+                        >
+                          {props.image.map((img, idx) => (
                             <SwiperSlide key={idx}>
                               <img
                                 src={img}
                                 alt={props.name || "Product image"}
-                                className="w-full h-72 object-cover rounded-md"
+                                className="w-full h-64 object-cover"
                               />
                             </SwiperSlide>
-                          )
-                        )}
-                    </Swiper>
+                          ))}
+                        </Swiper>
+                      ) : (
+                        <img
+                          src={
+                            (Array.isArray(props.image) && props.image[0]) ||
+                            "/no-image.png"
+                          }
+                          alt={props.name || "Product image"}
+                          className="w-full h-64 object-cover rounded-xl shadow-sm"
+                          onError={(e) =>
+                            (e.currentTarget.src = "/no-image.png")
+                          }
+                        />
+                      )}
+                    </div>
 
-                    <div className="w-2/3 ml-4">
-                      <p className="font-bold text-dark_blue text-2xl mb-2">
-                        {props.name}
-                      </p>
-                      {(() => {
-                        const selected = props.sizeOptions.find(
-                          (opt) => opt.size === values.sizeOption
-                        );
-                        return (
-                          <span className="text-camel font-semibold text-lg my-2">
-                            {selected
-                              ? selected.price.toLocaleString("vi-VN")
-                              : "Chọn size: 0"}
-                            ₫
-                          </span>
-                        );
-                      })()}
-                      {(() => {
-                        const selectedSize = props.sizeOptions.find(
-                          (opt) => opt.size === values.sizeOption
-                        );
-                        const toppingsTotal = values.toppings.reduce(
-                          (sum, t) => sum + (t.extraPrice || 0),
-                          0
-                        );
-                        const total = selectedSize
-                          ? (selectedSize.price + toppingsTotal) *
-                            values.quantity
-                          : 0;
+                    {/* Cột phải: Thông tin + số lượng (polish) */}
+                    <div className="sm:w-2/3 w-full flex flex-col justify-between">
+                      <div className="flex flex-col gap-2">
+                        {/* Tiêu đề */}
+                        <h2 className="text-[22px] font-semibold text-slate-900">
+                          {props.name}
+                        </h2>
 
-                        return (
-                          <span className="block text-green_starbuck font-bold text-lg my-2">
-                            Tổng: {total.toLocaleString("vi-VN")}₫
-                          </span>
-                        );
-                      })()}
-                      <p className="my-2">{props.description}</p>
-                      <div className="flex items-center gap-2 mt-4">
-                        {/* Nút Giảm */}
+                        {/* Giá chọn size & Tổng (tính inline để không phụ thuộc biến ngoài) */}
+                        {(() => {
+                          const selected = props.sizeOptions?.find(
+                            (opt) => opt.size === values.sizeOption
+                          );
+                          const sizePrice = selected ? selected.price : 0;
+                          const toppingsTotal = (values.toppings || []).reduce(
+                            (s, t) => s + (t.extraPrice || 0),
+                            0
+                          );
+                          const total =
+                            (sizePrice + toppingsTotal) *
+                            (values.quantity || 1);
+
+                          return (
+                            <div className="space-y-1">
+                              {/* “Chọn size” nhẹ nhàng hơn, label mờ + value nổi */}
+                              <div className="text-sm text-slate-500">
+                                Chọn size:{" "}
+                                <span className="text-camel font-semibold">
+                                  {sizePrice
+                                    ? `${sizePrice.toLocaleString("vi-VN")}đ`
+                                    : "0đ"}
+                                </span>
+                              </div>
+
+                              {/* Tổng nổi bật, to/đậm, màu thương hiệu xanh */}
+                              <div className="text-2xl font-bold text-green_starbuck">
+                                Tổng: {total.toLocaleString("vi-VN")}đ
+                              </div>
+                            </div>
+                          );
+                        })()}
+
+                        {/* Mô tả nhạt màu, tăng line-height cho dễ đọc */}
+                        <p className="text-slate-600 leading-relaxed mt-1">
+                          {props.description}
+                        </p>
+                      </div>
+
+                      {/* Stepper: đổi sang “outline” để bớt nặng, đặt dưới cùng, căn trái trên mobile / phải trên desktop */}
+                      <div className="mt-3 flex items-center gap-2 justify-start sm:justify-start">
                         <button
                           type="button"
-                          onClick={() => {
-                            if (values.quantity > 1) {
-                              setFieldValue("quantity", values.quantity - 1);
-                            }
-                          }}
-                          className="w-9 h-9 bg-dark_blue text-white flex items-center justify-center border rounded text-lg font-bold"
+                          onClick={() =>
+                            values.quantity > 1 &&
+                            setFieldValue("quantity", values.quantity - 1)
+                          }
+                          className="w-9 h-9 rounded-xl border border-dark_blue text-dark_blue grid place-items-center hover:bg-dark_blue hover:text-white transition"
+                          aria-label="Giảm"
                         >
-                          -
+                          −
                         </button>
-
-                        {/* Hiển thị số lượng */}
                         <Field
                           name="quantity"
                           type="number"
                           readOnly
-                          className="w-12 text-center border rounded py-1"
+                          className="w-12 text-center border rounded-xl py-1"
                         />
-
-                        {/* Nút Tăng */}
                         <button
                           type="button"
                           onClick={() =>
                             setFieldValue("quantity", values.quantity + 1)
                           }
-                          className="w-9 h-9 bg-dark_blue text-white flex items-center justify-center border rounded text-lg font-bold"
+                          className="w-9 h-9 rounded-xl border border-dark_blue text-dark_blue grid place-items-center hover:bg-dark_blue hover:text-white transition"
+                          aria-label="Tăng"
                         >
                           +
                         </button>
@@ -278,28 +295,32 @@ function ProductCard(props) {
                     </div>
                   </div>
 
-                  {/* Chọn Size (Chỉ 1 lựa chọn) */}
-                  <div className="mb-4">
-                    <label className="block font-semibold mb-1">
-                      Chọn size
+                  {/* Size — Circle badges */}
+                  <div>
+                    <label className="block text-sm uppercase tracking-wide text-slate-500 font-semibold mb-2">
+                      Chọn Size
                     </label>
-                    <div className="flex gap-4">
-                      {props.sizeOptions.map((item) => (
+                    <div className="flex items-center gap-4 flex-wrap">
+                      {props.sizeOptions?.map((item) => (
                         <label
                           key={item.size}
-                          className="flex items-center gap-2"
+                          className="cursor-pointer flex items-center gap-2"
                         >
                           <Field
                             type="radio"
                             name="sizeOption"
                             value={item.size}
-                            className="accent-green_starbuck"
+                            className="peer sr-only"
                           />
-                          <span>
-                            {item.size} -{" "}
-                            <span className="text-camel font-semibold">
-                              {item.price.toLocaleString()}đ
-                            </span>
+                          <span
+                            className="w-10 h-10 rounded-full border grid place-items-center text-sm font-semibold
+                         transition hover:border-green_starbuck
+                         peer-checked:bg-green_starbuck peer-checked:text-white peer-checked:border-transparent"
+                          >
+                            {item.size}
+                          </span>
+                          <span className="text-camel font-semibold">
+                            {item.price.toLocaleString("vi-VN")}đ
                           </span>
                         </label>
                       ))}
@@ -311,39 +332,45 @@ function ProductCard(props) {
                     />
                   </div>
 
-                  {/* Chọn Sugar */}
-                  <div className="mb-4">
-                    <label className="block font-semibold mb-1">
-                      Chọn Mức đường
+                  {/* Độ ngọt - segmented control*/}
+                  <div>
+                    <label className="block text-sm uppercase tracking-wide text-slate-500 font-semibold mb-2">
+                      Chọn độ ngọt
                     </label>
-                    <div className="flex gap-4">
+                    <div className="inline-flex rounded-xl border p-1 gap-1">
                       {["25", "50", "75", "100"].map((level) => (
-                        <label key={level} className="flex items-center gap-2">
+                        <label key={level} className="cursor-pointer">
                           <Field
                             type="radio"
                             name="sugarLevel"
                             value={level}
-                            className="accent-green_starbuck"
+                            className="peer sr-only"
                           />
-                          <span>{level}%</span>
+                          <span
+                            className="px-3 py-1.5 rounded-lg text-sm
+                         peer-checked:bg-green_starbuck peer-checked:text-white
+                         hover:bg-gray-100 inline-block"
+                          >
+                            {level}%
+                          </span>
                         </label>
                       ))}
                     </div>
                   </div>
 
-                  {/* Chọn Đá */}
-                  <div className="mb-4">
-                    <label className="block font-semibold mb-1">Chọn Đá</label>
-                    <div className="flex gap-4">
+                  {/* Đá — segmented control */}
+                  <div>
+                    <label className="block text-sm uppercase tracking-wide text-slate-500 font-semibold mb-2">Chọn Đá</label>
+                    <div className="inline-flex rounded-xl border p-1 gap-1">
                       {["Chung", "Riêng"].map((option) => (
-                        <label key={option} className="flex items-center gap-2">
+                        <label key={option} className="cursor-pointer">
                           <Field
                             type="radio"
                             name="iceOption"
                             value={option}
-                            className="accent-green_starbuck"
+                            className="peer sr-only"
                           />
-                          <span>
+                          <span className="px-3 py-1.5 rounded-lg text-sm inline-block hover:bg-gray-100 peer-checked:bg-green_starbuck peer-checked:text-white">
                             {option === "Chung" ? "Đá Chung" : "Đá Riêng"}
                           </span>
                         </label>
@@ -351,33 +378,37 @@ function ProductCard(props) {
                     </div>
                   </div>
 
-                  {/* Chọn Topping cho Order */}
+                  {/* Topping */}
                   <div>
-                    <label className="block font-semibold mb-1">
+                    <label className="block text-sm uppercase tracking-wide text-slate-500 font-semibold mb-2">
                       Chọn Topping
                     </label>
-                    <div className="grid grid-cols-3 gap-x-4 gap-y-1">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2">
                       {props.toppings?.map((topping, index) => {
-                        const isChecked = values.toppings.some(
+                        const isChecked = (values.toppings || []).some(
                           (t) => t.name === topping.name
                         );
                         return (
                           <label
                             key={index}
-                            className="flex items-center mb-1 text-sm"
+                            className={`flex items-center text-sm p-2 rounded-lg border ${
+                              isChecked
+                                ? "bg-green-50 border-green_starbuck/50"
+                                : "border-gray-200"
+                            } cursor-pointer`}
                           >
                             <input
                               type="checkbox"
                               checked={isChecked}
                               onChange={(e) => {
                                 const updatedToppings = e.target.checked
-                                  ? [...values.toppings, topping]
-                                  : values.toppings.filter(
+                                  ? [...(values.toppings || []), topping]
+                                  : (values.toppings || []).filter(
                                       (t) => t.name !== topping.name
                                     );
                                 setFieldValue("toppings", updatedToppings);
                               }}
-                              className="mr-2"
+                              className="mr-2 accent-green_starbuck"
                             />
                             <span className="flex-1 whitespace-nowrap">
                               {topping.name} (+
@@ -389,23 +420,20 @@ function ProductCard(props) {
                     </div>
                   </div>
 
-                  {/* Button  */}
-                  <div className="flex justify-end space-x-2">
-                    {/* Button Hủy */}
+                  {/* Footer hành động */}
+                  <div className="flex justify-end gap-3 pt-4 border-t mt-2">
                     <button
                       type="button"
-                      onClick={() => {
-                        setShowAddModal(false);
-                      }}
-                      className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-100"
+                      onClick={() => setShowAddModal(false)}
+                      className="px-4 py-2 border rounded-xl text-gray-700 hover:bg-gray-50"
                       disabled={isLoading}
                     >
                       Hủy
                     </button>
-                    {/* Button Thêm */}
+
                     <button
                       type="submit"
-                      className="relative bg-dark_blue text-white px-4 py-2 rounded hover:bg-dark_blue/80 disabled:bg-dark_blue"
+                      className="relative bg-dark_blue text-white px-5 py-2 rounded-xl hover:bg-dark_blue/90 disabled:opacity-70"
                       disabled={isLoading}
                     >
                       {isLoading ? (

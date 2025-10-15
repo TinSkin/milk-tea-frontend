@@ -240,8 +240,6 @@ export const useStoreSelectionStore = create(
 
                     // Products sẽ được lưu trong local state của component
                     set({ isLoadingStores: false, error: null });
-
-                    console.log("Loaded store products with pagination:", response.data.data);
                     return response.data.data || {}; // Return cả store info + products + pagination
                 } catch (error) {
                     const errorMessage = error.response?.data?.message || "Lỗi lấy sản phẩm của cửa hàng";
