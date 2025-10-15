@@ -6,14 +6,6 @@ const BASE_URL = import.meta.env.MODE === "development"
   ? `${import.meta.env.VITE_API_BASE}/api`
   : `${import.meta.env.VITE_API_BASE_PROD}/api`;
 
-// Debug logging for production
-console.log('🔧 Environment:', import.meta.env.MODE);
-console.log('🌐 Base URL:', BASE_URL);
-console.log('📊 Env vars:', {
-  VITE_API_BASE: import.meta.env.VITE_API_BASE,
-  VITE_API_BASE_PROD: import.meta.env.VITE_API_BASE_PROD
-});
-
 // Tạo instance axios với cấu hình chung
 const api = axios.create({
   baseURL: BASE_URL,
@@ -50,7 +42,7 @@ api.interceptors.response.use(
   (response) => {
     // Chỉ log success khi không phải check-auth
     if (!response.config.url?.includes('/check-auth')) {
-      console.log("API Response success:", response.config.url);
+      // console.log("API Response success:", response.config.url);
     }
     return response;
   },
@@ -113,8 +105,7 @@ export const toppingAPI = axios.create({
   withCredentials: true
 });
 
-//  ÁP DỤNG REQUEST INTERCEPTOR CHO CÁC INSTANCE KHÁC
-//  - Hàm tiện ích để attach interceptor vào nhiều instance
+// Áp dụng request interceptor cho các instance khác - Hàm tiện ích để attach interceptor vào nhiều instance
 const attachAuthRequestInterceptor = (instance) => {
   instance.interceptors.request.use(
     (config) => {

@@ -7,10 +7,6 @@ const API_ENDPOINT = import.meta.env.MODE === "development"
   ? import.meta.env.VITE_API_BASE || 'http://localhost:5000'
   : import.meta.env.VITE_API_BASE_PROD || 'https://milk-tea-backend.onrender.com';
 
-// Debug logging
-console.log('🏪 AddressStore Environment:', import.meta.env.MODE);
-console.log('🌐 AddressStore API Endpoint:', API_ENDPOINT);
-
 // ——— Debounce nhỏ cho UX mượt ———
 let debounceTimer;
 const debounce = (fn, delay = 600) => (...args) => {

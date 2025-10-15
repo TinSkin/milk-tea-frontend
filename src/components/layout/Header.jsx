@@ -18,29 +18,28 @@ function Header() {
   const { items: cartItems, clearCart } = useCartStore();
   const [cartCount, setCartCount] = useState(0);
 
-  // Tính tổng số sản phẩm trong giỏ hàng - tự động cập nhật khi cartItems thay đổi
+  //! Tính tổng số sản phẩm trong giỏ hàng - tự động cập nhật khi cartItems thay đổi
   useEffect(() => {
     const totalCount = cartItems.reduce(
       (total, item) => total + (item.quantity || 0),
       0
     );
     setCartCount(totalCount);
-    console.log("Header cart count updated:", totalCount);
   }, [cartItems]);
 
-  // Function để clear cart nhanh (development only)
+  //! Function để clear cart nhanh (development only)
   const debugClearCart = () => {
     clearCart();
-    console.log("🧹 DEBUG: Cart cleared completely!");
+    // console.log("🧹 DEBUG: Cart cleared completely!");
   };
 
-  // 🚨 DEBUG: Expose clear function to global window (development only)
+  //! 🚨 DEBUG: Expose clear function to global window (development only)
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === "development") {
       window.debugClearCart = debugClearCart;
-      console.log("🚨 DEBUG: Use window.debugClearCart() to clear cart quickly!");
+      // console.log("🚨 DEBUG: Use window.debugClearCart() to clear cart quickly!");
     }
-    
+
     return () => {
       if (window.debugClearCart) {
         delete window.debugClearCart;
@@ -165,7 +164,7 @@ function Header() {
             </Link>
 
             {/*Clear Cart Button (development only) */}
-            {cartCount > 0 && process.env.NODE_ENV === 'development' && (
+            {cartCount > 0 && process.env.NODE_ENV === "development" && (
               <button
                 onClick={debugClearCart}
                 className="ml-2 p-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors"

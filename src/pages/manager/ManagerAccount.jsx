@@ -836,14 +836,6 @@ const ManagerAccount = () => {
                             >
                               <RotateCcw className="w-4 h-4" />
                             </button>
-
-                            <button
-                              onClick={() => handleDeleteUser(user)}
-                              className="text-red-600 hover:text-red-800"
-                              title="Xóa tài khoản"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
                           </div>
                         </td>
                       </tr>

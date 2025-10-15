@@ -96,7 +96,7 @@ export const useAuthStore = create((set, get) => ({
 
         try {
             const { data } = await api.post(`${API_ENDPOINT}/verify-email`, { token });
-            
+
             // Sử dụng response trực tiếp từ backend (không cần gọi check-auth thêm)
             if (data.isAuthenticated && data.user) {
                 set({
@@ -189,7 +189,7 @@ export const useAuthStore = create((set, get) => ({
         set({ isLoading: true, error: null, message: null }); // Đặt trạng thái loading
         try {
             console.log("Gửi thông tin Google credential đến backend...", api.defaults.baseURL + API_ENDPOINT + "/google");
-            
+
             // Gửi Google credential token đến backend
             const response = await api.post(`${API_ENDPOINT}/google`, {
                 credential: googleCredential
@@ -200,7 +200,7 @@ export const useAuthStore = create((set, get) => ({
             // Kiểm tra xem có cần xác minh thêm không
             if (response.data.requiresVerification) {
                 console.log("Người dùng Google cần xác minh bổ sung");
-                
+
                 // Đặt trạng thái chờ xác minh
                 set({
                     user: null,
@@ -214,9 +214,9 @@ export const useAuthStore = create((set, get) => ({
                         reason: response.data.verificationReason
                     }
                 });
-                
-                return { 
-                    requiresVerification: true, 
+
+                return {
+                    requiresVerification: true,
                     email: response.data.user.email,
                     message: response.data.message,
                     reason: response.data.verificationReason
@@ -232,10 +232,10 @@ export const useAuthStore = create((set, get) => ({
                 message: response.data.message || "Đăng nhập Google thành công",
                 pendingVerification: null // Clear any pending verification
             });
-            
-            return { 
+
+            return {
                 requiresVerification: false,
-                user: response.data.user 
+                user: response.data.user
             };
         } catch (error) {
             console.error("Google login error:", error);
@@ -250,16 +250,19 @@ export const useAuthStore = create((set, get) => ({
     checkAuth: async () => {
         set({ isCheckingAuth: true, error: null });
         try {
+            if (!data) {
+                return null;
+            }
             const { data } = await api.get(`${API_ENDPOINT}/check-auth`); // axios phải withCredentials: true
             const user = data?.user || null;
-            
+
             const rememberMeCookie = document.cookie
                 .split('; ')
                 .find(row => row.startsWith('rememberMe='));
             const rememberMeStatus = rememberMeCookie ? rememberMeCookie.split('=')[1] === 'true' : false;
-            
+
             console.log("Trạng thái Remember Me:", rememberMeStatus);
-            
+
             set({
                 user,
                 isAuthenticated: !!user,
@@ -271,12 +274,12 @@ export const useAuthStore = create((set, get) => ({
             if (user && user.role === 'storeManager' && user.assignedStoreId) {
                 const storedStoreId = localStorage.getItem('managerStoreId');
                 console.log('Manager store ID - Backend:', user.assignedStoreId, 'localStorage:', storedStoreId);
-                
+
                 // Chỉ update nếu khác biệt (edge case: admin thay đổi assignment)
                 if (storedStoreId !== user.assignedStoreId) {
                     localStorage.setItem('managerStoreId', user.assignedStoreId);
                     console.log('Updated manager store ID:', user.assignedStoreId);
-                    
+
                     // Dispatch event khi có thay đổi
                     window.dispatchEvent(new CustomEvent('managerStoreAssignment', {
                         detail: { storeId: user.assignedStoreId, trigger: 'checkAuth-updated' }
@@ -318,10 +321,10 @@ export const useAuthStore = create((set, get) => ({
         try {
             // Gửi request POST đến endpoint đăng xuất
             await api.post(`${API_ENDPOINT}/logout`);
-            
+
             // Clear manager store ID khi logout
             localStorage.removeItem('managerStoreId');
-            
+
             // Nếu thành công, reset user, isAuthenticated và đặt loading thành false
             set({ user: null, isAuthenticated: false, isLoading: false });
         } catch (error) {
@@ -400,7 +403,7 @@ export const useAuthStore = create((set, get) => ({
 
     //! 18. Hàm xóa lỗi
     clearError: () => set({ error: null }),
-    
+
     //! 19. Hàm xóa thông báo
     clearMessage: () => set({ message: null }),
 

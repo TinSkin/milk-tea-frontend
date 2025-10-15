@@ -57,7 +57,8 @@ const itemsPerPageOptions = [
     value: 9,
     label: (
       <span className="flex items-center gap-2">
-        <ListOrdered className="w-4 h-4 text-camel" />12 / Trang
+        <ListOrdered className="w-4 h-4 text-camel" />
+        12 / Trang
       </span>
     ),
   },
@@ -79,7 +80,7 @@ function Menu() {
     loadStoreCategories,
     loadStoreProducts,
     openStoreModal,
-    isLoading: storeLoading,
+    isLoading: isLoadingStore,
   } = useStoreSelectionStore();
 
   // Trạng thái sản phẩm và danh mục - quản lý theo cửa hàng đã chọn
@@ -303,19 +304,24 @@ function Menu() {
 
   //! Reload data khi selectedStore thay đổi
   useEffect(() => {
-    console.log("Selected Store changed:", selectedStore);
+    if (!selectedStore) {
+      console.log("Selected Store changed:", selectedStore);
+    }
+
     if (selectedStore?._id) {
       loadInitialData();
     }
   }, [selectedStore?._id]);
 
   useEffect(() => {
-    console.log(
-      "ProductsList state updated:",
-      productsList,
-      "& Categories state updated:",
-      categories
-    );
+    if (!productsList && !categories) {
+      console.log(
+        "ProductsList state updated:",
+        productsList,
+        "& Categories state updated:",
+        categories
+      );
+    }
   }, [productsList, categories]);
 
   return (
@@ -429,7 +435,11 @@ function Menu() {
                       {/* Categories Sidebar */}
                       {categories && categories.length > 0 ? (
                         categories
-                          .filter((cat) => cat.status === "active" || cat.status === "available") // Support both status types
+                          .filter(
+                            (cat) =>
+                              cat.status === "active" ||
+                              cat.status === "available"
+                          ) // Support both status types
                           .map((category) => {
                             const categoryProductCount = allProducts.filter(
                               (product) => {
