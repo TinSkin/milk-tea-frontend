@@ -105,7 +105,7 @@ const itemsPerPageOptions = [
 
 const ManagerProduct = () => {
   const isInitLoaded = useRef(false);
-  
+
   // Trạng thái của stores
   const {
     products,
@@ -1049,7 +1049,10 @@ const ManagerProduct = () => {
                       Topping
                     </th>
                     <th className="p-3 text-md font-semibold text-green_starbuck">
-                      Trạng thái
+                      Hệ thống
+                    </th>
+                    <th className="p-3 text-md font-semibold text-green_starbuck">
+                      Cửa hàng
                     </th>
                     <th className="p-3 text-md font-semibold text-green_starbuck">
                       <div className="flex items-center justify-center">
@@ -1203,6 +1206,20 @@ const ManagerProduct = () => {
                           }`}
                         >
                           {product.status === "available"
+                            ? "Đang bán"
+                            : "Ngừng bán"}
+                        </span>
+                      </td>
+                      {/* Hiển thị trạng thái sản phẩm */}
+                      <td className="p-3 min-w-[140px]">
+                        <span
+                          className={`px-2 py-1 text-md rounded font-semibold ${
+                            product.storeStatus === "available"
+                              ? "text-green-700 bg-green-100"
+                              : "text-red-700 bg-red-100"
+                          }`}
+                        >
+                          {product.storeStatus === "available"
                             ? "Đang bán"
                             : "Ngừng bán"}
                         </span>
