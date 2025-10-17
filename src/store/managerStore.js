@@ -19,6 +19,8 @@ export const useManagerStore = create((set, get) => ({
     stats: null, // Thống kê doanh thu, đơn hàng của cửa hàng
     orders: [], // Danh sách đơn hàng của cửa hàng
     payments: [], // Danh sách phương thức thanh toán của cửa hàng
+    currentOrder: null, // Đơn hàng đang xem chi tiết
+    orderHistory: [],   // Lịch sử trạng thái đơn hàng
     pagination: {
         currentPage: 1,
         totalPages: 0,
@@ -147,30 +149,197 @@ export const useManagerStore = create((set, get) => ({
         }
     },
 
-    //! 9. Action để lấy danh sách đơn hàng
-    fetchMyStoreOrders: async (params = {}) => {
-        set({ isLoading: true, error: null });
-        try {
-            const response = await api.get(`${API_ENDPOINT}/orders`, { params });
+  //! 9. Action để lấy danh sách đơn hàng
+fetchMyStoreOrders: async (params = {}) => {
+    set({ isLoading: true, error: null });
+    try {
+        const response = await api.get(`${API_ENDPOINT}/orders`, { params });
 
-            if (response.data.success) {
-                set({
-                    orders: response.data.data.orders,
-                    pagination: response.data.data.pagination,
-                    isLoading: false
-                });
-                return response.data;
-            }
-        } catch (error) {
-            console.error("Lỗi khi lấy danh sách đơn hàng:", error);
+        if (response.data.success) {
             set({
-                error: error.response?.data?.message || "Lỗi khi lấy danh sách đơn hàng",
+                orders: response.data.data.orders,           
+                pagination: response.data.data.pagination,   
                 isLoading: false
             });
-            throw error;
+            return response.data;
         }
-    },
+    } catch (error) {
+        console.error("Lỗi khi lấy danh sách đơn hàng:", error);
+        set({
+            error: error.response?.data?.message || "Lỗi khi lấy danh sách đơn hàng",
+            isLoading: false
+        });
+        throw error;
+    }
+},
+    
+//! Lấy chi tiết đơn hàng
+fetchOrderDetail: async (orderId) => {
+    set({ isLoading: true, error: null });
+    try {
+        const response = await api.get(`${API_ENDPOINT}/orders/${orderId}?t=${Date.now()}`);
+        
+        if (response.data.success) {
+            set({
+                currentOrder: response.data.data,
+                isLoading: false
+            });
+            return response.data;
+        }
+    } catch (error) {
+        console.error("Lỗi khi lấy chi tiết đơn hàng:", error);
+        set({
+            error: error.response?.data?.message || "Lỗi khi lấy chi tiết đơn hàng",
+            isLoading: false
+        });
+        throw error;
+    }
+},
 
+//! Cập nhật trạng thái đơn hàng
+updateOrderStatus: async (orderId, statusData) => {
+    set({ isLoading: true, error: null });
+    try {
+        const response = await api.put(`${API_ENDPOINT}/orders/${orderId}/status`, statusData);
+        
+        if (response.data.success) {
+            // Cập nhật lại danh sách đơn hàng
+            const { orders, currentOrder } = get();
+            const updatedOrders = orders.map(order => 
+                order._id === orderId 
+                    ? { ...order, status: statusData.status }
+                    : order
+            );
+            
+            const updatedCurrentOrder = currentOrder && currentOrder._id === orderId 
+            ? { ...currentOrder, status: statusData.status }
+            : currentOrder;
+            set({
+                orders: updatedOrders,
+                currentOrder: updatedCurrentOrder, 
+                isLoading: false
+            });
+            return response.data;
+        }
+    } catch (error) {
+        console.error("Lỗi khi cập nhật trạng thái đơn hàng:", error);
+        set({
+            error: error.response?.data?.message || "Lỗi khi cập nhật trạng thái đơn hàng",
+            isLoading: false
+        });
+        throw error;
+    }
+},
+
+//! Cập nhật trạng thái thanh toán
+updatePaymentStatus: async (orderId, paymentData) => {
+    set({ isLoading: true, error: null });
+    try {
+        const response = await api.put(`${API_ENDPOINT}/orders/${orderId}/payment-status`, paymentData);
+        
+        if (response.data.success) {
+            // Cập nhật lại danh sách đơn hàng
+            const { orders, currentOrder } = get();
+            const updatedOrders = orders.map(order => 
+                order._id === orderId 
+                    ? { ...order, paymentStatus: paymentData.paymentStatus }
+                    : order
+            );
+            
+            const updatedCurrentOrder = currentOrder && currentOrder._id === orderId 
+                ? { ...currentOrder, paymentStatus: paymentData.paymentStatus }
+                : currentOrder;
+
+            set({
+                orders: updatedOrders,
+                currentOrder: updatedCurrentOrder, 
+                isLoading: false
+            });
+            return response.data;
+        }
+    } catch (error) {
+        console.error("Lỗi khi cập nhật trạng thái thanh toán:", error);
+        set({
+            error: error.response?.data?.message || "Lỗi khi cập nhật trạng thái thanh toán",
+            isLoading: false
+        });
+        throw error;
+    }
+},
+
+//! Hủy đơn hàng
+cancelOrder: async (orderId, reason) => {
+    set({ isLoading: true, error: null });
+    try {
+        const response = await api.put(`${API_ENDPOINT}/orders/${orderId}/cancel`, { reason });
+        
+        if (response.data.success) {
+            // Cập nhật lại danh sách đơn hàng
+            const { orders, currentOrder } = get();
+            const updatedOrders = orders.map(order => 
+                order._id === orderId 
+                    ? { 
+                        ...order, 
+                        status: "cancelled",
+                        paymentStatus: "failed" 
+                    }
+                    : order
+            );
+            
+            const updatedCurrentOrder = currentOrder && currentOrder._id === orderId 
+                ? { 
+                    ...currentOrder, 
+                    status: "cancelled",
+                    paymentStatus: "failed"
+                }
+                : currentOrder;
+                
+            set({
+                orders: updatedOrders,
+                currentOrder: updatedCurrentOrder,
+                isLoading: false
+            });
+            return response.data;
+        }
+    } catch (error) {
+        console.error("Lỗi khi hủy đơn hàng:", error);
+        set({
+            error: error.response?.data?.message || "Lỗi khi hủy đơn hàng",
+            isLoading: false
+        });
+        throw error;
+    }
+},
+//! Lấy lịch sử trạng thái đơn hàng
+fetchOrderStatusHistory: async (orderId) => {
+    set({ isLoading: true, error: null });
+    try {
+        const response = await api.get(`${API_ENDPOINT}/orders/${orderId}/history`);
+        
+        if (response.data.success) {
+            set({
+                orderHistory: response.data.data.history,
+                isLoading: false
+            });
+            return response.data;
+        }
+    } catch (error) {
+        console.error("Lỗi khi lấy lịch sử đơn hàng:", error);
+        set({
+            error: error.response?.data?.message || "Lỗi khi lấy lịch sử đơn hàng",
+            isLoading: false
+        });
+        throw error;
+    }
+},
+
+//! Action để clear current order - THÊM VÀO SAU fetchOrderStatusHistory
+clearCurrentOrder: () => {
+    set({ 
+        currentOrder: null, 
+        orderHistory: [] 
+    });
+},
     //! 10. Action để lấy danh sách categories của cửa hàng
     fetchMyStoreCategories: async (params = {}) => {
         set({ isLoading: true, error: null });

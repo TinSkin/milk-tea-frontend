@@ -34,7 +34,10 @@ export default function OrderTracking() {
         setError(null);
 
         const res = await api.get(`/orders/${id}`);
-        setOrder(res.data);
+        setOrder(res.data.order);
+        console.log("Dữ liệu đơn hàng từ server:", res.data.order);
+console.log("Danh sách item:", res.data.order.items);
+
       } catch (err) {
         console.error("Lỗi lấy đơn hàng:", err);
         setError("Không thể tải đơn hàng. Vui lòng thử lại!");

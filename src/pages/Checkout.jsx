@@ -16,6 +16,7 @@ import CheckoutModal from "../components/features/ecommerce/CheckoutModal";
 import { useCartStore } from "../store/cartStore";
 import { useAuthStore } from "../store/authStore";
 import { useAddressStore } from "../store/addressStore";
+import { useStoreSelectionStore } from "../store/storeSelectionStore";
 import api from "../api/axios";
 
 import AddressSelector from "../components/features/logistic/address/AddressSelector";
@@ -37,6 +38,7 @@ const CheckoutPage = () => {
   const items = useCartStore((s) => s.items);
   const selectedItems = useCartStore((s) => s.selectedItems);
   const getSelectedTotal = useCartStore((s) => s.getSelectedTotal);
+  const { selectedStore } = useStoreSelectionStore();
 
   //! Hàm tạo key duy nhất cho mỗi item (dùng để lọc selectedItems)
   const getItemKey = (item) =>
@@ -169,6 +171,7 @@ const CheckoutPage = () => {
         image: item.image || "",
       })),
       totalAmount: getSelectedTotal(),
+      storeId: selectedStore?._id,
     };
 
     try {
