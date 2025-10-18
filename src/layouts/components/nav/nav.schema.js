@@ -7,6 +7,7 @@ import {
     Coffee,
     Store,
     Globe,
+    ListChecks
 } from "lucide-react";
 
 // Cấu trúc navigation (sidebar) dùng chung cho tất cả vai trò
@@ -62,6 +63,13 @@ export const navSchema = [
         icon: Users,
         path: "/accounts",
         roles: ["admin", "storeManager"], 
+    },
+    {
+        id: "requests",
+        title: "Yêu cầu",
+        icon: ListChecks,
+        path: "/requests",
+        roles: ["admin", "storeManager"],
     },
     {
         id: "system",

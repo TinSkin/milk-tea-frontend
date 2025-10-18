@@ -39,8 +39,6 @@ const PrivateRoute = ({ permittedRole }) => {
     return <Navigate to="/unauthorized" replace />;
   }
 
-  console.log("User is authenticated and authorized:", user);
-
   //! Nếu người dùng đã đăng nhập và có quyền yêu cầu
   return <Outlet />;
 };

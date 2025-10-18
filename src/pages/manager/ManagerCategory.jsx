@@ -27,10 +27,13 @@ import Select from "react-select";
 
 // Import stores để quản lý trạng thái
 import { useManagerStore } from "../../store/managerStore";
+import { useRequestManagerStore } from "../../store/request/requestManagerStore";
 
 // Import component
 import Notification from "../../components/ui/Notification";
-import AddCategoryModal from "../../components/features/admin/category/AddCategoryModal";
+import AddCategoryRequestModal from "../../components/features/manager/request/category/AddCategoryRequestModal";
+import UpdateCategoryRequestModal from "../../components/features/manager/request/category/UpdateCategoryRequestModal";
+import DeleteCategoryRequestModal from "../../components/features/manager/request/category/DeleteCategoryRequestModal";
 import EditCategoryModal from "../../components/features/admin/category/EditCategoryModal";
 import ConfirmDeleteModal from "../../components/features/admin/ConfirmDeleteModal";
 
@@ -152,30 +155,45 @@ const ManagerCategory = () => {
   const isInitLoaded = useRef(false);
 
   // Store quản lý danh mục
-  const { categories, pagination, isLoading, fetchMyStoreCategories, clearError } =
+  const { categories, pagination, isLoading, fetchMyStoreCategories, updateMyStoreCategory, clearError } =
     useManagerStore();
+
+  // Store quản lý requests  
+  const { isLoading: isRequestLoading } = useRequestManagerStore();
 
   // Trạng thái các modal
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showUpdateRequestModal, setShowUpdateRequestModal] = useState(false);
+  const [showDeleteRequestModal, setShowDeleteRequestModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
+  const [requestingCategory, setRequestingCategory] = useState(null);
 
-  //! Hàm xử lý thêm danh mục
-  const handleAddCategory = async (categoryData) => {
-    try {
-      await createCategory(categoryData);
-      setShowAddModal(false);
-      Notification.success("Thêm danh mục thành công!");
-      loadCategories(pagination.currentPage);
-    } catch (error) {
-      Notification.error("Thêm danh mục thất bại", error.message);
-    }
+  //! Hàm xử lý thêm danh mục request
+  const handleAddCategoryRequest = () => {
+    setShowAddModal(false);
+    Notification.info(
+      "Yêu cầu đã được gửi", 
+      "Admin sẽ xem xét và phản hồi yêu cầu của bạn sớm nhất có thể."
+    );
   };
 
-  //! Hàm xử lý khi bấm chỉnh sửa danh mục
-  const handleEditCategory = (category) => {
-    setEditingCategory(category);
-    setShowEditModal(true);
+  //! Xử lý thành công khi gửi request cập nhật danh mục
+  const handleUpdateRequestSuccess = () => {
+    setShowUpdateRequestModal(false);
+    setRequestingCategory(null);
+  };
+
+  //! Xử lý thành công khi gửi request xóa danh mục
+  const handleDeleteRequestSuccess = () => {
+    setShowDeleteRequestModal(false);
+    setRequestingCategory(null);
+  };
+
+  //! Manager không được sửa danh mục trực tiếp - phải qua request system
+  const handleEditCategory = (categoryData) => {
+    setRequestingCategory(categoryData);
+    setShowUpdateRequestModal(true);
   };
 
   //! Hàm xử lý cập nhật danh mục
@@ -238,28 +256,6 @@ const ManagerCategory = () => {
       console.error("Bulk delete error:", error);
       Notification.error("Xóa danh mục thất bại", error.message);
     }
-  };
-
-  //! Hàm xử lý xóa vĩnh viễn danh mục (mở modal xác nhận xóa vĩnh viễn)
-  const handleDeleteCategory = (category) => {
-    setDeleteModalConfig({
-      type: "hard",
-      categoryId: category._id,
-      categoryName: category.name,
-      action: "hardDelete",
-    });
-    setShowDeleteModal(true);
-  };
-
-  //! Hàm xử lý xóa mềm danh mục (mở modal xác nhận chuyển trạng thái)
-  const handleSoftDeleteCategory = (category) => {
-    setDeleteModalConfig({
-      type: "soft",
-      categoryId: category._id,
-      categoryName: category.name,
-      action: "softDelete",
-    });
-    setShowDeleteModal(true);
   };
 
   //! Hàm xác nhận hành động xóa
@@ -359,7 +355,7 @@ const ManagerCategory = () => {
         sortOrder,
       };
 
-      const result = await getAllCategories(params);
+      await fetchMyStoreCategories(params);
     } catch (error) {
       Notification.error(
         "Không thể tải danh sách danh mục",
@@ -381,12 +377,113 @@ const ManagerCategory = () => {
     }
   };
 
-  //! Xử lý chuyển trạng thái danh mục
-  const handleToggleStatus = async (category) => {
+  //! Manager không được xóa danh mục - chỉ có thể request tới admin
+  const handleRemoveFromStore = async (category) => {
+    setRequestingCategory(category);
+    setShowDeleteRequestModal(true);
+  };
+
+  //! Gửi yêu cầu tới Admin để thay đổi system status
+  const handleRequestSystemStatusChange = async (category) => {
+    // Xác định loại request dựa trên system status hiện tại
+    let requestType = "";
+    let requestReason = "";
+    let newSystemStatus = "available"; // Default target status
+
+    if (category.status === "unavailable") {
+      requestType = "Yêu cầu mở lại danh mục";
+      requestReason =
+        "Danh mục đang bị khóa bởi Admin, cửa hàng muốn sử dụng lại danh mục này.";
+      newSystemStatus = "available";
+    } else if (category.status === "paused") {
+      requestType = "Yêu cầu mở lại danh mục";
+      requestReason =
+        "Danh mục đang bị tạm dừng bởi Admin, cửa hàng muốn sử dụng lại danh mục này.";
+      newSystemStatus = "available";
+    } else {
+      Notification.info(
+        "Danh mục đang hoạt động bình thường",
+        "Không cần gửi yêu cầu thay đổi trạng thái."
+      );
+      return;
+    }
+
     try {
-      handleSoftDeleteCategory(category);
+      // Implement request API call here if needed
+      Notification.success(
+        "Đã gửi yêu cầu tới Admin",
+        `${requestType} cho danh mục "${category.name}"`
+      );
     } catch (error) {
-      Notification.error("Cập nhật trạng thái thất bại", error.message);
+      Notification.error(
+        "Gửi yêu cầu thất bại",
+        error.message || "Đã xảy ra lỗi khi gửi yêu cầu"
+      );
+    }
+  };
+
+  //! Xử lý chuyển trạng thái danh mục TẠI CỬA HÀNG (storeStatus)
+  const handleToggleStoreStatus = async (category) => {
+    // Kiểm tra constraint: Chỉ được toggle khi system status = available
+    if (category.status !== "available") {
+      Notification.warning(
+        "Không thể thay đổi trạng thái",
+        "Danh mục phải được Admin mở lại trước khi bạn có thể thay đổi trạng thái cửa hàng."
+      );
+      return;
+    }
+
+    try {
+      // CHT có thể toggle giữa "available" và "paused"
+      const newStoreStatus =
+        category.storeStatus === "available" ? "paused" : "available";
+
+      await updateMyStoreCategory(category._id, { storeStatus: newStoreStatus });
+
+      Notification.success(
+        newStoreStatus === "available"
+          ? "Đã BẬT lại danh mục tại cửa hàng!"
+          : "Đã TẠM DỪNG danh mục tại cửa hàng!"
+      );
+
+      loadCategories(pagination.currentPage);
+    } catch (error) {
+      console.error("Toggle category store status error:", error);
+
+      // Handle specific business rule errors
+      const errorResponse = error.response?.data;
+      if (errorResponse?.code) {
+        switch (errorResponse.code) {
+          case "SYSTEM_STATUS_UNAVAILABLE":
+            Notification.error(
+              "Không thể bật danh mục",
+              "Admin đã tắt danh mục này toàn hệ thống. Liên hệ Admin để kích hoạt lại."
+            );
+            break;
+          case "SYSTEM_STATUS_PAUSED":
+            Notification.error(
+              "Không thể bật danh mục",
+              "Admin đang tạm dừng danh mục này. Liên hệ Admin để biết thêm thông tin."
+            );
+            break;
+          case "SYSTEM_STATUS_OUT_OF_STOCK":
+            Notification.error(
+              "Không thể bật danh mục",
+              "Danh mục đang bị hạn chế toàn hệ thống. Chờ Admin xử lý."
+            );
+            break;
+          default:
+            Notification.error(
+              "Cập nhật trạng thái thất bại",
+              errorResponse.message || error.message
+            );
+        }
+      } else {
+        Notification.error(
+          "Cập nhật trạng thái cửa hàng thất bại",
+          error.message
+        );
+      }
     }
   };
 
@@ -813,26 +910,29 @@ const ManagerCategory = () => {
                             onClick={() => handleEditCategory(category)}
                             className="text-blue-600 hover:text-blue-800"
                             disabled={isLoading}
-                            title="Chỉnh sửa"
+                            title="Yêu cầu chỉnh sửa"
                           >
                             <Pencil className="w-4 h-4" />
                           </button>
 
                           <Switch
-                            checked={category.status === "available"}
-                            onChange={() => handleToggleStatus(category)}
+                            checked={category.storeStatus === "available"}
+                            onChange={() => handleToggleStoreStatus(category)}
+                            disabled={category.status !== "available"}
                             className={`${
-                              category.status === "available"
+                              category.storeStatus === "available"
                                 ? "bg-green-500"
                                 : "bg-red-400"
-                            } relative inline-flex h-6 w-11 items-center rounded-full transition`}
+                            } relative inline-flex h-6 w-11 items-center rounded-full transition ${
+                              category.status !== "available" ? "opacity-50 cursor-not-allowed" : ""
+                            }`}
                           >
                             <span className="sr-only">
-                              Chuyển trạng thái bán
+                              Chuyển trạng thái cửa hàng
                             </span>
                             <span
                               className={`${
-                                category.status === "available"
+                                category.storeStatus === "available"
                                   ? "translate-x-6"
                                   : "translate-x-1"
                               } inline-block h-4 w-4 transform bg-white rounded-full transition`}
@@ -840,10 +940,10 @@ const ManagerCategory = () => {
                           </Switch>
 
                           <button
-                            onClick={() => handleDeleteCategory(category)}
+                            onClick={() => handleRemoveFromStore(category)}
                             className="text-red-600 hover:text-red-800"
                             disabled={isLoading}
-                            title="Thay đổi trạng thái"
+                            title="Yêu cầu xóa"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -916,10 +1016,34 @@ const ManagerCategory = () => {
 
       {/* Modal thêm/sửa/xóa */}
       {showAddModal && (
-        <AddCategoryModal
-          onAdd={handleAddCategory}
+        <AddCategoryRequestModal
+          isOpen={showAddModal}
           onClose={() => setShowAddModal(false)}
-          isLoading={isLoading}
+          onSuccess={handleAddCategoryRequest}
+        />
+      )}
+
+      {showUpdateRequestModal && requestingCategory && (
+        <UpdateCategoryRequestModal
+          isOpen={showUpdateRequestModal}
+          onClose={() => {
+            setShowUpdateRequestModal(false);
+            setRequestingCategory(null);
+          }}
+          onSuccess={handleUpdateRequestSuccess}
+          categoryData={requestingCategory}
+        />
+      )}
+
+      {showDeleteRequestModal && requestingCategory && (
+        <DeleteCategoryRequestModal
+          isOpen={showDeleteRequestModal}
+          onClose={() => {
+            setShowDeleteRequestModal(false);
+            setRequestingCategory(null);
+          }}
+          onSuccess={handleDeleteRequestSuccess}
+          categoryData={requestingCategory}
         />
       )}
 

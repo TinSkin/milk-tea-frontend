@@ -7,15 +7,13 @@ function SocialIcon() {
   const { loginWithGoogle } = useAuthStore();
   const navigate = useNavigate();
 
-  // Check if we should show Google button
-  const isProduction = import.meta.env.PROD;
-  const isLocalhost = window.location.hostname === 'localhost';
+  // Kiểm tra xem có nên hiển thị nút Google không
   const hasGoogleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-  
-  // Only show Google button in production or if explicitly enabled for localhost
-  const shouldShowGoogleButton = hasGoogleClientId && 
-    (isProduction || import.meta.env.VITE_ENABLE_GOOGLE_OAUTH_DEV === 'true');
 
+  // Hiển thị nút Google nếu có GOOGLE_CLIENT_ID (cho cả dev và production)
+  const shouldShowGoogleButton = hasGoogleClientId;
+
+  //! Xử lí thành công Google OAuth
   const handleGoogleSuccess = async (credentialResponse) => {
     console.log("Google login started");
     try {
@@ -55,7 +53,7 @@ function SocialIcon() {
     }
   };
 
-  //! Handle Google OAuth errors
+  //! Xử lí lỗi Google OAuth
   const handleGoogleError = (error) => {
     Notification.error(
       "Đăng nhập Google thất bại",
@@ -81,7 +79,7 @@ function SocialIcon() {
           />
         ) : (
           <div className="text-gray-500 text-sm p-2 border border-gray-300 rounded-lg">
-            Google OAuth (Chỉ khả dụng ở production)
+            Google OAuth (Chưa cấu hình GOOGLE_CLIENT_ID)
           </div>
         )}
       </div>

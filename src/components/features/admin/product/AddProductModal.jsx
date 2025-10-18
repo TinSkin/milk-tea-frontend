@@ -12,6 +12,7 @@ const AddProductModal = ({
   availableToppings,
   availableCategories,
 }) => {
+  // Dữ liệu khởi tạo cho form
   const initialValues = {
     name: "",
     images: [],
@@ -20,9 +21,9 @@ const AddProductModal = ({
     toppings: [],
     description: "",
     category: "",
-  };
+  }; 
 
-  //! Handle submit form data
+  //! Xử lí dữ liệu khi submit form
   const handleSubmit = async (values) => {
     console.log("Bắt đầu submit, values:", values);
     // Chuyển image từ chuỗi sang mảng nếu nhập nhiều URL
@@ -64,13 +65,14 @@ const AddProductModal = ({
     console.log("Kết thúc submit, đã gọi onAdd xong");
   };
 
-  //! Handle click outside modal
+  //! Đóng modal khi click vào backdrop
   const handleBackdropClick = (e) => {
     if (e.target === e.currentTarget) {
       onClose();
     }
   };
 
+  //! Đồng bộ giá cơ bản với giá nhỏ nhất trong sizeOptions
   function PriceSyncer() {
     const { values, setFieldValue } = useFormikContext();
     useEffect(() => {
