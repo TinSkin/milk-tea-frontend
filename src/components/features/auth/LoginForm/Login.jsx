@@ -11,17 +11,88 @@ import { useNavigate, useLocation } from "react-router-dom";
 
 // Import store quản lý trạng thái
 import { useAuthStore } from "../../../../store/authStore";
+import { useCartStore } from "../../../../store/cartStore"; 
 
 // Import Components
 import SocialIcon from "../SocialIcon";
 import InputField from "../../../ui/InputField";
 import Notification from "../../../ui/Notification";
 
+import { useStoreSelectionStore } from "../../../../store/storeSelectionStore";
 const Login = ({ handleRegisterClick }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isAuthenticated, login, isCheckingAuth } = useAuthStore();
+  const { login} = useAuthStore();
 
+    //! HÀM XỬ LÝ SAU KHI LOGIN THÀNH CÔNG
+    const handleLoginSuccess = async (userData) => {
+      try {
+        console.log("🔐 [Login] User data:", userData);
+    
+        const cartStore = useCartStore.getState();
+        const storeSelectionStore = useStoreSelectionStore.getState();
+    
+        cartStore.setAuthStatus(true);
+    
+        let storeId =
+          userData?.storeId ||
+          userData?.assignedStoreId ||
+          userData?.defaultStoreId ||
+          storeSelectionStore.selectedStore?._id;
+    
+        if (!storeId) {
+          console.warn("⚠️ Không tìm thấy storeId, bỏ qua đồng bộ giỏ hàng.");
+          return;
+        }
+    
+        await cartStore.setCurrentStore(storeId);
+    
+        // 🧩 1️⃣ Load lại giỏ hàng guest từ localStorage (nếu có)
+        cartStore.loadGuestCart();
+    
+        // 🧩 2️⃣ Lấy giỏ hàng từ backend
+        const backendCart = await cartStore.fetchCart();
+    
+        // 🧩 3️⃣ Merge logic
+        if (cartStore.items.length > 0) {
+          if (!backendCart?.items?.length) {
+            console.log("🔄 Backend trống → đẩy local cart lên...");
+            await cartStore.syncCartToBackend();
+          } else {
+            console.log("🧩 Merge local cart vào backend cart...");
+            const mergedItems = [];
+    
+            for (const localItem of cartStore.items) {
+              const existing = backendCart.items.find(
+                (i) =>
+                  i.productId === localItem.productId &&
+                  i.sizeOption === localItem.sizeOption &&
+                  i.sugarLevel === localItem.sugarLevel &&
+                  i.iceOption === localItem.iceOption
+              );
+              if (existing) {
+                existing.quantity += localItem.quantity;
+              } else {
+                mergedItems.push(localItem);
+              }
+            }
+    
+            backendCart.items = [...backendCart.items, ...mergedItems];
+            cartStore.setItems(backendCart.items);
+            await cartStore.syncCartToBackend();
+          }
+    
+          // 🧹 Xóa guest cart trong localStorage
+          cartStore.clearGuestCart();
+        }
+    
+        await cartStore.fetchCart();
+        console.log("✅ [Login] Merge hoàn tất!");
+      } catch (error) {
+        console.error("❌ [Login] handleLoginSuccess error:", error);
+      }
+    };
+    
   //! Xử lý logic đăng nhập với error handling 
   const handleLogin = async (userData, { setErrors, setSubmitting }) => {
     try {
@@ -32,6 +103,7 @@ const Login = ({ handleRegisterClick }) => {
       const user = response?.data?.user || useAuthStore.getState()?.user || null;
 
       if (user) {
+        await handleLoginSuccess(user);
         // Chưa xác thực email -> chuyển đến trang verify
         if (!user.isVerified) {
           return navigate("/verify-choice", {
