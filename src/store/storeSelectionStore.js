@@ -73,7 +73,7 @@ export const useStoreSelectionStore = create(
             },
 
             //! 7. Hàm chọn cửa hàng
-            selectStore: (store) => {
+            selectStore: async (store) => {
                 set({
                     selectedStore: store,
                     isStoreModalOpen: false,
@@ -81,6 +81,22 @@ export const useStoreSelectionStore = create(
                     error: null
                 });
                 
+                try {
+                    const cartStore = useCartStore.getState();
+                    
+                    // Nếu đổi store, clear cart local và load cart mới
+                    if (previousStore && previousStore._id !== store._id) {
+                        console.log("🔄 [StoreSelection] Store changed, switching cart...");
+                        await cartStore.switchStore(store._id);
+                    } else {
+                        // Lần đầu chọn store
+                        cartStore.setCurrentStore(store._id);
+                        console.log("🆕 [StoreSelection] Initial store selection, cart store updated");
+                    }
+                } catch (error) {
+                    console.error("❌ [StoreSelection] Error syncing cart store:", error);
+                }
+
                 // Verify state change
                 const newState = get();
             },

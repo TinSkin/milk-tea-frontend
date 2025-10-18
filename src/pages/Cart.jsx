@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react"; // Import hook useEffect và useState để quản lý trạng thái và side-effect
-import { Link, useNavigate } from "react-router-dom"; // Import hook useNavigate để điều hướng
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { useCartStore } from "../store/cartStore";
 import { useProductStore } from "../store/productStore";
+import { useStoreSelectionStore } from "../store/storeSelectionStore";
 import {
   Plus,
   Minus,
@@ -25,11 +26,9 @@ import { checkOutSchema } from "../utils/checkOutSchema";
 // Import Component
 import Header from "../components/layout/Header";
 import Footer from "../components/layout/Footer";
-import Notification from "../components/ui/Notification";
 
 const Cart = () => {
-  // Định nghĩa component Cart
-  const navigate = useNavigate(); // Khởi tạo hook useNavigate
+  const navigate = useNavigate();
   const items = useCartStore((state) => state.items);
   const selectedItems = useCartStore((state) => state.selectedItems);
   const setSelectedItems = useCartStore((state) => state.setSelectedItems);
@@ -38,11 +37,18 @@ const Cart = () => {
   const getTotalItems = useCartStore((state) => state.getTotalItems);
   const removeFromCart = useCartStore((state) => state.removeFromCart);
   const updateQuantity = useCartStore((state) => state.updateQuantity);
+  const updateCartItem = useCartStore((state) => state.updateCartItem);
+  const mergeDuplicateItems = useCartStore((state) => state.mergeDuplicateItems);
 
-  const [isLoading, setIsLoading] = useState(false); // Trạng thái loading
+  const { 
+    loadCartFromBackend, 
+    isAuthenticated, 
+    currentStoreId,
+    isLoading: cartLoading
+  } = useCartStore();
 
-  const [editingItem, setEditingItem] = useState(null); // item đang chỉnh sửa
-
+  const [isLoading, setIsLoading] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
   const products = useProductStore((state) => state.products);
 
   const getItemKey = (item) =>
@@ -50,11 +56,70 @@ const Cart = () => {
       item.toppings || []
     )}`;
 
+  //! Load giỏ hàng từ backend khi component mount và user đã đăng nhập
+ // File: pages/Cart.js
+//! Load giỏ hàng từ backend khi component mount và user đã đăng nhập
+useEffect(() => {
+  console.log("🔄 [Cart] useEffect triggered", {
+    isAuthenticated,
+    currentStoreId,
+    itemsCount: items.length
+  });
+  
+  if (isAuthenticated && currentStoreId) {
+    console.log("📥 [Cart] Loading cart from backend...");
+    loadCartFromBackend(currentStoreId);
+  }
+}, [isAuthenticated, currentStoreId, loadCartFromBackend]);
+
+// ✅ THÊM: Debug items
+useEffect(() => {
+  console.log("📦 [Cart] Items updated:", {
+    count: items.length,
+    items: items.map(item => ({
+      name: item.name,
+      quantity: item.quantity,
+      toppings: item.toppings,
+      price: item.price
+    }))
+  });
+}, [items]);
   //! Hàm xóa tất cả sản phẩm khỏi giỏ hàng
-  const handleClearCart = () => {
+  const handleClearCart = async () => {
     if (window.confirm("Bạn có chắc muốn xóa tất cả sản phẩm khỏi giỏ hàng?")) {
-      clearCart();
-      toast.success("Đã xóa tất cả sản phẩm khỏi giỏ hàng");
+      console.log("🧹 [Cart] User triggered clear cart");
+      try {
+        await clearCart();
+        toast.success("Đã xóa tất cả sản phẩm khỏi giỏ hàng");
+      } catch (error) {
+        console.error("❌ [Cart] Error clearing cart:", error);
+        toast.error("Có lỗi khi xóa giỏ hàng");
+      }
+    }
+  };
+
+  // ✅ SỬA: Hàm xử lý lỗi khi update quantity
+  const handleUpdateQuantity = async (id, quantity, options = {}) => {
+    try {
+      if (quantity < 1) {
+        toast.error("Số lượng phải lớn hơn 0");
+        return;
+      }
+      await updateQuantity(id, quantity, options);
+    } catch (error) {
+      console.error("❌ [Cart] Error updating quantity:", error);
+      toast.error("Có lỗi khi cập nhật số lượng");
+    }
+  };
+
+  // ✅ SỬA: Hàm xử lý lỗi khi remove item
+  const handleRemoveFromCart = async (id, options = {}) => {
+    try {
+      await removeFromCart(id, options);
+      toast.success("Đã xóa sản phẩm khỏi giỏ hàng");
+    } catch (error) {
+      console.error("❌ [Cart] Error removing item:", error);
+      toast.error("Có lỗi khi xóa sản phẩm");
     }
   };
 
@@ -70,7 +135,6 @@ const Cart = () => {
       return;
     }
 
-    // Nếu đã chọn rồi thì mới cho đi tiếp
     navigate("/checkout");
   };
 
@@ -82,10 +146,6 @@ const Cart = () => {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(price);
-  };
-
-  const getTotal = () => {
-    return getCartTotal().toLocaleString();
   };
 
   //! Hàm xử lý tick checkbox
@@ -114,10 +174,8 @@ const Cart = () => {
   
   //! Hàm sửa sản phẩm
   const handleEdit = (cartItem) => {
-    // tìm product gốc (nếu có)
     const product = products?.find((p) => p._id === cartItem.id);
 
-    // chuẩn hoá available toppings từ product (fallback nhiều tên trường)
     const rawAvailable =
       product?.availableToppings ||
       product?.allToppings ||
@@ -135,20 +193,17 @@ const Cart = () => {
         }))
       : [];
 
-    // chuẩn hoá selected toppings từ cartItem
     const selectedToppings = (cartItem.toppings || []).map((t) => ({
       _id: t._id,
       name: t.name,
       extraPrice: typeof t.extraPrice === "number" ? t.extraPrice : 0,
     }));
 
-    // chuẩn hoá sizeOptions
     const sizeOptions = product?.sizeOptions || cartItem?.sizeOptions || [];
 
-    // merge product + cartItem (product đứng trước để có full options, cartItem ghi đè choice)
     const merged = {
-      ...(product || {}), // đầy đủ thông tin của product nếu có
-      ...cartItem, // ghi đè lựa chọn hiện tại
+      ...(product || {}),
+      ...cartItem,
       sizeOptions,
       availableToppings,
       toppings: selectedToppings,
@@ -161,7 +216,41 @@ const Cart = () => {
     setEditingItem({ oldItem: cartItem, merged });
   };
 
-  if (items.length === 0 && !isLoading) {
+  // ✅ SỬA: Hàm xử lý submit form chỉnh sửa
+  const handleEditSubmit = async (values) => {
+    try {
+      const merged = editingItem.merged || {};
+      const selectedSize = (merged.sizeOptions || []).find(
+        (s) => s.size === values.sizeOption
+      );
+      const sizePrice = selectedSize?.price || 0;
+
+      const toppingsPrice = (values.toppings || []).reduce(
+        (sum, t) => sum + (t.extraPrice || 0),
+        0
+      );
+
+      const updatedItem = {
+        quantity: values.quantity,
+        sizeOption: values.sizeOption,
+        sizeOptionPrice: sizePrice,
+        sugarLevel: values.sugarLevel,
+        iceOption: values.iceOption,
+        toppings: values.toppings,
+        price: merged.price || 0,
+      };
+
+      await updateCartItem(editingItem.oldItem, updatedItem);
+      await mergeDuplicateItems();
+      setEditingItem(null);
+      toast.success("Cập nhật sản phẩm thành công!");
+    } catch (error) {
+      console.error("❌ [Cart] Error updating item:", error);
+      toast.error("Có lỗi khi cập nhật sản phẩm");
+    }
+  };
+
+  if (items.length === 0 && !cartLoading) {
     return (
       <>
         <Header />
@@ -225,12 +314,13 @@ const Cart = () => {
                 </h2>
                 <button
                   onClick={handleClearCart}
-                  className="text-red-600 hover:text-red-700 text-sm font-medium transition-colors"
+                  disabled={cartLoading}
+                  className="text-red-600 hover:text-red-700 text-sm font-medium transition-colors disabled:opacity-50"
                 >
                   Xóa tất cả
                 </button>
               </div>
-              {isLoading ? (
+              {cartLoading ? (
                 <div className="text-center">
                   <svg
                     className="animate-spin h-12 w-12 text-dark_blue mx-auto"
@@ -261,7 +351,6 @@ const Cart = () => {
                       <thead className="bg-dark_blue text-white">
                         <tr>
                           <th className="text-center w-[50px]"></th>
-
                           <th className="p-3 text-left text-lg font-semibold w-1/5">
                             Tên
                           </th>
@@ -332,10 +421,10 @@ const Cart = () => {
                               </span>
                             </td>
                             <td className="p-3 text-lg text-dark_blue">
-                              {item.sugarLevel.toLocaleString()}%
+                              {item.sugarLevel}
                             </td>
                             <td className="p-3 text-lg text-dark_blue">
-                              {item.iceOption.toLocaleString()}
+                              {item.iceOption}
                             </td>
                             <td
                               colSpan={3}
@@ -350,13 +439,11 @@ const Cart = () => {
                                     {typeof option === "object"
                                       ? option.name
                                       : option}
-                                    : <span></span>
                                   </span>
-                                  <span className="text-black">
+                                  <span className="text-black ml-1">
                                     {typeof option.extraPrice === "number"
-                                      ? option.extraPrice.toLocaleString()
-                                      : "N/A"}
-                                    ₫
+                                      ? `+${option.extraPrice.toLocaleString()}₫`
+                                      : ""}
                                   </span>
                                 </div>
                               ))}
@@ -369,7 +456,7 @@ const Cart = () => {
                                 type="number"
                                 value={item.quantity}
                                 onChange={(e) =>
-                                  updateQuantity(
+                                  handleUpdateQuantity(
                                     item.id,
                                     parseInt(e.target.value),
                                     {
@@ -399,7 +486,7 @@ const Cart = () => {
                               {/* Nút xóa */}
                               <button
                                 onClick={() =>
-                                  removeFromCart(item.id, {
+                                  handleRemoveFromCart(item.id, {
                                     sizeOption: item.sizeOption,
                                     sugarLevel: item.sugarLevel,
                                     iceOption: item.iceOption,
@@ -450,10 +537,10 @@ const Cart = () => {
                   {/* Checkout Button */}
                   <button
                     onClick={handleCheckout}
-                    disabled={isLoading}
-                    className="w-full bg-[#0b3042] text-white hover:scale-105 font-medium py-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                    disabled={cartLoading || selectedItems.length === 0}
+                    className="w-full bg-[#0b3042] text-white hover:scale-105 font-medium py-4 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isLoading ? (
+                    {cartLoading ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                         Đang xử lý...
@@ -492,7 +579,6 @@ const Cart = () => {
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
           {(() => {
             const merged = editingItem.merged || {};
-            // tạo union
             const raw = (merged.availableToppings || []).concat(
               merged.toppings || []
             );
@@ -522,43 +608,9 @@ const Cart = () => {
                   iceOption: merged.iceOption ?? "Chung",
                   toppings: merged.toppings || [],
                 }}
-                onSubmit={(values) => {
-                  const selectedSize = (merged.sizeOptions || []).find(
-                    (s) => s.size === values.sizeOption
-                  );
-                  const sizePrice = selectedSize?.price || 0;
-
-                  const toppingsPrice = (values.toppings || []).reduce(
-                    (sum, t) => sum + (t.extraPrice || 0),
-                    0
-                  );
-
-                  const unitPrice =
-                    (merged.price || 0) + sizePrice + toppingsPrice;
-
-                  const updatedItem = {
-                    // ghi đè những trường cần thiết
-                    quantity: values.quantity,
-                    sizeOption: values.sizeOption,
-                    sizeOptionPrice: sizePrice,
-                    sugarLevel: values.sugarLevel,
-                    iceOption: values.iceOption,
-                    toppings: values.toppings,
-                    price: merged.price || 0, // base price (không ghi đè availableToppings)
-                    // nếu muốn lưu đơn giá bao gồm size+topping, bạn có thể lưu unitPriceField
-                    // unitPrice: unitPrice
-                  };
-
-                  useCartStore
-                    .getState()
-                    .updateCartItem(editingItem.oldItem, updatedItem);
-                  // ✅ Merge các sản phẩm trùng cấu hình
-                  useCartStore.getState().mergeDuplicateItems();
-                  setEditingItem(null);
-                  toast.success("Cập nhật sản phẩm thành công!");
-                }}
+                onSubmit={handleEditSubmit}
               >
-                {({ values, setFieldValue }) => (
+                {({ values, setFieldValue, isSubmitting }) => (
                   <Form className="bg-white p-6 rounded shadow-md w-[700px] max-h-[90vh] overflow-y-auto">
                     <h2 className="text-xl font-bold mb-4">
                       {merged.name || "Chỉnh sửa"}
@@ -671,10 +723,10 @@ const Cart = () => {
                     <div className="mb-4">
                       <label className="font-semibold block mb-1">Đường</label>
                       <div className="flex gap-4">
-                        {["25", "50", "75", "100"].map((l) => (
+                        {["25%", "50%", "75%", "100%"].map((l) => (
                           <label key={l} className="flex items-center gap-2">
                             <Field type="radio" name="sugarLevel" value={l} />
-                            {l}%
+                            {l}
                           </label>
                         ))}
                       </div>
@@ -697,14 +749,16 @@ const Cart = () => {
                         type="button"
                         onClick={() => setEditingItem(null)}
                         className="px-4 py-2 border rounded"
+                        disabled={isSubmitting}
                       >
                         Hủy
                       </button>
                       <button
                         type="submit"
                         className="px-4 py-2 bg-blue-600 text-white rounded"
+                        disabled={isSubmitting}
                       >
-                        Lưu
+                        {isSubmitting ? "Đang lưu..." : "Lưu"}
                       </button>
                     </div>
                   </Form>
