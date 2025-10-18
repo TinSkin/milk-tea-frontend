@@ -78,7 +78,6 @@ export const useStoreStore = create((set, get) => ({
         try {
             const response = await api.get(`${API_ENDPOINT}/${storeId}`);
             
-            // ✅ SỬA: Truy cập đúng cấu trúc response từ backend
             set({
                 currentStore: response.data.data,
                 isLoading: false,

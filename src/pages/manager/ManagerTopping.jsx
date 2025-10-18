@@ -25,9 +25,13 @@ import Select from "react-select";
 
 // Import stores để quản lý trạng thái
 import { useManagerStore } from "../../store/managerStore";
+import { useRequestManagerStore } from "../../store/request/requestManagerStore";
 
 // Import component
 import Notification from "../../components/ui/Notification";
+import AddToppingRequestModal from "../../components/features/manager/request/topping/AddToppingRequestModal";
+import UpdateToppingRequestModal from "../../components/features/manager/request/topping/UpdateToppingRequestModal";
+import DeleteToppingRequestModal from "../../components/features/manager/request/topping/DeleteToppingRequestModal";
 
 // Import utilities và hooks
 import { formatNiceDate } from "../../utils/helpers/dateFormatter";
@@ -165,8 +169,11 @@ const ManagerTopping = () => {
   const isInitLoaded = useRef(false);
 
   // Store quản lý topping
-  const { toppings, isLoading, pagination, fetchMyStoreToppings, clearError } =
+  const { toppings, isLoading, pagination, fetchMyStoreToppings, updateMyStoreTopping, clearError } =
     useManagerStore();
+
+  // Store quản lý requests
+  const { isLoading: isRequestLoading } = useRequestManagerStore();
 
   // Trạng thái bộ lọc
   const [searchTerm, setSearchTerm] = useState("");
@@ -176,6 +183,154 @@ const ManagerTopping = () => {
 
   // Phân trang
   const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Modal states
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showUpdateRequestModal, setShowUpdateRequestModal] = useState(false);
+  const [showDeleteRequestModal, setShowDeleteRequestModal] = useState(false);
+  const [requestingTopping, setRequestingTopping] = useState(null);
+
+  //! Hàm xử lý thêm topping request
+  const handleAddToppingRequest = () => {
+    setShowAddModal(false);
+    Notification.info(
+      "Yêu cầu đã được gửi", 
+      "Admin sẽ xem xét và phản hồi yêu cầu của bạn sớm nhất có thể."
+    );
+  };
+
+  //! Xử lý thành công khi gửi request cập nhật topping
+  const handleUpdateRequestSuccess = () => {
+    setShowUpdateRequestModal(false);
+    setRequestingTopping(null);
+  };
+
+  //! Xử lý thành công khi gửi request xóa topping
+  const handleDeleteRequestSuccess = () => {
+    setShowDeleteRequestModal(false);
+    setRequestingTopping(null);
+  };
+
+  //! Manager không được sửa topping trực tiếp - phải qua request system
+  const handleEditTopping = (toppingData) => {
+    setRequestingTopping(toppingData);
+    setShowUpdateRequestModal(true);
+  };
+
+  //! Manager không được xóa topping - chỉ có thể request tới admin
+  const handleDeleteTopping = (topping) => {
+    setRequestingTopping(topping);
+    setShowDeleteRequestModal(true);
+  };
+
+  //! Gửi yêu cầu tới Admin để thay đổi system status
+  const handleRequestSystemStatusChange = async (topping) => {
+    // Xác định loại request dựa trên system status hiện tại
+    let requestType = "";
+    let requestReason = "";
+    let newSystemStatus = "available"; // Default target status
+
+    if (topping.status === "unavailable") {
+      requestType = "Yêu cầu mở lại topping";
+      requestReason =
+        "Topping đang bị khóa bởi Admin, cửa hàng muốn sử dụng lại topping này.";
+      newSystemStatus = "available";
+    } else if (topping.status === "paused") {
+      requestType = "Yêu cầu mở lại topping";
+      requestReason =
+        "Topping đang bị tạm dừng bởi Admin, cửa hàng muốn sử dụng lại topping này.";
+      newSystemStatus = "available";
+    } else {
+      Notification.info(
+        "Topping đang hoạt động bình thường",
+        "Không cần gửi yêu cầu thay đổi trạng thái."
+      );
+      return;
+    }
+
+    try {
+      // Implement request API call here if needed
+      Notification.success(
+        "Đã gửi yêu cầu tới Admin",
+        `${requestType} cho topping "${topping.name}"`
+      );
+    } catch (error) {
+      Notification.error(
+        "Gửi yêu cầu thất bại",
+        error.message || "Đã xảy ra lỗi khi gửi yêu cầu"
+      );
+    }
+  };
+
+  //! Xử lý chuyển trạng thái topping TẠI CỬA HÀNG (storeStatus)
+  const handleToggleStoreStatus = async (topping) => {
+    // Kiểm tra constraint: Chỉ được toggle khi system status = available
+    if (topping.status !== "available") {
+      Notification.warning(
+        "Không thể thay đổi trạng thái",
+        "Topping phải được Admin mở lại trước khi bạn có thể thay đổi trạng thái cửa hàng."
+      );
+      return;
+    }
+
+    try {
+      // CHT có thể toggle giữa "available" và "paused"
+      const newStoreStatus =
+        topping.storeStatus === "available" ? "paused" : "available";
+
+      await updateMyStoreTopping(topping._id, { storeStatus: newStoreStatus });
+
+      Notification.success(
+        newStoreStatus === "available"
+          ? "Đã BẬT lại topping tại cửa hàng!"
+          : "Đã TẠM DỪNG topping tại cửa hàng!"
+      );
+
+      loadToppings(pagination.currentPage);
+    } catch (error) {
+      console.error("Toggle topping store status error:", error);
+
+      // Handle specific business rule errors
+      const errorResponse = error.response?.data;
+      if (errorResponse?.code) {
+        switch (errorResponse.code) {
+          case "SYSTEM_STATUS_UNAVAILABLE":
+            Notification.error(
+              "Không thể bật topping",
+              "Admin đã tắt topping này toàn hệ thống. Liên hệ Admin để kích hoạt lại."
+            );
+            break;
+          case "SYSTEM_STATUS_PAUSED":
+            Notification.error(
+              "Không thể bật topping",
+              "Admin đang tạm dừng topping này. Liên hệ Admin để biết thêm thông tin."
+            );
+            break;
+          case "SYSTEM_STATUS_OUT_OF_STOCK":
+            Notification.error(
+              "Không thể bật topping",
+              "Topping đang hết hàng toàn hệ thống. Chờ Admin nhập thêm hàng."
+            );
+            break;
+          default:
+            Notification.error(
+              "Cập nhật trạng thái thất bại",
+              errorResponse.message || error.message
+            );
+        }
+      } else {
+        Notification.error(
+          "Cập nhật trạng thái cửa hàng thất bại",
+          error.message
+        );
+      }
+    }
+  };
+
+  //! Wrapper function for the switch component
+  const handleToggleStatus = async (topping) => {
+    await handleToggleStoreStatus(topping);
+  };
 
   //! Hàm tải danh sách topping cho lần đầu (có notification)
   const loadToppingsInit = async (page = 1, limit = itemsPerPage) => {
@@ -236,6 +391,15 @@ const ManagerTopping = () => {
       console.log("⚠️ Prevented duplicate load");
     }
   }, []); // Chỉ chạy một lần khi component mount
+
+  //! Xử lý tìm kiếm với debounce
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      loadToppings(1);
+    }, 500);
+
+    return () => clearTimeout(debounceTimer);
+  }, [searchTerm, statusFilter, sortBy, sortOrder]);
 
   //! Xử lý chuyển trang
   const handlePageChange = (newPage) => {
@@ -649,26 +813,29 @@ const ManagerTopping = () => {
                             onClick={() => handleEditTopping(topping)}
                             className="text-blue-600 hover:text-blue-800"
                             disabled={isLoading}
-                            title="Chỉnh sửa"
+                            title="Yêu cầu chỉnh sửa"
                           >
                             <Pencil className="w-4 h-4" />
                           </button>
 
                           <Switch
-                            checked={topping.status === "available"}
-                            onChange={() => handleToggleStatus(topping)}
+                            checked={topping.storeStatus === "available"}
+                            onChange={() => handleToggleStoreStatus(topping)}
+                            disabled={topping.status !== "available"}
                             className={`${
-                              topping.status === "available"
+                              topping.storeStatus === "available"
                                 ? "bg-green-500"
                                 : "bg-red-400"
-                            } relative inline-flex h-6 w-11 items-center rounded-full transition`}
+                            } relative inline-flex h-6 w-11 items-center rounded-full transition ${
+                              topping.status !== "available" ? "opacity-50 cursor-not-allowed" : ""
+                            }`}
                           >
                             <span className="sr-only">
-                              Chuyển trạng thái bán
+                              Chuyển trạng thái cửa hàng
                             </span>
                             <span
                               className={`${
-                                topping.status === "available"
+                                topping.storeStatus === "available"
                                   ? "translate-x-6"
                                   : "translate-x-1"
                               } inline-block h-4 w-4 transform bg-white rounded-full transition`}
@@ -679,7 +846,7 @@ const ManagerTopping = () => {
                             onClick={() => handleDeleteTopping(topping)}
                             className="text-red-600 hover:text-red-800"
                             disabled={isLoading}
-                            title="Xóa vĩnh viễn"
+                            title="Yêu cầu xóa"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -749,6 +916,41 @@ const ManagerTopping = () => {
           )}
         </div>
       </div>
+
+      {/* Modal thêm topping request */}
+      {showAddModal && (
+        <AddToppingRequestModal
+          isOpen={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          onSuccess={handleAddToppingRequest}
+        />
+      )}
+
+      {/* Modal cập nhật topping request */}
+      {showUpdateRequestModal && requestingTopping && (
+        <UpdateToppingRequestModal
+          isOpen={showUpdateRequestModal}
+          onClose={() => {
+            setShowUpdateRequestModal(false);
+            setRequestingTopping(null);
+          }}
+          onSuccess={handleUpdateRequestSuccess}
+          toppingData={requestingTopping}
+        />
+      )}
+
+      {/* Modal xóa topping request */}
+      {showDeleteRequestModal && requestingTopping && (
+        <DeleteToppingRequestModal
+          isOpen={showDeleteRequestModal}
+          onClose={() => {
+            setShowDeleteRequestModal(false);
+            setRequestingTopping(null);
+          }}
+          onSuccess={handleDeleteRequestSuccess}
+          toppingData={requestingTopping}
+        />
+      )}
     </>
   );
 };

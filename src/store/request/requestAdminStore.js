@@ -127,7 +127,9 @@ export const useRequestAdminStore = create((set, get) => ({
     approveRequest: async (requestId, note = "") => {
         set({ isLoading: true, error: null });
         try {
-            const response = await api.patch(`${API_ENDPOINT}/${requestId}/approve`, { note });
+            console.log("Store approveRequest called with:", { requestId, note });
+            const response = await api.post(`${API_ENDPOINT}/${requestId}/approve`, { note });
+            console.log("Approve response:", response.data);
 
             if (response.data.success) {
                 const approvedRequest = response.data.data;
@@ -159,7 +161,13 @@ export const useRequestAdminStore = create((set, get) => ({
     rejectRequest: async (requestId, note = "") => {
         set({ isLoading: true, error: null });
         try {
-            const response = await api.patch(`${API_ENDPOINT}/${requestId}/reject`, { note });
+            console.log("Store rejectRequest called with:", { requestId, note });
+            console.log("API base URL:", api.defaults.baseURL);
+            console.log("Full API endpoint:", `${API_ENDPOINT}/${requestId}/reject`);
+            console.log("Request body:", { note });
+            
+            const response = await api.post(`${API_ENDPOINT}/${requestId}/reject`, { note });
+            console.log("Reject response:", response.data);
 
             if (response.data.success) {
                 const rejectedRequest = response.data.data;
@@ -181,6 +189,12 @@ export const useRequestAdminStore = create((set, get) => ({
                 throw new Error(response.data.message || "Không thể từ chối request");
             }
         } catch (error) {
+            console.error("Reject request error details:", {
+                message: error.message,
+                status: error.response?.status,
+                data: error.response?.data,
+                config: error.config
+            });
             const errorMessage = error.response?.data?.message || "Lỗi từ chối request";
             set({ error: errorMessage, isLoading: false });
             throw error;
