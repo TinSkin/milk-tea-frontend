@@ -42,6 +42,7 @@ import AdminCategory from "./pages/admin/AdminCategory";
 import AdminTopping from "./pages/admin/AdminTopping";
 import AdminAccount from "./pages/admin/AdminAccount";
 import AdminStore from "./pages/admin/AdminStore";
+import AdminRequest from "./pages/admin/AdminRequest";
 
 // Import Store Manager Pages
 import ManagerDashboard from "./pages/manager/ManagerDashboard";
@@ -52,6 +53,7 @@ import ManagerOrders from "./pages/manager/ManagerOrders";
 import ManagerCustomers from "./pages/manager/ManagerCustomers";
 import ManagerAccount from "./pages/manager/ManagerAccount";
 import ManagerSettings from "./pages/manager/ManagerSettings";
+import ManagerRequest from "./pages/manager/ManagerRequest";
 
 // Import Protected Route
 import PrivateRoute from "./routes/PrivateRoute";
@@ -169,6 +171,7 @@ function App() {
             {/* Trang quản lý tài khoản và cài đặt */}
             <Route path="accounts" element={<ManagerAccount />} />
             <Route path="settings" element={<ManagerSettings />} />
+            <Route path="requests" element={<ManagerRequest />} />
           </Route>
         </Route>
         {/* //* ------ Staff Route (Staff access is required) ------ */}
@@ -190,6 +193,7 @@ function App() {
             <Route path="toppings" element={<AdminTopping />} />
             <Route path="accounts" element={<AdminAccount />} />
             <Route path="stores" element={<AdminStore />} />
+            <Route path="requests" element={<AdminRequest />} />
           </Route>
         </Route>
       </Routes>

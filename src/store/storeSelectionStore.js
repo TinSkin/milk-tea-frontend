@@ -25,7 +25,7 @@ export const useStoreSelectionStore = create(
                 if (typeof window !== 'undefined') {
                     window.addEventListener('managerStoreAssignment', async (event) => {
                         const { storeId } = event.detail;
-                        console.log("Received manager store assignment:", storeId);
+                        // console.log("Received manager store assignment:", storeId);
                         
                         try {
                             await get().loadStoreById(storeId);

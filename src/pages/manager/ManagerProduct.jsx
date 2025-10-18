@@ -17,6 +17,7 @@ import {
   Square,
   CheckSquare,
   Settings,
+  RotateCcw,
 } from "lucide-react";
 import { Switch } from "@headlessui/react";
 import Select from "react-select";
@@ -28,16 +29,16 @@ import { Autoplay } from "swiper/modules"; // Import module Autoplay từ Swiper
 import { Swiper, SwiperSlide } from "swiper/react"; // Import Swiper và SwiperSlide để tạo carousel ảnh sản phẩm
 
 // Import stores quản lý trạng thái
-import { useProductStore } from "../../store/productStore";
-import { useCategoryStore } from "../../store/categoryStore";
-import { useToppingStore } from "../../store/toppingStore";
+import { useManagerStore } from "../../store/managerStore";
+import { useRequestManagerStore } from "../../store/request/requestManagerStore";
 
 // Import component
 import Notification from "../../components/ui/Notification";
-import AddProductModal from "../../components/features/admin/product/AddProductModal";
-import EditProductModal from "../../components/features/admin/product/EditProductModal";
 import ConfirmDeleteModal from "../../components/features/admin/ConfirmDeleteModal";
 import ViewToppingsModal from "../../components/features/admin/product/ViewToppingsModal";
+import CreateProductRequestModal from "../../components/features/manager/request/product/CreateProductRequestModal";
+import UpdateProductRequestModal from "../../components/features/manager/request/product/UpdateProductRequestModal";
+import DeleteProductRequestModal from "../../components/features/manager/request/product/DeleteProductRequestModal";
 
 // Import utilities và hooks
 import { formatNiceDate } from "../../utils/helpers/dateFormatter";
@@ -105,141 +106,62 @@ const itemsPerPageOptions = [
 
 const ManagerProduct = () => {
   const isInitLoaded = useRef(false);
-  
-  // Trạng thái của stores
+
+  // Store quản lý dữ liệu cửa hàng
   const {
     products,
+    categories,
+    toppings,
+    storeInfo,
     isLoading,
-    pagination,
     error,
-    getAllProducts,
-    createProduct,
-    updateProduct,
-    softDeleteProduct,
+    pagination,
+    fetchMyStoreProducts,
+    fetchMyStoreCategories,
+    fetchMyStoreToppings,
+    updateMyStoreProduct,
     clearError,
-  } = useProductStore();
-  const { categories, getAllCategories } = useCategoryStore();
-  const { toppings, getAllToppings } = useToppingStore();
+  } = useManagerStore();
 
-  // Trạng thái cục bộ cho modal thêm/sửa
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingProduct, setEditingProduct] = useState(null); // Trạng thái editingProduct: Lưu thông tin sản phẩm đang được chỉnh sửa
-  const [imagePreviews, setImagePreviews] = useState([]); // Trạng thái imagePreviews: Lưu danh sách URL ảnh để hiển thị preview trong modal
+  // Store quản lý requests
+  const { isLoading: isRequestLoading } = useRequestManagerStore();
 
-  //! Hàm xử lí thêm sản phẩm
-  const handleAddProduct = async (productData) => {
-    console.log("Adding product with data:", productData);
-    try {
-      // Transform data to match backend schema
-      const transformedData = {
-        name: productData.name.trim(),
-        description: productData.description.trim(),
-        category: getCategoryIdByName(productData.category),
-        images: Array.isArray(productData.images)
-          ? productData.images
-          : productData.images
-              .split(",")
-              .map((url) => url.trim())
-              .filter((url) => url),
-        price: parseFloat(productData.price),
-        sizeOptions: productData.sizeOptions.map((opt) => ({
-          size: opt.size,
-          price: parseFloat(opt.price),
-        })),
-        toppings: Array.isArray(productData.toppings)
-          ? productData.toppings.map((topping) =>
-              typeof topping === "object" ? topping._id : topping
-            )
-          : [],
-        status: "available",
-      };
+  // Trạng thái cho modal request
+  const [showAddRequestModal, setShowAddRequestModal] = useState(false);
+  const [showUpdateRequestModal, setShowUpdateRequestModal] = useState(false);
+  const [showDeleteRequestModal, setShowDeleteRequestModal] = useState(false);
+  const [requestingProduct, setRequestingProduct] = useState(null);
 
-      console.log("Transformed data:", transformedData);
-      await createProduct(transformedData);
-
-      setShowAddModal(false);
-      setImagePreviews([]);
-      Notification.success("Thêm sản phẩm thành công!");
-
-      // Reload current page
-      loadProducts(pagination.currentPage);
-    } catch (error) {
-      Notification.error("Thêm sản phẩm thất bại", error.message);
-    }
+  //! Mở modal yêu cầu thêm sản phẩm
+  const handleAddProduct = () => {
+    setShowAddRequestModal(true);
   };
 
-  //! Hàm xử lí mở modal sửa sản phẩm
+  //! Xử lý thành công khi gửi request thêm sản phẩm
+  const handleAddRequestSuccess = () => {
+    setShowAddRequestModal(false);
+    Notification.info(
+      "Yêu cầu đã được gửi",
+      "Admin sẽ xem xét và phản hồi yêu cầu của bạn sớm nhất có thể."
+    );
+  };
+
+  //! Xử lý thành công khi gửi request cập nhật sản phẩm
+  const handleUpdateRequestSuccess = () => {
+    setShowUpdateRequestModal(false);
+    setRequestingProduct(null);
+  };
+
+  //! Xử lý thành công khi gửi request xóa sản phẩm
+  const handleDeleteRequestSuccess = () => {
+    setShowDeleteRequestModal(false);
+    setRequestingProduct(null);
+  };
+
+  //! Manager không được sửa sản phẩm trực tiếp - phải qua request system
   const handleEditProduct = (productData) => {
-    // Chuyển dữ liệu sản phẩm cho việc chỉnh sửa
-    const editData = {
-      ...productData,
-      category: productData.category?.name || productData.category,
-      basePrice: productData.price,
-      image: Array.isArray(productData.images)
-        ? productData.images
-        : [productData.images].filter(Boolean),
-    };
-
-    setEditingProduct(editData);
-    setImagePreviews(editData.images);
-    setShowEditModal(true);
-  };
-
-  //! Hàm xử lí cập nhật sản phẩm
-  const handleUpdateProduct = async (productData) => {
-    console.log("Updating product with data:", productData);
-    try {
-      // Transform data to match backend schema
-      const transformedData = {
-        name: productData.name.trim(),
-        description: productData.description.trim(),
-        category: getCategoryIdByName(productData.category),
-        images: Array.isArray(productData.images)
-          ? productData.images
-          : productData.images
-              .split(",")
-              .map((url) => url.trim())
-              .filter((url) => url),
-        price: parseFloat(productData.price),
-        sizeOptions: productData.sizeOptions.map((opt) => ({
-          size: opt.size,
-          price: parseFloat(opt.price),
-        })),
-        toppings: Array.isArray(productData.toppings)
-          ? productData.toppings.map((topping) =>
-              typeof topping === "object" ? topping._id : topping
-            )
-          : [],
-      };
-
-      console.log("Transformed data:", transformedData);
-      await updateProduct(editingProduct._id, transformedData);
-
-      setShowEditModal(false);
-      setEditingProduct(null);
-      setImagePreviews([]);
-      Notification.success("Cập nhật sản phẩm thành công!");
-
-      // Reload current page
-      loadProducts(pagination.currentPage);
-    } catch (error) {
-      Notification.error("Cập nhật sản phẩm thất bại", error.message);
-    }
-  };
-
-  //! Hàm xử lí thay đổi input ảnh để hiển thị preview
-  const handleImageInputChange = (e) => {
-    const value = e.target.value;
-    if (value.trim()) {
-      const urls = value
-        .split(",")
-        .map((url) => url.trim())
-        .filter((url) => url);
-      setImagePreviews(urls);
-    } else {
-      setImagePreviews([]);
-    }
+    setRequestingProduct(productData);
+    setShowUpdateRequestModal(true);
   };
 
   // Modal xem topping
@@ -291,17 +213,6 @@ const ManagerProduct = () => {
     } catch (error) {
       Notification.error("Thay đổi trạng thái thất bại", error.message);
     }
-  };
-
-  //! Hàm xử lý xóa mềm sản phẩm
-  const handleSoftDeleteProduct = async (product) => {
-    setDeleteModalConfig({
-      type: "soft",
-      productId: product._id,
-      productName: product.name,
-      action: "softDelete",
-    });
-    setShowDeleteModal(true);
   };
 
   //! Xác nhận xóa product
@@ -368,7 +279,7 @@ const ManagerProduct = () => {
   const [showFilter2, setShowFilter2] = useState(false);
   const filterRef2 = useRef(null);
 
-  // State cho expand description
+  // State để theo dõi các sản phẩm có mô tả được mở rộng
   const [expandedDescriptions, setExpandedDescriptions] = useState(new Set());
 
   //! Xử lý expand/collapse description
@@ -384,7 +295,7 @@ const ManagerProduct = () => {
     });
   };
 
-  // Checkbox selection hook
+  // Checkbox chọn lựa sản phẩm
   const {
     selectedItems,
     selectedCount,
@@ -397,21 +308,21 @@ const ManagerProduct = () => {
     getSelectedItems,
   } = useTableCheckbox(products, "_id");
 
-  //! Load initial data on component mount (với protection)
+  //! Tải dữ liệu ban đầu khi component được mount (có bảo vệ tránh tải lại nhiều lần)
   useEffect(() => {
     if (!isInitLoaded.current) {
-      console.log("🚀 First load products - Using loadProductsInit");
       loadProductsInit(); // Gọi hàm loadProductsInit để tải danh sách sản phẩm với notification
       loadFormData(); // Load categories và toppings
       isInitLoaded.current = true;
     } else {
-      console.log("⚠️ Prevented duplicate products load");
+      console.log("Prevented duplicate products load");
     }
   }, []); // Chỉ chạy 1 lần khi component mount
 
-  //! Load products cho lần đầu (có notification)
+  //! Load products cửa hàng lần đầu (có notification)
   const loadProductsInit = async (page = 1) => {
     try {
+      clearError();
       const params = {
         page,
         limit: itemsPerPage,
@@ -422,20 +333,26 @@ const ManagerProduct = () => {
         sortOrder: getSortOrder(),
       };
 
-      const result = await getAllProducts(params);
-      if (result && result.products) {
+      const result = await fetchMyStoreProducts(params);
+      // console.log("Fetched store products:", result);
+      // console.log("Pagination data:", result?.data?.pagination);
+      if (result.data && result.data.products) {
         Notification.success(
-          `Tải thành công ${result.products.length} sản phẩm.`
+          `Tải thành công ${result.data.products.length} sản phẩm của cửa hàng.`
         );
       }
     } catch (error) {
-      Notification.error("Lỗi tải danh sách sản phẩm", error.message);
+      Notification.error(
+        "Không thể tải danh sách sản phẩm cửa hàng",
+        error?.message || "Đã xảy ra lỗi khi kết nối đến server."
+      );
     }
   };
 
-  //! Load products với bộ lọc chính (không notification)
+  //! Load products cửa hàng với bộ lọc chính (không notification)
   const loadProducts = async (page = 1) => {
     try {
+      clearError();
       const params = {
         page,
         limit: itemsPerPage,
@@ -446,27 +363,31 @@ const ManagerProduct = () => {
         sortOrder: getSortOrder(),
       };
 
-      await getAllProducts(params);
+      await fetchMyStoreProducts(params);
     } catch (error) {
-      Notification.error("Lỗi tải danh sách sản phẩm", error.message);
+      Notification.error(
+        "Không thể tải danh sách sản phẩm cửa hàng",
+        error?.message || "Đã xảy ra lỗi khi kết nối đến server."
+      );
     }
   };
 
-  //! Load categories and toppings for dropdowns
+  //! Load categories and toppings của cửa hàng for dropdowns
   const loadFormData = async () => {
     try {
       await Promise.all([
-        getAllCategories({ status: "available" }),
-        getAllToppings({ status: "available" }),
+        fetchMyStoreCategories({ status: "available" }),
+        fetchMyStoreToppings({ status: "available" }),
       ]);
     } catch (error) {
-      console.error("Error loading form data:", error);
+      console.error("Error loading store form data:", error);
     }
   };
 
-  //! Load products với bộ lọc thứ 2
+  //! Load products cửa hàng với bộ lọc thứ 2
   const loadProducts2 = async (page = 1) => {
     try {
+      clearError();
       const params = {
         page,
         limit: itemsPerPage2,
@@ -477,11 +398,11 @@ const ManagerProduct = () => {
         sortOrder: getSortOrder2(),
       };
 
-      await getAllProducts(params);
+      await fetchMyStoreProducts(params);
     } catch (error) {
       Notification.error(
-        "Lỗi tải danh sách sản phẩm (Bộ lọc 2)",
-        error.message
+        "Không thể tải danh sách sản phẩm cửa hàng (Bộ lọc 2)",
+        error?.message || "Đã xảy ra lỗi khi kết nối đến server."
       );
     }
   };
@@ -501,7 +422,7 @@ const ManagerProduct = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showFilter, showFilter2]);
 
-  //! Get sort configuration
+  //! Lấy cấu hình sắp xếp dựa trên tùy chọn được chọn
   const getSortBy = () => {
     if (!sortOption) return "createdAt";
     if (sortOption.includes("price")) return "price";
@@ -514,7 +435,7 @@ const ManagerProduct = () => {
     return sortOption.includes("asc") ? "asc" : "desc";
   };
 
-  //! Get sort configuration cho bộ lọc thứ 2
+  //! Lấy cấu hình sắp xếp dựa trên tùy chọn được chọn cho bộ lọc thứ 2
   const getSortBy2 = () => {
     if (!sortOption2) return "createdAt";
     if (sortOption2.includes("price")) return "price";
@@ -527,7 +448,7 @@ const ManagerProduct = () => {
     return sortOption2.includes("asc") ? "asc" : "desc";
   };
 
-  //! Handle filter changes
+  //! Xử lí thay đổi bộ lọc
   useEffect(() => {
     const timer = setTimeout(() => {
       loadProducts(1);
@@ -536,7 +457,7 @@ const ManagerProduct = () => {
     return () => clearTimeout(timer);
   }, [searchTerm, statusFilter, categoryFilter, sortOption, itemsPerPage]);
 
-  //! Handle filter changes cho bộ lọc thứ 2
+  //! Xử lí thay đổi bộ lọc cho bộ lọc thứ 2
   useEffect(() => {
     const timer = setTimeout(() => {
       loadProducts2(1);
@@ -562,59 +483,125 @@ const ManagerProduct = () => {
     }
   };
 
-  //! Xử lý chuyển trạng thái sản phẩm
-  const handleToggleStatus = async (product) => {
+  //! Manager không được xóa sản phẩm - chỉ có thể request tới admin
+  const handleRemoveFromStore = async (product) => {
+    setRequestingProduct(product);
+    setShowDeleteRequestModal(true);
+  };
+
+  //! Gửi yêu cầu tới Admin để thay đổi system status
+  const handleRequestSystemStatusChange = async (product) => {
+    // Xác định loại request dựa trên system status hiện tại
+    let requestType = "";
+    let requestReason = "";
+    let newSystemStatus = "available"; // Default target status
+
+    if (product.status === "unavailable") {
+      requestType = "Yêu cầu mở lại sản phẩm";
+      requestReason =
+        "Sản phẩm đang bị khóa bởi Admin, cửa hàng muốn bán lại sản phẩm này.";
+      newSystemStatus = "available";
+    } else if (product.status === "paused") {
+      requestType = "Yêu cầu tiếp tục bán sản phẩm";
+      requestReason =
+        "Sản phẩm đang bị tạm dừng bởi Admin, cửa hàng muốn tiếp tục bán sản phẩm này.";
+      newSystemStatus = "available";
+    } else if (product.status === "out_of_stock") {
+      requestType = "Yêu cầu nhập hàng";
+      requestReason =
+        "Sản phẩm đang hết hàng toàn hệ thống, cửa hàng muốn Admin nhập thêm hàng.";
+      newSystemStatus = "available";
+    }
+
     try {
-      // Kiểm tra category tồn tại
-      if (!product.category || !product.category._id) {
-        Notification.error("Sản phẩm chưa có danh mục!");
-        return;
-      }
+      const requestData = {
+        productId: product._id,
+        productName: product.name,
+        currentSystemStatus: product.status,
+        requestedSystemStatus: newSystemStatus,
+        requestType,
+        note: requestReason,
+      };
 
-      // Tìm category trong danh sách categories
-      const category = categories.find(
-        (cat) => cat._id === product.category._id
+      await submitUpdateRequest("product", product._id, requestData);
+
+      Notification.success(
+        "Gửi yêu cầu thành công!",
+        `Đã gửi "${requestType}" cho sản phẩm "${product.name}" tới Admin. Yêu cầu sẽ được xem xét sớm nhất có thể.`
       );
-
-      // Kiểm tra category có tồn tại và đang hoạt động
-      if (!category || category.status !== "available") {
-        Notification.error(
-          "Danh mục của sản phẩm đang ngừng hoạt động hoặc đã bị xóa. Không thể chuyển trạng thái sản phẩm sang 'Đang bán'!"
-        );
-        return;
-      }
-
-      if (product.status === "unavailable") {
-        // Chuyển sang đang bán
-        await updateProduct(product._id, { status: "available" });
-        Notification.success("Đã chuyển trạng thái sản phẩm sang 'Đang bán'!");
-        loadProducts(pagination.currentPage);
-      } else {
-        // Chuyển sang ngừng bán (mở modal xác nhận)
-        handleSoftDeleteProduct(product);
-      }
-
-      // handleSoftDeleteProduct(product);
     } catch (error) {
-      Notification.error("Cập nhật trạng thái thất bại", error.message);
+      console.error("Error submitting system status change request:", error);
+      Notification.error(
+        "Gửi yêu cầu thất bại",
+        error.message || "Đã xảy ra lỗi khi gửi yêu cầu tới Admin"
+      );
     }
   };
 
-  //! Hàm lấy ID danh mục từ tên danh mục
-  const getCategoryIdByName = (categoryName) => {
-    const category = categories.find((cat) => cat.name === categoryName);
-    return category?._id || categoryName;
+  //! Xử lý chuyển trạng thái sản phẩm TẠI CỬA HÀNG (storeStatus)
+  const handleToggleStoreStatus = async (product) => {
+    // Kiểm tra constraint: Chỉ được toggle khi system status = available
+    if (product.status !== "available") {
+      Notification.warning(
+        "Không thể thay đổi trạng thái",
+        "Sản phẩm phải được Admin mở lại trước khi bạn có thể thay đổi trạng thái cửa hàng."
+      );
+      return;
+    }
+
+    try {
+      // CHT có thể toggle giữa "available" và "paused"
+      const newStoreStatus =
+        product.storeStatus === "available" ? "paused" : "available";
+
+      await updateMyStoreProduct(product._id, { storeStatus: newStoreStatus });
+
+      Notification.success(
+        newStoreStatus === "available"
+          ? "Đã BẬT lại sản phẩm tại cửa hàng!"
+          : "Đã TẠM DỪNG sản phẩm tại cửa hàng!"
+      );
+
+      loadProducts(pagination.currentPage);
+    } catch (error) {
+      console.error("Toggle store status error:", error);
+
+      // Handle specific business rule errors
+      const errorResponse = error.response?.data;
+      if (errorResponse?.code) {
+        switch (errorResponse.code) {
+          case "SYSTEM_STATUS_UNAVAILABLE":
+            Notification.error(
+              "Không thể bật sản phẩm",
+              "Admin đã tắt sản phẩm này toàn hệ thống. Liên hệ Admin để kích hoạt lại."
+            );
+            break;
+          case "SYSTEM_STATUS_PAUSED":
+            Notification.error(
+              "Không thể bật sản phẩm",
+              "Admin đang tạm dừng sản phẩm này. Liên hệ Admin để biết thêm thông tin."
+            );
+            break;
+          case "SYSTEM_STATUS_OUT_OF_STOCK":
+            Notification.error(
+              "Không thể bật sản phẩm",
+              "Sản phẩm đang hết hàng toàn hệ thống. Chờ Admin nhập thêm hàng."
+            );
+            break;
+          default:
+            Notification.error(
+              "Cập nhật trạng thái thất bại",
+              errorResponse.message || error.message
+            );
+        }
+      } else {
+        Notification.error(
+          "Cập nhật trạng thái cửa hàng thất bại",
+          error.message
+        );
+      }
+    }
   };
-
-  //! Lấy các topping có trạng thái "available" để hiển thị trong form
-  const availableToppings = toppings.filter(
-    (topping) => topping.status === "available"
-  );
-
-  //! Lấy các danh mục có trạng thái "available" để hiển thị trong bộ lọc
-  const availableCategories = categories.filter(
-    (category) => category.status === "available"
-  );
 
   //! Hiển thị thông báo lỗi khi có lỗi xảy ra trong store
   useEffect(() => {
@@ -663,10 +650,10 @@ const ManagerProduct = () => {
             {/* Tiêu đề */}
             <div>
               <h3 className="text-lg font-semibold text-gray-800">
-                Danh sách sản phẩm
+                Sản phẩm cửa hàng
               </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Theo dõi tiến độ cửa hàng của bạn để tăng doanh số bán hàng.
+                Quản lý sản phẩm có trong cửa hàng của bạn.
               </p>
             </div>
             {/* Nút tác vụ */}
@@ -684,7 +671,7 @@ const ManagerProduct = () => {
               </div>
               {/* Thêm sản phẩm */}
               <button
-                onClick={() => setShowAddModal(true)}
+                onClick={handleAddProduct}
                 className="bg-green_starbuck text-white px-4 py-2 rounded hover:bg-green_starbuck/80 flex items-center gap-2 font-semibold"
                 disabled={isLoading}
               >
@@ -948,7 +935,7 @@ const ManagerProduct = () => {
                           className="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 focus:ring-2 focus:ring-green_starbuck focus:border-transparent"
                         >
                           <option value="all">Tất cả danh mục</option>
-                          {availableCategories.map((category) => (
+                          {categories.map((category) => (
                             <option key={category._id} value={category._id}>
                               {category.name}
                             </option>
@@ -1011,11 +998,10 @@ const ManagerProduct = () => {
               <p className="text-center text-gray-600 text-lg py-8">
                 {searchTerm
                   ? "Sản phẩm bạn tìm kiếm không tồn tại"
-                  : "Chưa có sản phẩm nào"}
+                  : "Cửa hàng chưa có sản phẩm nào"}
               </p>
             ) : (
               <table className="min-w-full divide-y divide-gray-200">
-                {" "}
                 {/* Phần tiêu đề bảng */}
                 <thead>
                   <tr className="border-b-2 border-gray-200">
@@ -1049,7 +1035,10 @@ const ManagerProduct = () => {
                       Topping
                     </th>
                     <th className="p-3 text-md font-semibold text-green_starbuck">
-                      Trạng thái
+                      Hệ thống
+                    </th>
+                    <th className="p-3 text-md font-semibold text-green_starbuck">
+                      Cửa hàng
                     </th>
                     <th className="p-3 text-md font-semibold text-green_starbuck">
                       <div className="flex items-center justify-center">
@@ -1193,56 +1182,183 @@ const ManagerProduct = () => {
                           </span>
                         )}
                       </td>
-                      {/* Hiển thị trạng thái sản phẩm */}
+                      {/* Trạng thái hệ thống (chỉ xem, không sửa được) */}
                       <td className="p-3 min-w-[140px]">
-                        <span
-                          className={`px-2 py-1 text-md rounded font-semibold ${
-                            product.status === "available"
-                              ? "text-green-700 bg-green-100"
-                              : "text-red-700 bg-red-100"
-                          }`}
-                        >
-                          {product.status === "available"
-                            ? "Đang bán"
-                            : "Ngừng bán"}
-                        </span>
+                        <div className="flex flex-col gap-1">
+                          <span
+                            className={`px-2 py-1 text-sm rounded font-semibold text-center ${
+                              product.status === "available"
+                                ? "text-green-700 bg-green-100"
+                                : product.status === "paused"
+                                ? "text-yellow-700 bg-yellow-100"
+                                : product.status === "out_of_stock"
+                                ? "text-orange-700 bg-orange-100"
+                                : "text-red-700 bg-red-100"
+                            }`}
+                          >
+                            {product.status === "available"
+                              ? "Hoạt động"
+                              : product.status === "paused"
+                              ? "Tạm dừng"
+                              : product.status === "out_of_stock"
+                              ? "Hết hàng"
+                              : "Ngừng bán"}
+                          </span>
+                          {product.status !== "available" && (
+                            <span className="text-xs text-red-500 text-center">
+                              {product.status === "paused"
+                                ? "Admin tạm dừng"
+                                : product.status === "out_of_stock"
+                                ? "Hệ thống hết hàng"
+                                : "⚠️ Admin đã khóa"}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      {/* Trạng thái cửa hàng (CHT có thể thay đổi) */}
+                      <td className="p-3 min-w-[140px]">
+                        <div className="flex flex-col gap-1">
+                          <span
+                            className={`px-2 py-1 text-sm rounded font-semibold text-center ${
+                              // Khi system unavailable, store status cũng phải unavailable
+                              product.status === "unavailable"
+                                ? "text-red-700 bg-red-100"
+                                : product.storeStatus === "available"
+                                ? "text-blue-700 bg-blue-100"
+                                : product.storeStatus === "paused"
+                                ? "text-yellow-700 bg-yellow-100"
+                                : product.storeStatus === "out_of_stock"
+                                ? "text-orange-700 bg-orange-100"
+                                : "text-gray-700 bg-gray-100"
+                            }`}
+                          >
+                            {product.status === "unavailable"
+                              ? "Bị khóa"
+                              : product.storeStatus === "available"
+                              ? "Đang bán"
+                              : product.storeStatus === "paused"
+                              ? "Tạm dừng"
+                              : product.storeStatus === "out_of_stock"
+                              ? "Hết hàng"
+                              : "Tắt"}
+                          </span>
+
+                          {/* Hiển thị lý do khi bị constraint */}
+                          {product.status === "unavailable" && (
+                            <span className="text-xs text-red-500 text-center">
+                              🔒 Admin đã khóa
+                            </span>
+                          )}
+                          {product.status === "paused" && (
+                            <span className="text-xs text-yellow-600 text-center">
+                              ⏸️ Admin tạm dừng
+                            </span>
+                          )}
+                          {product.status === "out_of_stock" && (
+                            <span className="text-xs text-orange-600 text-center">
+                              📦 Hệ thống hết hàng
+                            </span>
+                          )}
+                        </div>
                       </td>
                       {/* Nhóm các nút hành động */}
                       <td className="p-3">
                         <div className="flex items-center justify-center space-x-2">
+                          {/* Nút chỉnh sửa - disabled khi system status = unavailable */}
                           <Pencil
-                            className="w-4 h-4 text-blue-600 cursor-pointer"
-                            onClick={() => handleEditProduct(product)} // Gọi hàm chỉnh sửa
-                            disabled={product.status === "unavailable"}
-                            style={{
-                              cursor:
-                                product.status === "unavailable"
-                                  ? "not-allowed"
-                                  : "pointer",
-                              opacity:
-                                product.status === "unavailable" ? 0.5 : 1,
+                            className={`w-4 h-4 cursor-pointer ${
+                              product.status === "unavailable"
+                                ? "text-gray-400 cursor-not-allowed"
+                                : "text-blue-600 hover:text-blue-800"
+                            }`}
+                            onClick={() => {
+                              if (product.status !== "unavailable") {
+                                handleEditProduct(product);
+                              }
                             }}
+                            title={
+                              product.status === "unavailable"
+                                ? "Không thể sửa khi sản phẩm bị Admin khóa"
+                                : "Gửi yêu cầu chỉnh sửa tới Admin"
+                            }
                           />
+
+                          {/* Toggle cho storeStatus - CHỈ hoạt động khi system status = available */}
                           <Switch
-                            checked={product.status === "available"}
-                            onChange={() => handleToggleStatus(product)}
+                            checked={
+                              product.status === "available" &&
+                              product.storeStatus === "available"
+                            }
+                            onChange={() => handleToggleStoreStatus(product)}
+                            disabled={product.status !== "available"}
                             className={`${
-                              product.status === "available"
-                                ? "bg-green-500"
-                                : "bg-red-400"
+                              product.status !== "available"
+                                ? "bg-gray-300 cursor-not-allowed"
+                                : product.storeStatus === "available"
+                                ? "bg-blue-500"
+                                : "bg-orange-400"
                             } relative inline-flex h-6 w-11 items-center rounded-full transition`}
+                            title={
+                              product.status !== "available"
+                                ? "Không thể thay đổi khi hệ thống không cho phép"
+                                : "Bật/tắt sản phẩm tại cửa hàng này"
+                            }
                           >
                             <span className="sr-only">
-                              Chuyển trạng thái bán
+                              Chuyển trạng thái bán tại cửa hàng
                             </span>
                             <span
                               className={`${
-                                product.status === "available"
+                                product.status === "available" &&
+                                product.storeStatus === "available"
                                   ? "translate-x-6"
                                   : "translate-x-1"
                               } inline-block h-4 w-4 transform bg-white rounded-full transition`}
                             />
                           </Switch>
+
+                          {/* Nút Request - luôn hiển thị với tooltip động */}
+                          <button
+                            onClick={() =>
+                              handleRequestSystemStatusChange(product)
+                            }
+                            className={`p-1 rounded transition ${
+                              product.status !== "available"
+                                ? "text-orange-600 hover:text-orange-800 hover:bg-orange-50"
+                                : "text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                            }`}
+                            disabled={isRequestLoading}
+                            title={
+                              product.status === "unavailable"
+                                ? "Yêu cầu Admin mở lại sản phẩm bị khóa"
+                                : product.status === "paused"
+                                ? "Yêu cầu Admin tiếp tục bán sản phẩm bị tạm dừng"
+                                : product.status === "out_of_stock"
+                                ? "Yêu cầu Admin nhập thêm hàng cho sản phẩm hết hàng"
+                                : "Gửi yêu cầu thay đổi sản phẩm tới Admin"
+                            }
+                          >
+                            <RotateCcw className="w-4 h-4" />
+                          </button>
+
+                          {/* Nút xóa khỏi cửa hàng - disabled khi system status = unavailable */}
+                          <Trash2
+                            className={`w-4 h-4 cursor-pointer ${
+                              product.status === "unavailable"
+                                ? "text-gray-400 cursor-not-allowed"
+                                : "text-red-600 hover:text-red-800"
+                            }`}
+                            onClick={() => {
+                              if (product.status !== "unavailable") {
+                                handleRemoveFromStore(product);
+                              }
+                            }}
+                            title={
+                              product.status === "unavailable"
+                                ? "Không thể xóa khi sản phẩm bị Admin khóa"
+                                : "Xóa sản phẩm khỏi cửa hàng (không xóa khỏi hệ thống)"
+                            }
+                          />
                         </div>
                       </td>
                     </tr>
@@ -1285,40 +1401,6 @@ const ManagerProduct = () => {
           )}
         </div>
       </div>
-
-      {/* Modal thêm sản phẩm */}
-      {showAddModal && (
-        <AddProductModal
-          onAdd={handleAddProduct}
-          onClose={() => {
-            setShowAddModal(false);
-            setImagePreviews([]);
-          }}
-          isLoading={isLoading}
-          imagePreviews={imagePreviews}
-          handleImageInputChange={handleImageInputChange}
-          availableToppings={availableToppings}
-          availableCategories={availableCategories}
-        />
-      )}
-
-      {/* Modal sửa sản phẩm */}
-      {showEditModal && editingProduct && (
-        <EditProductModal
-          editingProduct={editingProduct}
-          onUpdate={handleUpdateProduct}
-          onClose={() => {
-            setShowEditModal(false);
-            setImagePreviews([]);
-            setEditingProduct(null);
-          }}
-          isLoading={isLoading}
-          imagePreviews={imagePreviews}
-          handleImageInputChange={handleImageInputChange}
-          availableToppings={availableToppings}
-          availableCategories={availableCategories}
-        />
-      )}
 
       {/* Modal xem Topping */}
       {showToppingModal && (
@@ -1419,6 +1501,35 @@ const ManagerProduct = () => {
             ? "Thay đổi trạng thái"
             : "Xóa vĩnh viễn"
         }
+      />
+
+      {/* Modal yêu cầu thêm sản phẩm */}
+      <CreateProductRequestModal
+        isOpen={showAddRequestModal}
+        onClose={() => setShowAddRequestModal(false)}
+        onSuccess={handleAddRequestSuccess}
+      />
+
+      {/* Modal yêu cầu cập nhật sản phẩm */}
+      <UpdateProductRequestModal
+        isOpen={showUpdateRequestModal}
+        onClose={() => {
+          setShowUpdateRequestModal(false);
+          setRequestingProduct(null);
+        }}
+        onSuccess={handleUpdateRequestSuccess}
+        productData={requestingProduct}
+      />
+
+      {/* Modal yêu cầu xóa sản phẩm */}
+      <DeleteProductRequestModal
+        isOpen={showDeleteRequestModal}
+        onClose={() => {
+          setShowDeleteRequestModal(false);
+          setRequestingProduct(null);
+        }}
+        onSuccess={handleDeleteRequestSuccess}
+        productData={requestingProduct}
       />
     </>
   );

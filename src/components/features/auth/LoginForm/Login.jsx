@@ -1,5 +1,3 @@
-import { useEffect } from "react";
-
 // Import Formik Yup
 import { Formik, Form } from "formik";
 import loginSchema from "../../../../utils/loginSchema";
@@ -115,7 +113,7 @@ const Login = ({ handleRegisterClick }) => {
         }
         
         // Đã xác thực -> GuestRoute sẽ tự động redirect theo role
-        console.log("Login success for role:", user.role, "- GuestRoute will handle redirect");
+        // console.log("Login success for role:", user.role, "- GuestRoute will handle redirect");
       }
       
     } catch (error) {
