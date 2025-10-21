@@ -64,11 +64,14 @@ export const useAuthStore = create((set, get) => ({
 
     //! 7. Hàm gửi lại OTP xác minh
     resendVerificationOTP: async (email) => {
+        console.log("Frontend: Attempting to resend OTP for:", email);
         set({ isLoading: true, error: null, message: null });
         try {
             // Gửi request POST đến endpoint gửi lại OTP với email
             const response = await api.post(`${API_ENDPOINT}/resend-otp`, { email });
 
+            console.log("Frontend: Resend OTP response:", response.data);
+            
             // Nếu thành công, cập nhật trạng thái message
             set({
                 message: response.data.message || "Gửi lại email OTP xác minh thành công",
@@ -77,6 +80,11 @@ export const useAuthStore = create((set, get) => ({
             });
             return response.data; // Trả về response để xử lý tiếp
         } catch (error) {
+            console.error("Frontend: Error in resendVerificationOTP:", error);
+            console.error("Frontend: Error response:", error.response?.data);
+            console.error("Frontend: Error status:", error.response?.status);
+            console.error("Frontend: Error headers:", error.response?.headers);
+            
             // Nếu có lỗi, cập nhật error với thông báo từ server hoặc thông báo mặc định
             const errorMessage = error.response?.data?.message || "Lỗi gửi lại email xác minh";
             set({ error: errorMessage, isLoading: false });
