@@ -6,6 +6,13 @@ const BASE_URL = import.meta.env.MODE === "development"
   ? `${import.meta.env.VITE_API_BASE}/api`
   : `${import.meta.env.VITE_API_BASE_PROD}/api`;
 
+// Debug logging để kiểm tra environment variables
+console.log("API Configuration Debug:");
+console.log("MODE:", import.meta.env.MODE);
+console.log("VITE_API_BASE:", import.meta.env.VITE_API_BASE);
+console.log("VITE_API_BASE_PROD:", import.meta.env.VITE_API_BASE_PROD);
+console.log("Final BASE_URL:", BASE_URL);
+
 // Tạo instance axios với cấu hình chung
 const api = axios.create({
   baseURL: BASE_URL,
