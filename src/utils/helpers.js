@@ -1,8 +1,4 @@
-/**
- * Helper functions for common operations
- */
-
-// Debounce function for search input
+// Debounce chức năng để tối ưu hóa việc nhập liệu trong ô tìm kiếm
 export const debounce = (func, delay) => {
   let timeoutId;
   return (...args) => {

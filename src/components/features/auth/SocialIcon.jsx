@@ -23,14 +23,14 @@ function SocialIcon() {
 
       if (result.requiresVerification) {
         console.log("Verification required, navigating to /verify-choice");
-        
+
         // Show notification about verification requirement
         Notification.info(
           "Xác thực bổ sung",
           result.message || "Vui lòng xác thực email để hoàn tất đăng nhập"
         );
 
-        // Redirect to verification choice page 
+        // Redirect to verification choice page
         navigate("/verify-choice", {
           state: {
             email: result.email,
@@ -55,10 +55,25 @@ function SocialIcon() {
 
   //! Xử lí lỗi Google OAuth
   const handleGoogleError = (error) => {
-    Notification.error(
-      "Đăng nhập Google thất bại",
-      "Người dùng từ chối hoặc có lỗi xác thực"
-    );
+    console.error("Google OAuth Error:", error);
+    
+    // Handle different error types
+    if (error?.error === 'popup_blocked') {
+      Notification.error(
+        "Popup bị chặn", 
+        "Vui lòng cho phép popup và thử lại"
+      );
+    } else if (error?.error === 'access_denied') {
+      Notification.warning(
+        "Đăng nhập bị hủy", 
+        "Bạn đã từ chối quyền truy cập Google"
+      );
+    } else {
+      Notification.error(
+        "Lỗi đăng nhập Google",
+        "Có lỗi xảy ra với dịch vụ Google OAuth. Vui lòng thử lại sau."
+      );
+    }
   };
 
   return (
@@ -66,20 +81,33 @@ function SocialIcon() {
       {/* Google Login Button */}
       <div className="mx-2 inline-block">
         {shouldShowGoogleButton ? (
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={handleGoogleError}
-            useOneTap={false}
-            auto_select={false}
-            theme="outline"
-            size="medium"
-            text="signin_with"
-            shape="rectangular"
-            logo_alignment="left"
-          />
+          <div className="relative">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              useOneTap={false}
+              auto_select={false}
+              theme="outline"
+              size="medium"
+              text="signin_with"
+              shape="rectangular"
+              logo_alignment="left"
+              cancel_on_tap_outside={false}
+            />
+            {process.env.NODE_ENV === 'development' && (
+              <div className="text-xs text-gray-400 mt-1">
+                Debug: Client ID loaded
+              </div>
+            )}
+          </div>
         ) : (
           <div className="text-gray-500 text-sm p-2 border border-gray-300 rounded-lg">
-            Google OAuth (Chưa cấu hình GOOGLE_CLIENT_ID)
+            <div>Google OAuth không khả dụng</div>
+            <div className="text-xs mt-1">
+              {process.env.NODE_ENV === 'development' 
+                ? 'Thiếu VITE_GOOGLE_CLIENT_ID trong .env' 
+                : 'Dịch vụ tạm thời không khả dụng'}
+            </div>
           </div>
         )}
       </div>

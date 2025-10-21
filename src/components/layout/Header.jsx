@@ -30,14 +30,14 @@ function Header() {
   //! Function để clear cart nhanh (development only)
   const debugClearCart = () => {
     clearCart();
-    // console.log("🧹 DEBUG: Cart cleared completely!");
+    // console.log("DEBUG: Cart cleared completely!");
   };
 
   //! 🚨 DEBUG: Expose clear function to global window (development only)
   useEffect(() => {
     if (process.env.NODE_ENV === "development") {
       window.debugClearCart = debugClearCart;
-      // console.log("🚨 DEBUG: Use window.debugClearCart() to clear cart quickly!");
+      // console.log("DEBUG: Use window.debugClearCart() to clear cart quickly!");
     }
 
     return () => {

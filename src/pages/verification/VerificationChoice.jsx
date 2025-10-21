@@ -45,6 +45,10 @@ const VerificationChoice = () => {
       return navigate("/login", { state: { next: "/verify-otp", email } });
     }
 
+    console.log("Resending OTP to:", email);
+    console.log("Provider:", provider);
+    console.log("Reason:", isGoogleVerification ? reasonFromState : "N/A");
+
     await resendVerificationOTP(email);
     navigate("/verify-otp", {
       state: {

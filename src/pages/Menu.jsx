@@ -38,7 +38,7 @@ const sortOptions = [
 
 const itemsPerPageOptions = [
   {
-    value: 3,
+    value: 4,
     label: (
       <span className="flex items-center gap-2">
         <ListOrdered className="w-4 h-4 text-camel" />4 / Trang
@@ -46,7 +46,7 @@ const itemsPerPageOptions = [
     ),
   },
   {
-    value: 6,
+    value: 8,
     label: (
       <span className="flex items-center gap-2">
         <ListOrdered className="w-4 h-4 text-camel" />8 / Trang
@@ -54,7 +54,7 @@ const itemsPerPageOptions = [
     ),
   },
   {
-    value: 9,
+    value: 12,
     label: (
       <span className="flex items-center gap-2">
         <ListOrdered className="w-4 h-4 text-camel" />
@@ -63,7 +63,7 @@ const itemsPerPageOptions = [
     ),
   },
   {
-    value: 12,
+    value: 16,
     label: (
       <span className="flex items-center gap-2">
         <ListOrdered className="w-4 h-4 text-camel" />

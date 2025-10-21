@@ -19,14 +19,14 @@ const PrivateRoute = ({ permittedRole }) => {
   const notificationShown = useRef(false);
   const cartLoaded = useRef(false);
 
-  // ✅ Chỉ đồng bộ auth nếu là customer
+  // Chỉ đồng bộ auth nếu là customer
   useEffect(() => {
     if (isAuthenticated && user?.role === "customer" && !cartAuthenticated) {
       setAuthStatus(true);
     }
   }, [isAuthenticated, user, cartAuthenticated, setAuthStatus]);
 
-  // ✅ Load cart khi user là customer và có storeId
+  // Load cart khi user là customer và có storeId
   useEffect(() => {
     const loadCartIfNeeded = async () => {
       if (!isAuthenticated || user?.role !== "customer" || cartLoaded.current) {
@@ -36,13 +36,13 @@ const PrivateRoute = ({ permittedRole }) => {
       try {
         let effectiveStoreId = currentStoreId;
 
-        // ✅ Dùng store đang được chọn nếu currentStoreId chưa có
+        //  Dùng store đang được chọn nếu currentStoreId chưa có
         if (!effectiveStoreId && selectedStore?._id) {
           effectiveStoreId = selectedStore._id;
           console.log("🔄 [PrivateRoute] Using selected store:", effectiveStoreId);
         }
 
-        // ✅ Nếu vẫn chưa có storeId thì bỏ qua
+        //  Nếu vẫn chưa có storeId thì bỏ qua
         if (!effectiveStoreId) {
           console.warn("⚠️ [PrivateRoute] No storeId available, skipping cart load");
           return;
@@ -56,7 +56,7 @@ const PrivateRoute = ({ permittedRole }) => {
         await loadCartFromBackend(effectiveStoreId);
         cartLoaded.current = true;
 
-        console.log("✅ [PrivateRoute] Cart loaded successfully");
+        console.log(" [PrivateRoute] Cart loaded successfully");
       } catch (error) {
         console.error("❌ [PrivateRoute] Error loading cart:", error);
       }
@@ -67,12 +67,12 @@ const PrivateRoute = ({ permittedRole }) => {
     return () => clearTimeout(timer);
   }, [isAuthenticated, user, currentStoreId, loadCartFromBackend, selectedStore]);
 
-  // ✅ Reset cartLoaded khi user logout hoặc đổi user
+  // Reset cartLoaded khi user logout hoặc đổi user
   useEffect(() => {
     cartLoaded.current = false;
   }, [user?._id, isAuthenticated]);
 
-  // ✅ Reset notification khi component bị unmount
+  // Reset notification khi component bị unmount
   useEffect(() => {
     return () => {
       notificationShown.current = false;
@@ -102,7 +102,7 @@ const PrivateRoute = ({ permittedRole }) => {
     return <Navigate to="/unauthorized" replace />;
   }
 
-  console.log("✅ [PrivateRoute] Authenticated user:", user);
+  console.log(" [PrivateRoute] Authenticated user:", user);
   return <Outlet />;
 };
 

@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useEffect, Suspense, lazy } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -7,197 +7,224 @@ import {
 } from "react-router-dom";
 import { Toaster } from "sonner";
 
-// Import Layout
-import StoreManagerLayout from "./layouts/StoreManagerLayout";
-import AdminLayout from "./layouts/AdminLayout";
-
-// Import Pages
-import Home from "./pages/Home";
-import Auth from "./pages/Auth";
-import Intro from "./pages/Intro";
-import Menu from "./pages/Menu";
-import Cart from "./pages/Cart";
-import Promotion from "./pages/Promotion";
-import Checkout from "./pages/Checkout";
-import OrderTracking from "./pages/OrderTracking";
-import OrderHistory from "./pages/OrderHistory";
-
-// Verification Pages
-import VerificationChoice from "./pages/verification/VerificationChoice";
-import EmailVerification from "./pages/verification/EmailVerification";
-import OTPVerification from "./pages/verification/OTPVerification";
-import ForgotPassword from "./pages/forgot-password/ForgotPassword";
-import ResetPassword from "./pages/reset-password/ResetPassword";
-
-// Import AI Chat Components & Icons & Data
-import ChatbotWrapper from "./components/features/chatbot/ChatbotWrapper";
-
-// Import Error Page
-import NotFound from "./pages/notfound/NotFound";
-import Unauthorized from "./pages/unauthorized/Unauthorized";
-
-// Import Admin Pages
-import AdminProduct from "./pages/admin/AdminProduct";
-import AdminCategory from "./pages/admin/AdminCategory";
-import AdminTopping from "./pages/admin/AdminTopping";
-import AdminAccount from "./pages/admin/AdminAccount";
-import AdminStore from "./pages/admin/AdminStore";
-import AdminRequest from "./pages/admin/AdminRequest";
-
-// Import Store Manager Pages
-import ManagerDashboard from "./pages/manager/ManagerDashboard";
-import ManagerProduct from "./pages/manager/ManagerProduct";
-import ManagerCategory from "./pages/manager/ManagerCategory";
-import ManagerTopping from "./pages/manager/ManagerTopping";
-import ManagerOrders from "./pages/manager/ManagerOrders";
-import ManagerCustomers from "./pages/manager/ManagerCustomers";
-import ManagerAccount from "./pages/manager/ManagerAccount";
-import ManagerSettings from "./pages/manager/ManagerSettings";
-import ManagerRequest from "./pages/manager/ManagerRequest";
-
-// Import Protected Route
+// Core components - loaded immediately
+import { useAuthStore } from "./store/authStore";
 import PrivateRoute from "./routes/PrivateRoute";
 import EmailRoute from "./routes/EmailRoute";
 import GuestRoute from "./routes/GuestRoute";
 import StoreGuard from "./routes/StoreGuard";
-import { useAuthStore } from "./store/authStore";
+
+// Loading component
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+  </div>
+);
+
+// Error Boundary Component
+import ErrorBoundary from "./components/ui/ErrorBoundary";
+
+// Lazy load all page components for better performance
+const Home = lazy(() => import("./pages/Home"));
+const Auth = lazy(() => import("./pages/Auth"));
+const Intro = lazy(() => import("./pages/Intro"));
+const Menu = lazy(() => import("./pages/Menu"));
+const Cart = lazy(() => import("./pages/Cart"));
+const Promotion = lazy(() => import("./pages/Promotion"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const OrderTracking = lazy(() => import("./pages/OrderTracking"));
+const OrderHistory = lazy(() => import("./pages/OrderHistory"));
+
+// Verification Pages
+const VerificationChoice = lazy(() =>
+  import("./pages/verification/VerificationChoice")
+);
+const EmailVerification = lazy(() =>
+  import("./pages/verification/EmailVerification")
+);
+const OTPVerification = lazy(() =>
+  import("./pages/verification/OTPVerification")
+);
+const ForgotPassword = lazy(() =>
+  import("./pages/forgot-password/ForgotPassword")
+);
+const ResetPassword = lazy(() =>
+  import("./pages/reset-password/ResetPassword")
+);
+
+// Layouts
+const StoreManagerLayout = lazy(() => import("./layouts/StoreManagerLayout"));
+const AdminLayout = lazy(() => import("./layouts/AdminLayout"));
+
+// Chatbot (conditionally loaded)
+const ChatbotWrapper = lazy(() =>
+  import("./components/features/chatbot/ChatbotWrapper")
+);
+
+// Error Pages
+const NotFound = lazy(() => import("./pages/notfound/NotFound"));
+const Unauthorized = lazy(() => import("./pages/unauthorized/Unauthorized"));
+
+// Admin Pages
+const AdminProduct = lazy(() => import("./pages/admin/AdminProduct"));
+const AdminCategory = lazy(() => import("./pages/admin/AdminCategory"));
+const AdminTopping = lazy(() => import("./pages/admin/AdminTopping"));
+const AdminAccount = lazy(() => import("./pages/admin/AdminAccount"));
+const AdminStore = lazy(() => import("./pages/admin/AdminStore"));
+const AdminRequest = lazy(() => import("./pages/admin/AdminRequest"));
+
+// Manager Pages
+const ManagerDashboard = lazy(() => import("./pages/manager/ManagerDashboard"));
+const ManagerProduct = lazy(() => import("./pages/manager/ManagerProduct"));
+const ManagerCategory = lazy(() => import("./pages/manager/ManagerCategory"));
+const ManagerTopping = lazy(() => import("./pages/manager/ManagerTopping"));
+const ManagerOrders = lazy(() => import("./pages/manager/ManagerOrders"));
+const ManagerCustomers = lazy(() => import("./pages/manager/ManagerCustomers"));
+const ManagerAccount = lazy(() => import("./pages/manager/ManagerAccount"));
+const ManagerSettings = lazy(() => import("./pages/manager/ManagerSettings"));
+const ManagerRequest = lazy(() => import("./pages/manager/ManagerRequest"));
 
 import "./App.css";
 
-// Main Component
 function App() {
-  const { user } = useAuthStore();
+  const { user, checkAuth } = useAuthStore();
 
-  //! Check authentication
-  const checkAuth = useAuthStore((s) => s.checkAuth);
+  //! Kiểm tra xác thực chỉ một lần khi mount
   const didInit = useRef(false);
   useEffect(() => {
     if (didInit.current) return;
     didInit.current = true;
-    checkAuth(); // gọi đúng 1 lần lúc app mount
+    checkAuth();
   }, [checkAuth]);
 
   return (
-    <Router>
-      {/* Toaster should be rendered at the root of the app */}
-      <Toaster richColors position="top-right" />
-      {/* Chatbot component should be rendered conditionally based on user role */}
-      {user && user?.role === "customer" && <ChatbotWrapper />}
-      <Routes>
-        {/* //* Public Route (Login is not required) */}
-        <Route path="/" element={<Home />} />{" "}
-        <Route path="/intro" element={<Intro />} />
-        <Route
-          path="/menu"
-          element={
-            <StoreGuard>
-              <Menu />
-            </StoreGuard>
-          }
-        />
-        <Route
-          path="/login"
-          element={
-            <GuestRoute>
-              <Auth />
-            </GuestRoute>
-          }
-        />
-        <Route path="/promotion" element={<Promotion />} />
-        {/* //* Protected Email Verification Route */}
-        <Route
-          path="/verify-choice"
-          element={
-            <EmailRoute>
-              <VerificationChoice />
-            </EmailRoute>
-          }
-        />
-        <Route
-          path="/verify-email"
-          element={
-            <EmailRoute>
-              <EmailVerification />
-            </EmailRoute>
-          }
-        />
-        <Route
-          path="/verify-otp"
-          element={
-            <EmailRoute>
-              <OTPVerification />
-            </EmailRoute>
-          }
-        />
-        {/* Forgot Password page */}
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        {/* Reset Password page */}
-        <Route
-          path="/reset-password"
-          element={<Navigate to="/forgot-password" replace />}
-        />
-        <Route path="/reset-password/:token" element={<ResetPassword />} />
-        <Route path="/unauthorized" element={<Unauthorized />} />{" "}
-        <Route path="*" element={<NotFound />} />{" "}
-        <Route path="/order-history-test" element={<OrderHistory />} />
-        {/* //* Cart - Guest có thể sử dụng, không cần đăng nhập */}
-        <Route path="/cart" element={<Cart />} />
-        {/* //* ------ Customer Route (Registered Customer access is required) ------*/}
-        <Route element={<PrivateRoute permittedRole="customer" />}>
-          {/* Trang thanh toán - YÊU CẦU ĐĂNG NHẬP */}
-          <Route path="/checkout" element={<Checkout />} />
-          {/* Trang theo dõi đơn hàng*/}
-          <Route path="/order-tracking/:id" element={<OrderTracking />} />
-          {/* Trang xem lịch sử đơn hàng*/}
-          <Route path="/order-history" element={<OrderHistory />} />
-        </Route>
-        {/* //* ------ Manager Route (Manager access is required) ------ */}
-        <Route element={<PrivateRoute permittedRole="storeManager" />}>
-          <Route path="/store-manager" element={<StoreManagerLayout />}>
-            {/* Khi truy cập /store-manager → điều hướng tới /store-manager/dashboard */}
+    <ErrorBoundary>
+      <Router>
+        {/* Để thông báo ở đây cho Notification hiện ở tất cả các trang */}
+        <Toaster richColors position="top-right" />
+
+        {/* Hiện chatbot cho khách hàng đã đăng nhập */}
+        {user?.role === "customer" && (
+          <Suspense fallback={null}>
+            <ChatbotWrapper />
+          </Suspense>
+        )}
+
+        {/* Sử dụng <Suspense> để lazy load các trang */}
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<Home />} />
+            <Route path="/intro" element={<Intro />} />
+            <Route path="/promotion" element={<Promotion />} />
             <Route
-              index
-              element={<Navigate to="/store-manager/dashboard" replace />}
+              path="/menu"
+              element={
+                <StoreGuard>
+                  <Menu />
+                </StoreGuard>
+              }
             />
-            {/* Trang dashboard */}
-            <Route path="dashboard" element={<ManagerDashboard />} />
-            {/* Trang quản lý sản phẩm dành riêng cho cửa hàng trưởng */}
-            <Route path="products" element={<ManagerProduct />} />
-            <Route path="categories" element={<ManagerCategory />} />
-            <Route path="toppings" element={<ManagerTopping />} />
-            {/* Trang quản lý đơn hàng và khách hàng */}
-            <Route path="orders" element={<ManagerOrders />} />
-            <Route path="customers" element={<ManagerCustomers />} />
-            {/* Trang quản lý tài khoản và cài đặt */}
-            <Route path="accounts" element={<ManagerAccount />} />
-            <Route path="settings" element={<ManagerSettings />} />
-            <Route path="requests" element={<ManagerRequest />} />
-          </Route>
-        </Route>
-        {/* //* ------ Staff Route (Staff access is required) ------ */}
-        <Route element={<PrivateRoute permittedRole="staff" />}>
-          {/* Khi truy cập /manager → điều hướng tới /manager/dashboard */}
-          <Route
-            path="/staff"
-            element={<Navigate to="/staff/dashboard" replace />}
-          />
-        </Route>
-        {/* //* ------ Admin Route (Admin access is required) ------*/}
-        <Route element={<PrivateRoute permittedRole="admin" />}>
-          <Route path="/admin" element={<AdminLayout />}>
-            {/* Khi truy cập /admin → điều hướng tới /admin/products */}
-            <Route index element={<Navigate to="/admin/products" replace />} />
-            {/* Trang quản lý sản phẩm dành riêng cho admin */}
-            <Route path="products" element={<AdminProduct />} />
-            <Route path="categories" element={<AdminCategory />} />
-            <Route path="toppings" element={<AdminTopping />} />
-            <Route path="accounts" element={<AdminAccount />} />
-            <Route path="stores" element={<AdminStore />} />
-            <Route path="requests" element={<AdminRequest />} />
-          </Route>
-        </Route>
-      </Routes>
-    </Router>
+            <Route
+              path="/login"
+              element={
+                <GuestRoute>
+                  <Auth />
+                </GuestRoute>
+              }
+            />
+            {/* Email Verification Routes */}
+            <Route
+              path="/verify-choice"
+              element={
+                <EmailRoute>
+                  <VerificationChoice />
+                </EmailRoute>
+              }
+            />
+            <Route
+              path="/verify-email"
+              element={
+                <EmailRoute>
+                  <EmailVerification />
+                </EmailRoute>
+              }
+            />
+            <Route
+              path="/verify-otp"
+              element={
+                <EmailRoute>
+                  <OTPVerification />
+                </EmailRoute>
+              }
+            />
+
+            {/* Password Reset Routes */}
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route
+              path="/reset-password"
+              element={<Navigate to="/forgot-password" replace />}
+            />
+            <Route path="/reset-password/:token" element={<ResetPassword />} />
+
+            {/* Cart - accessible to guests */}
+            <Route path="/cart" element={<Cart />} />
+
+            {/* Error Routes */}
+            <Route path="/unauthorized" element={<Unauthorized />} />
+            {/* Customer Routes - Authentication Required */}
+            <Route element={<PrivateRoute permittedRole="customer" />}>
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/order-tracking/:id" element={<OrderTracking />} />
+              <Route path="/order-history" element={<OrderHistory />} />
+            </Route>
+            {/* Store Manager Routes */}
+            <Route element={<PrivateRoute permittedRole="storeManager" />}>
+              <Route path="/store-manager" element={<StoreManagerLayout />}>
+                <Route
+                  index
+                  element={<Navigate to="/store-manager/dashboard" replace />}
+                />
+                <Route path="dashboard" element={<ManagerDashboard />} />
+                <Route path="products" element={<ManagerProduct />} />
+                <Route path="categories" element={<ManagerCategory />} />
+                <Route path="toppings" element={<ManagerTopping />} />
+                <Route path="orders" element={<ManagerOrders />} />
+                <Route path="customers" element={<ManagerCustomers />} />
+                <Route path="accounts" element={<ManagerAccount />} />
+                <Route path="settings" element={<ManagerSettings />} />
+                <Route path="requests" element={<ManagerRequest />} />
+              </Route>
+            </Route>
+            {/* Staff Routes */}
+            <Route element={<PrivateRoute permittedRole="staff" />}>
+              <Route
+                path="/staff"
+                element={<Navigate to="/staff/dashboard" replace />}
+              />
+            </Route>
+            {/* Admin Routes */}
+            <Route element={<PrivateRoute permittedRole="admin" />}>
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route
+                  index
+                  element={<Navigate to="/admin/products" replace />}
+                />
+                <Route path="products" element={<AdminProduct />} />
+                <Route path="categories" element={<AdminCategory />} />
+                <Route path="toppings" element={<AdminTopping />} />
+                <Route path="accounts" element={<AdminAccount />} />
+                <Route path="stores" element={<AdminStore />} />
+                <Route path="requests" element={<AdminRequest />} />
+              </Route>
+            </Route>
+
+            {/* 404 - Must be last route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
+      </Router>
+    </ErrorBoundary>
   );
 }
 
