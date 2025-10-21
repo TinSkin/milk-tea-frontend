@@ -67,6 +67,9 @@ export const useAuthStore = create((set, get) => ({
         console.log("Frontend: Attempting to resend OTP for:", email);
         set({ isLoading: true, error: null, message: null });
         try {
+            console.log(`Frontend: Sending POST request to: ${API_ENDPOINT}/resend-otp`);
+            console.log("Frontend: Request payload:", { email });
+            
             // Gửi request POST đến endpoint gửi lại OTP với email
             const response = await api.post(`${API_ENDPOINT}/resend-otp`, { email });
 
@@ -81,12 +84,28 @@ export const useAuthStore = create((set, get) => ({
             return response.data; // Trả về response để xử lý tiếp
         } catch (error) {
             console.error("Frontend: Error in resendVerificationOTP:", error);
-            console.error("Frontend: Error response:", error.response?.data);
+            console.error("Frontend: Error response data:", error.response?.data);
             console.error("Frontend: Error status:", error.response?.status);
-            console.error("Frontend: Error headers:", error.response?.headers);
+            console.error("Frontend: Error message:", error.message);
+            console.error("Frontend: Full error object:", error);
+            
+            // Parse error message chi tiết hơn
+            let errorMessage = "Lỗi gửi lại email xác minh";
+            
+            if (error.response?.status === 500) {
+                errorMessage = "Lỗi server nội bộ. Vui lòng thử lại sau.";
+                console.error("500 Error detected - likely backend issue with email service or database");
+            } else if (error.response?.status === 404) {
+                errorMessage = "Không tìm thấy người dùng với email này";
+            } else if (error.response?.status === 400) {
+                errorMessage = error.response?.data?.message || "Yêu cầu không hợp lệ";
+            } else if (error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
             
             // Nếu có lỗi, cập nhật error với thông báo từ server hoặc thông báo mặc định
-            const errorMessage = error.response?.data?.message || "Lỗi gửi lại email xác minh";
             set({ error: errorMessage, isLoading: false });
             throw error; // Ném lại lỗi để xử lý tiếp
         }
