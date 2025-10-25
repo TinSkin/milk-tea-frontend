@@ -5,7 +5,7 @@ import { persist } from "zustand/middleware"; // Persist middleware cho localSto
 //! API endpoint - tương tự logic trong axios.js
 const API_ENDPOINT = import.meta.env.MODE === "development"
   ? import.meta.env.VITE_API_BASE || 'http://localhost:5000'
-  : import.meta.env.VITE_API_BASE_PROD || 'https://milk-tea-backend.onrender.com';
+  : import.meta.env.VITE_API_BASE_PROD || 'https://milk-tea-backend-s4s2.onrender.com';
 
 // ——— Debounce nhỏ cho UX mượt ———
 let debounceTimer;

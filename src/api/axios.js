@@ -112,40 +112,4 @@ export const toppingAPI = axios.create({
   withCredentials: true
 });
 
-// Áp dụng request interceptor cho các instance khác - Hàm tiện ích để attach interceptor vào nhiều instance
-const attachAuthRequestInterceptor = (instance) => {
-  instance.interceptors.request.use(
-    (config) => {
-      const state = useAuthStore.getState();
-      const token = state?.user?.token || state?.token || state?.accessToken;
-      if (token) {
-        config.headers = {
-          ...config.headers,
-          Authorization: `Bearer ${token}`
-        };
-      }
-      return config;
-    },
-    (error) => Promise.reject(error)
-  );
-};
-
-// Sử dụng interceptor chung cho các instance khác
-[authAPI, productAPI, userAPI, categoryAPI, toppingAPI].forEach(instance => {
-  instance.interceptors.response.use(
-    (response) => response,
-    (error) => {
-      if (error.response?.status === 401) {
-        console.log("Token expired, auto logout");
-        useAuthStore.setState({
-          user: null,
-          isAuthenticated: false,
-          error: "Phiên đăng nhập đã hết hạn"
-        });
-      }
-      return Promise.reject(error);
-    }
-  );
-});
-
 export default api;
