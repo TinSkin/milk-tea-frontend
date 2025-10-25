@@ -2,6 +2,7 @@ import { useCartStore } from "../../../store/cartStore";
 import { useState, useEffect } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
+import { useNavigate } from "react-router-dom";
 import "swiper/css";
 import "swiper/css/pagination";
 
@@ -16,10 +17,14 @@ import Notification from "../../ui/Notification";
 
 // Import Store
 import { useStoreSelectionStore } from "../../../store/storeSelectionStore";
+import { useAuthStore } from "../../../store/authStore";
 
 function ProductCard(props) {
   const [isLoading, setIsLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
+
 
   //! Lấy store đã chọn
   const { selectedStore } = useStoreSelectionStore();
@@ -107,15 +112,21 @@ function ProductCard(props) {
             }}
             validationSchema={addOrderSchema}
             onSubmit={(values) => {
-              // Kiểm tra store đã được chọn chưa
-              if (!selectedStore?._id) {
-                Notification.error(
-                  "Vui lòng chọn cửa hàng trước khi đặt hàng!"
-                );
+              // Kiểm tra đã đăng nhập chưa
+              if (!user) {
+                Notification.warning("Bạn phải đăng nhập mới được thêm vào giỏ hàng!");
+                setShowAddModal(false);
+                navigate("/login");
                 return;
               }
-
-              // Tính toán giá
+            
+              // Kiểm tra store đã chọn chưa
+              if (!selectedStore?._id) {
+                Notification.error("Vui lòng chọn cửa hàng trước khi đặt hàng!");
+                return;
+              }
+            
+              // Tính toán giá và tạo sản phẩm mới
               const selectedSize = props.sizeOptions?.find(
                 (opt) => opt.size === values.sizeOption
               );
@@ -124,14 +135,15 @@ function ProductCard(props) {
                 (s, t) => s + (t.extraPrice || 0),
                 0
               );
-              const total =
-                (sizePrice + toppingsPrice) * (values.quantity || 1);
-
+              
+              // ✅ QUAN TRỌNG: Tính giá ĐƠN VỊ (không nhân số lượng)
+              const unitPrice = sizePrice + toppingsPrice;
+              
               const newProduct = {
                 _id: props._id,
                 name: props.name,
                 images: props.image || props.images || [],
-                price: total,
+                price: unitPrice, // ✅ Sửa: Chỉ lưu giá đơn vị
                 sizeOption: values.sizeOption,
                 sizeOptionPrice: sizePrice,
                 sugarLevel: values.sugarLevel,
@@ -143,21 +155,18 @@ function ProductCard(props) {
                   extraPrice: t.extraPrice || 0,
                 })),
                 sizeOptions: props.sizeOptions || [],
-                quantity: values.quantity || 1,
-                storeId: selectedStore._id, // Thêm store info
+                quantity: values.quantity || 1, // ✅ Gửi đúng số lượng người dùng chọn
+                storeId: selectedStore._id,
                 storeName: selectedStore.storeName || selectedStore.name,
               };
-
-              // Thêm trực tiếp vào giỏ hàng (không cần đăng nhập)
-              addToCart(newProduct);
+            
+              // Thêm vào giỏ hàng (backend)
+              addToCart(newProduct, values.quantity); // ✅ THÊM: Truyền số lượng vào hàm addToCart
               setShowAddModal(false);
-
-              // Thông báo cho Cart component cập nhật
               window.dispatchEvent(new CustomEvent("cartUpdated"));
-
-              // Hiển thị thông báo thành công
               Notification.success("Đã thêm sản phẩm vào giỏ hàng!");
             }}
+            
           >
             {({ values, setFieldValue }) => {
               const selectedSize = props.sizeOptions?.find(
@@ -168,8 +177,8 @@ function ProductCard(props) {
                 (sum, t) => sum + (t.extraPrice || 0),
                 0
               );
-              const total =
-                (sizePrice + toppingsTotal) * (values.quantity || 1);
+              const unitPrice = sizePrice + toppingsTotal; // ✅ Giá đơn vị
+  const total = unitPrice * (values.quantity || 1); // ✅ Tổng = đơn vị * số lượng
               return (
                 <Form
                   onClick={(e) => e.stopPropagation()}
@@ -250,7 +259,7 @@ function ProductCard(props) {
 
                               {/* Tổng nổi bật, to/đậm, màu thương hiệu xanh */}
                               <div className="text-2xl font-bold text-green_starbuck">
-                                Tổng: {total.toLocaleString("vi-VN")}đ
+                              Tổng: {total.toLocaleString("vi-VN")}đ
                               </div>
                             </div>
                           );

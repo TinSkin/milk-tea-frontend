@@ -1,15 +1,15 @@
 import api from "./axios";
 
 export const cartAPI = {
-  // 🛒 Lấy giỏ hàng từ backend
+  // Lấy giỏ hàng từ backend
   getCart: async (storeId) => {
     try {
-      console.log("🛒 [API] GET /cart?storeId=", storeId);
+      console.log("GET /cart?storeId=", storeId);
       const response = await api.get(`/cart?storeId=${storeId}`);
-      console.log("🛒 [API] GET response:", response.data);
+      console.log("GET response:", response.data);
       return response.data;
     } catch (error) {
-      console.error("🛒 [API] GET ERROR:", error.response?.data || error.message);
+      console.error("GET ERROR:", error.response?.data || error.message);
       if (error.response?.status === 404) {
         return { success: true, data: { items: [], totalAmount: 0 } };
       }
@@ -17,33 +17,32 @@ export const cartAPI = {
     }
   },
 
-  // 🧃 Thêm sản phẩm vào giỏ hàng backend
+  // Thêm sản phẩm vào giỏ
   addToCart: async (cartData) => {
     try {
-      console.log("🛒 [API] POST /cart/add raw data:", cartData);
+      console.log("POST /cart/add raw:", cartData);
 
       const formattedData = {
         storeId: cartData.storeId,
         productId: cartData.productId,
-        quantity: cartData.quantity,
-        sizeOption: cartData.sizeOption,
-        sugarLevel: cartData.sugarLevel.includes('%') ? cartData.sugarLevel : `${cartData.sugarLevel}%`,
-        iceOption: cartData.iceOption,
+        quantity: cartData.quantity ?? 1,
+        sizeOption: cartData.sizeOption || "M",
+        sugarLevel: String(cartData.sugarLevel || "100%").includes('%') 
+          ? cartData.sugarLevel 
+          : `${cartData.sugarLevel}%`,
+        iceOption: cartData.iceOption || "Chung",
         specialNotes: cartData.specialNotes || "",
-        // ✅ FIX: topping chỉ cần _id hoặc string, không được lồng toppingId bên trong
-        toppings: (cartData.toppings || []).map((t) => ({
-          toppingId: t._id || t.toppingId || t
-        }))
+        // Gửi array ID string
+        toppings: (cartData.toppings || []).map(t => t._id || t.toppingId || t).filter(Boolean)
       };
 
-      console.log("🛒 [API] POST formatted data:", JSON.stringify(formattedData, null, 2));
+      console.log("POST formatted:", JSON.stringify(formattedData, null, 2));
 
       const response = await api.post("/cart/add", formattedData);
-      console.log("🛒 [API] POST response:", response.data);
-
+      console.log("POST success:", response.data);
       return response.data;
     } catch (error) {
-      console.error("🛒 [API] POST ERROR:", {
+      console.error("POST ERROR:", {
         status: error.response?.status,
         data: error.response?.data,
         message: error.message
@@ -52,75 +51,96 @@ export const cartAPI = {
     }
   },
 
-  // 🔢 Cập nhật số lượng
+  // Cập nhật số lượng
   updateQuantity: async (updateData) => {
     try {
-      console.log("🛒 [API] PUT /cart/quantity data:", updateData);
+      console.log("PUT /cart/quantity data:", updateData);
       const response = await api.put("/cart/quantity", updateData);
-      console.log("🛒 [API] PUT response:", response.data);
+      console.log("PUT quantity success:", response.data);
       return response.data;
     } catch (error) {
-      console.error("🛒 [API] PUT ERROR:", error.response?.data || error.message);
+      console.error("PUT quantity ERROR:", error.response?.data || error.message);
       throw error;
     }
   },
 
-  // ❌ Xóa sản phẩm
+  // Xóa sản phẩm
   removeFromCart: async (removeData) => {
     try {
-      console.log("🛒 [API] DELETE /cart/item data:", removeData);
+      console.log("DELETE /cart/item data:", removeData);
       const response = await api.delete("/cart/item", { data: removeData });
-      console.log("🛒 [API] DELETE response:", response.data);
+      console.log("DELETE success:", response.data);
       return response.data;
     } catch (error) {
-      console.error("🛒 [API] DELETE ERROR:", error.response?.data || error.message);
+      console.error("DELETE ERROR:", error.response?.data || error.message);
       throw error;
     }
   },
 
-  // 🧹 Xóa toàn bộ giỏ hàng
+  // Xóa toàn bộ giỏ
   clearCart: async (storeId) => {
     try {
-      console.log("🛒 [API] DELETE /cart/clear storeId:", storeId);
+      console.log("DELETE /cart/clear storeId:", storeId);
       const response = await api.delete("/cart/clear", { data: { storeId } });
-      console.log("🛒 [API] CLEAR response:", response.data);
+      console.log("CLEAR success:", response.data);
       return response.data;
     } catch (error) {
-      console.error("🛒 [API] CLEAR ERROR:", error.response?.data || error.message);
+      console.error("CLEAR ERROR:", error.response?.data || error.message);
       throw error;
     }
   },
 
-  // 🔧 Cập nhật sản phẩm trong giỏ
+  // CẬP NHẬT CẤU HÌNH SẢN PHẨM - QUAN TRỌNG NHẤT
   updateCartItem: async (updateData) => {
     try {
-      console.log("🛒 [API] PUT /cart/update data:", updateData);
+      // BẮT BUỘC: itemId phải là _id của cart item
+      if (!updateData.itemId) {
+        throw new Error("Thiếu itemId (cart item _id)");
+      }
+
+      console.log("PUT /cart/update RAW:", updateData);
 
       const formattedData = {
-        ...updateData,
-        toppings: (updateData.toppings || []).map((t) => ({
-          toppingId: t._id || t.toppingId || t
-        }))
+        storeId: updateData.storeId,
+        itemId: updateData.itemId,
+        newConfig: {
+          quantity: updateData.newConfig?.quantity ?? 1,
+          sizeOption: updateData.newConfig?.sizeOption || "M",
+          sugarLevel: updateData.newConfig?.sugarLevel || "100%",
+          iceOption: updateData.newConfig?.iceOption || "Chung",
+          specialNotes: updateData.newConfig?.specialNotes || "",
+          // CHỈ GỬI MẢNG ID STRING
+          toppings: (updateData.newConfig?.toppings || [])
+            .map(t => t._id || t.toppingId || t)
+            .filter(Boolean)
+        }
       };
 
+      console.log("PUT /cart/update FORMATTED:", JSON.stringify(formattedData, null, 2));
+
       const response = await api.put("/cart/update", formattedData);
-      console.log("🛒 [API] UPDATE response:", response.data);
+      console.log("UPDATE success:", response.data);
       return response.data;
     } catch (error) {
-      console.error("🛒 [API] UPDATE ERROR:", error.response?.data || error.message);
+      console.error("UPDATE CART ITEM ERROR:", {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+        config: error.config
+      });
       throw error;
     }
   },
 
-  // 🔄 Gom các sản phẩm trùng
+  // Gom trùng (tùy chọn - backend đã xử lý)
   mergeDuplicateItems: async (storeId) => {
     try {
-      console.log("🛒 [API] PUT /cart/merge storeId:", storeId);
+      console.log("PUT /cart/merge storeId:", storeId);
       const response = await api.put("/cart/merge", { storeId });
-      console.log("🛒 [API] MERGE response:", response.data);
+      console.log("MERGE success:", response.data);
       return response.data;
     } catch (error) {
-      console.error("🛒 [API] MERGE ERROR:", error.response?.data || error.message);
+      console.error("MERGE ERROR:", error.response?.data || error.message);
       throw error;
     }
   }
