@@ -127,58 +127,62 @@ function Header() {
             </Link>
           </ul>
 
-          {/* Cart Icon - hiển thị cho cả user đã đăng nhập và guest */}
+          {/* Cart Icon & User Authentication Area */}
           <div className="flex items-center gap-4">
-            {/* Cart Button */}
-            <Link
-              to="/cart"
-              className="relative p-2 text-white hover:text-camel transition-colors duration-200"
-              title="Giỏ hàng"
-            >
-              {/* Cart Icon SVG */}
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 9M7 13l-1.5-9M16 19a2 2 0 100 4 2 2 0 000-4zM9 19a2 2 0 100 4 2 2 0 000-4z"
-                />
-              </svg>
+            {/* Chỉ hiển thị giỏ hàng khi user đã đăng nhập */}
+            {user && (
+              <>
+                {/* Cart Button */}
+                <Link
+                  to="/cart"
+                  className="relative p-2 text-white hover:text-camel transition-colors duration-200"
+                  title="Giỏ hàng"
+                >
+                  {/* Cart Icon SVG */}
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 9M7 13l-1.5-9M16 19a2 2 0 100 4 2 2 0 000-4zM9 19a2 2 0 100 4 2 2 0 000-4z"
+                    />
+                  </svg>
 
-              {/* Badge hiển thị số lượng sản phẩm */}
-              {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center min-w-[20px]">
-                  {cartCount > 99 ? "99+" : cartCount}
-                </span>
-              )}
+                  {/* Badge hiển thị số lượng sản phẩm */}
+                  {cartCount > 0 && (
+                    <>
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center min-w-[20px]">
+                        {cartCount > 99 ? "99+" : cartCount}
+                      </span>
+                      {/* Pulse hiệu ứng khi có sản phẩm */}
+                      <span className="absolute -top-1 -right-1 bg-red-500 rounded-full h-5 w-5 animate-ping opacity-20"></span>
+                    </>
+                  )}
+                </Link>
 
-              {/* Pulse effect khi có sản phẩm mới */}
-              {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 rounded-full h-5 w-5 animate-ping opacity-20"></span>
-              )}
-            </Link>
-
-            {/*Clear Cart Button (development only) */}
-            {cartCount > 0 && process.env.NODE_ENV === "development" && (
-              <button
-                onClick={debugClearCart}
-                className="ml-2 p-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-                title="DEBUG: Clear Cart"
-              >
-                <Trash className="w-4 h-4" />
-              </button>
+                {/* Nút Clear Cart (chỉ hiển thị trong môi trường development) */}
+                {/* {cartCount > 0 && process.env.NODE_ENV === "development" && (
+                  <button
+                    onClick={debugClearCart}
+                    className="ml-2 p-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                    title="DEBUG: Clear Cart"
+                  >
+                    <Trash className="w-4 h-4" />
+                  </button>
+                )} */}
+              </>
             )}
 
-            {/* User Authentication Area */}
+            {/* Khu vực Đăng nhập / Avatar */}
             {user ? (
               <div className="relative">
                 <div className="flex items-center">
-                  {/* Avatar button */}
+                  {/* Avatar */}
                   <button
                     type="button"
                     className="text-sm rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -192,7 +196,8 @@ function Header() {
                       alt="user"
                     />
                   </button>
-                  {/* Show name and role */}
+
+                  {/* Tên và email */}
                   <div className="flex flex-col ml-2">
                     <span className="font-semibold text-camel text-base capitalize">
                       {user.userName}
@@ -210,20 +215,11 @@ function Header() {
                     openMenu ? "" : "hidden"
                   }`}
                 >
-                  <div className="px-4 py-3 text-md text-dark_blue ">
+                  <div className="px-4 py-3 text-md text-dark_blue">
                     <div className="font-semibold">{user.userName}</div>
                     <div className="font-medium truncate text-camel">
                       {user.email}
                     </div>
-                  </div>
-                  <div className="">
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      className="block w-full bg-camel text-white px-4 py-2  hover:bg-logo_color transition font-semibold"
-                    >
-                      Đăng xuất
-                    </button>
                   </div>
                   <div>
                     <Link
@@ -232,6 +228,15 @@ function Header() {
                     >
                       Lịch sử đơn hàng
                     </Link>
+                  </div>
+                  <div>
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="block w-full bg-camel text-white px-4 py-2 hover:bg-logo_color transition font-semibold"
+                    >
+                      Đăng xuất
+                    </button>
                   </div>
                 </div>
               </div>

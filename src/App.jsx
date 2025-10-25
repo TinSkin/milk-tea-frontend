@@ -140,10 +140,10 @@ function App() {
         <Route path="/unauthorized" element={<Unauthorized />} />{" "}
         <Route path="*" element={<NotFound />} />{" "}
         <Route path="/order-history-test" element={<OrderHistory />} />
-        {/* //* Cart - Guest có thể sử dụng, không cần đăng nhập */}
-        <Route path="/cart" element={<Cart />} />
         {/* //* ------ Customer Route (Registered Customer access is required) ------*/}
         <Route element={<PrivateRoute permittedRole="customer" />}>
+         {/* Trang giỏ hàng - YÊU CẦU ĐĂNG NHẬP */}
+          <Route path="/cart" element={<Cart />} />
           {/* Trang thanh toán - YÊU CẦU ĐĂNG NHẬP */}
           <Route path="/checkout" element={<Checkout />} />
           {/* Trang theo dõi đơn hàng*/}

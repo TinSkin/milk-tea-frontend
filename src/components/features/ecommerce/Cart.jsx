@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useStoreSelectionStore } from "../../../store/storeSelectionStore";
 import { useCartStore } from "../../../store/cartStore";
+import { useAuthStore } from "../../../store/authStore";
 import Notification from "../../ui/Notification";
 
 function Cart() {
@@ -9,6 +10,9 @@ function Cart() {
 
   // Lấy thông tin cửa hàng đã chọn
   const { selectedStore } = useStoreSelectionStore();
+
+  // Lấy trạng thái đăng nhập
+  const { isAuthenticated } = useAuthStore();
   
   // Lấy cartItems và clearCart từ Zustand store
   const { items: cartItems, clearCart: clearCartStore } = useCartStore();
@@ -60,9 +64,18 @@ function Cart() {
       </div>
       {/* Cart Items */}
       <div className="w-[80%] mx-auto pb-4">
-        {cartItems.length === 0 ? (
-          <p className="text-gray-500 text-sm mb-4">Chưa có sản phẩm nào!</p>
+        {!isAuthenticated ? (
+          //  Nếu chưa đăng nhập
+          <p className="text-gray-500 text-sm mb-4">
+            Bạn phải đăng nhập để xem giỏ hàng.
+          </p>
+        ) : cartItems.length === 0 ? (
+          // Nếu đăng nhập rồi nhưng giỏ trống
+          <p className="text-gray-500 text-sm mb-4">
+            Chưa có sản phẩm nào!
+          </p>
         ) : (
+          // Nếu có sản phẩm trong giỏ hàng
           <ul className="text-left text-sm space-y-2 mb-4 max-h-64 overflow-y-auto pr-2">
             {cartItems.map((item, index) => (
               <li key={index} className="border-b pb-2">
@@ -83,9 +96,20 @@ function Cart() {
             ))}
           </ul>
         )}
+
+        {/* Nút Thanh toán */}
         <Link
-          to="/cart"
-          className="bg-[#151d2d] hover:bg-camel text-white w-full px-4 py-2 rounded text-sm font-semibold block"
+          to={isAuthenticated ? "/cart" : "/login"} 
+          className={`${
+            isAuthenticated
+              ? "bg-[#151d2d] hover:bg-camel"
+              : "bg-gray-400 cursor-not-allowed"
+          } text-white w-full px-4 py-2 rounded text-sm font-semibold block`}
+          onClick={() => {
+            if (!isAuthenticated) {
+              Notification.info("Bạn phải đăng nhập để xem giỏ hàng");
+            }
+          }}
         >
           Thanh toán
         </Link>
