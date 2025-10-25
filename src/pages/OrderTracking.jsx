@@ -36,8 +36,7 @@ export default function OrderTracking() {
         const res = await api.get(`/orders/${id}`);
         setOrder(res.data.order);
         console.log("Dữ liệu đơn hàng từ server:", res.data.order);
-console.log("Danh sách item:", res.data.order.items);
-
+        console.log("Danh sách item:", res.data.order.items);
       } catch (err) {
         console.error("Lỗi lấy đơn hàng:", err);
         setError("Không thể tải đơn hàng. Vui lòng thử lại!");
@@ -126,7 +125,9 @@ console.log("Danh sách item:", res.data.order.items);
                     {index < steps.length - 1 && (
                       <div
                         className={`absolute top-5 left-1/2 w-full h-1 -z-10 
-                          ${index < currentStep ? "bg-red-500" : "bg-gray-300"}`}
+                          ${
+                            index < currentStep ? "bg-red-500" : "bg-gray-300"
+                          }`}
                       ></div>
                     )}
                   </div>
@@ -172,11 +173,7 @@ console.log("Danh sách item:", res.data.order.items);
                     Số lượng: {item.quantity || 0}
                   </p>
                   <p className="font-medium text-white">
-                    Giá:{" "}
-                    {item.price
-                      ? item.price.toLocaleString()
-                      : 0}
-                    đ
+                    Giá: {item.price ? item.price.toLocaleString() : 0}đ
                   </p>
                 </div>
               </div>
@@ -205,7 +202,6 @@ console.log("Danh sách item:", res.data.order.items);
               Quay lại trang chủ
             </button>
           </div>
-
         </div>
         <Footer />
       </div>

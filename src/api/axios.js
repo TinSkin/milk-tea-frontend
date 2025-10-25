@@ -6,6 +6,13 @@ const BASE_URL = import.meta.env.MODE === "development"
   ? `${import.meta.env.VITE_API_BASE}/api`
   : `${import.meta.env.VITE_API_BASE_PROD}/api`;
 
+// Debug logging để kiểm tra environment variables
+console.log("API Configuration Debug:");
+console.log("MODE:", import.meta.env.MODE);
+console.log("VITE_API_BASE:", import.meta.env.VITE_API_BASE);
+console.log("VITE_API_BASE_PROD:", import.meta.env.VITE_API_BASE_PROD);
+console.log("Final BASE_URL:", BASE_URL);
+
 // Tạo instance axios với cấu hình chung
 const api = axios.create({
   baseURL: BASE_URL,
@@ -103,42 +110,6 @@ export const categoryAPI = axios.create({
 export const toppingAPI = axios.create({
   baseURL: `${BASE_URL}/toppings`,
   withCredentials: true
-});
-
-// Áp dụng request interceptor cho các instance khác - Hàm tiện ích để attach interceptor vào nhiều instance
-const attachAuthRequestInterceptor = (instance) => {
-  instance.interceptors.request.use(
-    (config) => {
-      const state = useAuthStore.getState();
-      const token = state?.user?.token || state?.token || state?.accessToken;
-      if (token) {
-        config.headers = {
-          ...config.headers,
-          Authorization: `Bearer ${token}`
-        };
-      }
-      return config;
-    },
-    (error) => Promise.reject(error)
-  );
-};
-
-// Sử dụng interceptor chung cho các instance khác
-[authAPI, productAPI, userAPI, categoryAPI, toppingAPI].forEach(instance => {
-  instance.interceptors.response.use(
-    (response) => response,
-    (error) => {
-      if (error.response?.status === 401) {
-        console.log("Token expired, auto logout");
-        useAuthStore.setState({
-          user: null,
-          isAuthenticated: false,
-          error: "Phiên đăng nhập đã hết hạn"
-        });
-      }
-      return Promise.reject(error);
-    }
-  );
 });
 
 export default api;

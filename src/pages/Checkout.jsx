@@ -89,23 +89,17 @@ const CheckoutPage = () => {
     // Validate thông tin cơ bản
     if (!formData.fullName.trim())
       newErrors.fullName = "Vui lòng nhập họ và tên";
-    if (!formData.email.trim()) 
-      newErrors.email = "Vui lòng nhập email";
-    if (!formData.phone.trim()) 
-      newErrors.phone = "Vui lòng nhập số điện thoại";
+    if (!formData.email.trim()) newErrors.email = "Vui lòng nhập email";
+    if (!formData.phone.trim()) newErrors.phone = "Vui lòng nhập số điện thoại";
 
     // Validate địa chỉ từ AddressSelector - chi tiết từng field
-    if (!selectedProvince) 
-      newErrors.province = "Vui lòng chọn tỉnh/thành phố";
-    if (!selectedDistrict) 
-      newErrors.district = "Vui lòng chọn quận/huyện";
-    if (!selectedWard) 
-      newErrors.ward = "Vui lòng chọn phường/xã";
-    if (!street?.trim()) 
-      newErrors.street = "Vui lòng nhập tên đường";
+    if (!selectedProvince) newErrors.province = "Vui lòng chọn tỉnh/thành phố";
+    if (!selectedDistrict) newErrors.district = "Vui lòng chọn quận/huyện";
+    if (!selectedWard) newErrors.ward = "Vui lòng chọn phường/xã";
+    if (!street?.trim()) newErrors.street = "Vui lòng nhập tên đường";
 
     // Tùy chọn: Yêu cầu có tọa độ GPS (nếu cần)
-    // if (!coordinates) 
+    // if (!coordinates)
     //   newErrors.coordinates = "Vui lòng lấy tọa độ GPS cho địa chỉ";
 
     setErrors(newErrors);
@@ -331,13 +325,13 @@ const CheckoutPage = () => {
                   </div>
 
                   {/* Chọn địa chỉ */}
-                  <AddressSelector 
+                  <AddressSelector
                     errors={{
                       province: errors.province,
                       district: errors.district,
                       ward: errors.ward,
                       street: errors.street,
-                      coordinates: errors.coordinates
+                      coordinates: errors.coordinates,
                     }}
                   />
                 </div>
@@ -359,55 +353,71 @@ const CheckoutPage = () => {
                   {paymentMethods.map((method) => {
                     const Icon = method.icon;
                     return (
-                      <label
-                        key={method.id}
-                        className={`flex items-center p-4 border rounded-lg cursor-pointer transition-colors duration-200
+                      <div key={method.id}>
+                        <label
+                          className={`flex items-center p-4 border rounded-lg cursor-pointer transition-colors duration-200 
     ${
       formData.paymentMethod === method.id
         ? "border-[#e2cda2] bg-[#769da8]/70 text-white"
         : "border-gray-300 hover:bg-gray-50 group"
-    } // chỉ thêm group cho những ô chưa chọn
+    } 
   `}
-                      >
-                        <input
-                          type="radio"
-                          name="paymentMethod"
-                          value={method.id}
-                          checked={formData.paymentMethod === method.id}
-                          onChange={handleInputChange}
-                          className="sr-only"
-                        />
-                        <Icon
-                          className={`w-5 h-5 mr-3 transition-colors duration-200
+                        >
+                          <input
+                            type="radio"
+                            name="paymentMethod"
+                            value={method.id}
+                            checked={formData.paymentMethod === method.id}
+                            onChange={handleInputChange}
+                            disabled={
+                              method.id === "bank_transfer" ||
+                              method.id === "e_wallet"
+                            }
+                            className={`sr-only ${
+                              method.id === "bank_transfer" ||
+                              method.id === "e_wallet"
+                                ? "cursor-not-allowed opacity-50"
+                                : ""
+                            }`}
+                          />
+                          <Icon
+                            className={`w-5 h-5 mr-3 transition-colors duration-200
       ${
         formData.paymentMethod === method.id
           ? "text-white"
           : "text-white group-hover:text-black"
       }`}
-                        />
-                        <div className="flex-1">
-                          <p
-                            className={`font-medium transition-colors duration-200
+                          />
+                          <div className="flex-1">
+                            <p
+                              className={`font-medium transition-colors duration-200
         ${
           formData.paymentMethod === method.id
             ? "text-white"
             : "text-white group-hover:text-black"
         }`}
-                          >
-                            {method.name}
-                          </p>
-                          <p
-                            className={`text-sm transition-colors duration-200
+                            >
+                              {method.name}
+                            </p>
+                            <p
+                              className={`text-sm transition-colors duration-200
         ${
           formData.paymentMethod === method.id
             ? "text-white"
             : "text-white group-hover:text-black"
         }`}
-                          >
-                            {method.description}
-                          </p>
-                        </div>
-                      </label>
+                            >
+                              {method.description}
+                            </p>
+                          </div>
+                          {(method.id === "bank_transfer" ||
+                            method.id === "e_wallet") && (
+                            <p className="text-sm text-yellow-400 mt-1 ml-8">
+                              (Phương thức này hiện chưa khả dụng)
+                            </p>
+                          )}
+                        </label>
+                      </div>
                     );
                   })}
                 </div>

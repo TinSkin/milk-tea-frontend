@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { Formik, Form, Field, ErrorMessage, useFormikContext } from "formik";
 import { X } from "lucide-react";
-import { editProductSchema } from "../../../../utils/editProductSchema";
+import { editProductSchema } from "../../../../utils/schemas/product/editProductSchema";
 
 const EditProductModal = ({
   editingProduct,

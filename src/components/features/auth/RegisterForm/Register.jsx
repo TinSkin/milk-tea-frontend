@@ -2,7 +2,7 @@ import { useEffect } from "react";
 
 // Import Formik Yup
 import { Formik, Form } from "formik";
-import registerSchema from "../../../../utils/registerSchema";
+import registerSchema from "../../../../utils/schemas/auth/registerSchema";
 
 // Import FontAwesome Icons
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";

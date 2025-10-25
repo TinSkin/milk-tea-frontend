@@ -1,20 +1,20 @@
 import * as Yup from "yup";
 
-//! Regex: Only allow letters and spaces (Vietnamese names)
+// Regex cho phép tên tiếng Việt có dấu và khoảng trắng
 const nameRegex = /^[a-zA-ZÀ-ỹ\s]+$/u;
 
-//! Regex: Basic VN phone number validation
+// Regex cho phép số điện thoại bắt đầu bằng 0 hoặc 84, theo sau là 9 hoặc 10 chữ số
 const phoneRegex = /^(0[2-9]|84[2-9])([0-9]{8})$/;
 
-//! Regex helpers
-const hasUpper = /[A-Z]/;
-const hasLower = /[a-z]/;
-const hasNumber = /\d/;
-const hasSpecial = /[^A-Za-z0-9]/; // Special characters like !@#$%^&*() etc.
-const noSpaces = /^\S*$/;          // No spaces allowed
-const noOnlySpaces = /.*\S.*/;     // No only spaces
+// Regex helpers
+const hasUpper = /[A-Z]/;          // Có chữ in hoa
+const hasLower = /[a-z]/;          // Có chữ thường 
+const hasNumber = /\d/;            // Có số
+const hasSpecial = /[^A-Za-z0-9]/; // Ký tự đặc biệt
+const noSpaces = /^\S*$/;          // Không có khoảng trắng
+const noOnlySpaces = /.*\S.*/;     // Không chỉ có khoảng trắng
 
-//! Common bad passwords
+// Common bad passwords
 const commonBadPasswords = new Set([
   "123456", "12345678", "password", "qwerty", "111111",
   "123123", "abc123", "iloveyou", "admin"
