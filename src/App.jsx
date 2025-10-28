@@ -55,7 +55,7 @@ function App() {
   const isCheckingAuth = useAuthStore((s) => s.isCheckingAuth);
   const didInit = useRef(false);
   useEffect(() => {
-    console.log("🔍 App.jsx: Running checkAuth on mount");
+    console.log(" App.jsx: Running checkAuth on mount");
     if (didInit.current) return;
     didInit.current = true;
     checkAuth(); // gọi đúng 1 lần lúc app mount

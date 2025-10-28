@@ -39,7 +39,7 @@ function NavbarMenu() {
           </li>
         </ul>
         <div className="flex items-center bg-gray-100 px-3 py-2 rounded-full w-full">
-          <span className="text-gray-400 mr-2">🔍</span>
+          <span className="text-gray-400 mr-2"></span>
 
           <span className="text-sm text-gray-500">Tìm kiếm sản phẩm...</span>
         </div>

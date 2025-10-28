@@ -24,7 +24,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 const Footer = () => {
   return (
-    <footer className="bg-dark_blue text-white text-sm pt-10 pb-6 border-t-[1.5rem] border-camel">
+    <footer className="bg-[#0c1321] text-white text-sm pt-10 pb-6 border-t-[1.5rem] border-camel">
       <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-9">
         {/* Logo */}
         <img src={logo} alt="penny logo" className="w-full h-50 mb-4" />

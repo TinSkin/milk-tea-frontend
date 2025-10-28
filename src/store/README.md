@@ -20,8 +20,8 @@ set({
 message: response.data.message, // ← Success message
 isLoading: false, // ← Stop loading
 error: null // ← Clear errors
-<!-- ❌ NO user: response.data.user -->
-<!-- ❌ NO isAuthenticated: true -->
+<!--  NO user: response.data.user -->
+<!--  NO isAuthenticated: true -->
 });
 
 1. User registers → Backend tạo user (isVerified: false)

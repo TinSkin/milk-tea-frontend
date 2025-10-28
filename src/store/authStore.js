@@ -176,7 +176,7 @@ export const useAuthStore = create((set) => ({
 
     //! Check authentication function
     checkAuth: async () => {
-        console.log("🔍 checkAuth started");
+        console.log(" checkAuth started");
         set({ isCheckingAuth: true, error: null });
         try {
             const { data } = await api.get("/check-auth"); // axios phải withCredentials: true
