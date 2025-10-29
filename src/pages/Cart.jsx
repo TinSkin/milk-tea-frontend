@@ -55,6 +55,7 @@ const Cart = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [showClearCartModal, setShowClearCartModal] = useState(false);
 
   const getItemKey = (item) =>
     `${item.id}__${item.sizeOption || "M"}__${JSON.stringify(
@@ -126,21 +127,31 @@ const Cart = () => {
       itemsCount: items.length,
     });
   }, [products, toppings, items]);
-  //! Hàm xóa tất cả sản phẩm khỏi giỏ hàng
+  //! Hàm xóa tất cả sản phẩm khỏi giỏ hàng - SỬA ĐỔI
   const handleClearCart = async () => {
-    if (window.confirm("Bạn có chắc muốn xóa tất cả sản phẩm khỏi giỏ hàng?")) {
-      console.log("🧹 [Cart] User triggered clear cart");
-      try {
-        await clearCart();
-        toast.success("Đã xóa tất cả sản phẩm khỏi giỏ hàng");
-      } catch (error) {
-        console.error("❌ [Cart] Error clearing cart:", error);
-        toast.error("Có lỗi khi xóa giỏ hàng");
-      }
+    // Thay vì dùng window.confirm, hiển thị modal custom
+    setShowClearCartModal(true);
+  };
+
+  //! Hàm xác nhận xóa giỏ hàng
+  const confirmClearCart = async () => {
+    console.log("🧹 [Cart] User confirmed clear cart");
+    try {
+      await clearCart();
+      toast.success("Đã xóa tất cả sản phẩm khỏi giỏ hàng");
+      setShowClearCartModal(false);
+    } catch (error) {
+      console.error(" [Cart] Error clearing cart:", error);
+      toast.error("Có lỗi khi xóa giỏ hàng");
     }
   };
 
-  // ✅ SỬA: Hàm xử lý lỗi khi update quantity
+  //! Hàm hủy xóa giỏ hàng
+  const cancelClearCart = () => {
+    setShowClearCartModal(false);
+  };
+
+  //  SỬA: Hàm xử lý lỗi khi update quantity
   const handleUpdateQuantity = async (id, quantity, options = {}) => {
     try {
       if (quantity < 1) {
@@ -149,18 +160,18 @@ const Cart = () => {
       }
       await updateQuantity(id, quantity, options);
     } catch (error) {
-      console.error("❌ [Cart] Error updating quantity:", error);
+      console.error(" [Cart] Error updating quantity:", error);
       toast.error("Có lỗi khi cập nhật số lượng");
     }
   };
 
-  // ✅ SỬA: Hàm xử lý lỗi khi remove item
+  //  SỬA: Hàm xử lý lỗi khi remove item
   const handleRemoveFromCart = async (id, options = {}) => {
     try {
       await removeFromCart(id, options);
       toast.success("Đã xóa sản phẩm khỏi giỏ hàng");
     } catch (error) {
-      console.error("❌ [Cart] Error removing item:", error);
+      console.error(" [Cart] Error removing item:", error);
       toast.error("Có lỗi khi xóa sản phẩm");
     }
   };
@@ -215,21 +226,20 @@ const Cart = () => {
   };
 
   //! Hàm sửa sản phẩm - CHỈ DÙNG TOPPING TỪ SẢN PHẨM
-  //! Hàm sửa sản phẩm - CHỈ DÙNG TOPPING TỪ SẢN PHẨM
   const handleEdit = (cartItem) => {
-    console.log("🛒 [Cart] Editing item:", cartItem);
+    console.log(" [Cart] Editing item:", cartItem);
 
     // Tìm sản phẩm gốc từ store products
     const product = products?.find((p) => p._id === cartItem.id);
-    console.log("📦 [Cart] Found product:", product);
+    console.log(" [Cart] Found product:", product);
 
     if (!product) {
-      console.error("❌ [Cart] Product not found for item:", cartItem);
+      console.error(" [Cart] Product not found for item:", cartItem);
       toast.error("Không tìm thấy thông tin sản phẩm");
       return;
     }
 
-    // 🎯 SỬA: CHUẨN HÓA sugarLevel - bỏ ký tự % nếu có
+    //  SỬA: CHUẨN HÓA sugarLevel - bỏ ký tự % nếu có
     const currentSugarLevel = cartItem.sugarLevel || "100%";
     const normalizedSugarLevel = currentSugarLevel.includes("%")
       ? currentSugarLevel.replace("%", "")
@@ -244,7 +254,7 @@ const Cart = () => {
       product.toppings ||
       [];
 
-    console.log("🍕 [Cart] Raw product toppings:", rawProductToppings);
+    console.log(" [Cart] Raw product toppings:", rawProductToppings);
 
     // Xử lý topping từ sản phẩm
     const availableToppings = rawProductToppings
@@ -260,7 +270,7 @@ const Cart = () => {
       })
       .filter((topping) => topping._id); // Lọc bỏ topping không hợp lệ
 
-    console.log("✅ [Cart] Available toppings for product:", availableToppings);
+    console.log(" [Cart] Available toppings for product:", availableToppings);
 
     // Lấy topping đã chọn từ cart item và map với topping gốc
     const selectedToppings = (cartItem.toppings || [])
@@ -280,7 +290,7 @@ const Cart = () => {
       })
       .filter((topping) => topping._id); // Lọc bỏ topping không hợp lệ
 
-    console.log("🎯 [Cart] Selected toppings:", selectedToppings);
+    console.log(" [Cart] Selected toppings:", selectedToppings);
 
     const sizeOptions = product.sizeOptions || cartItem.sizeOptions || [];
 
@@ -292,13 +302,13 @@ const Cart = () => {
       toppings: selectedToppings,
       quantity: cartItem.quantity || 1,
       sizeOption: cartItem.sizeOption || sizeOptions[0]?.size || "M",
-      sugarLevel: normalizedSugarLevel, // 🎯 SỬA: Dùng giá trị đã chuẩn hóa (không có %)
+      sugarLevel: normalizedSugarLevel, //  SỬA: Dùng giá trị đã chuẩn hóa (không có %)
       iceOption: cartItem.iceOption || "Chung",
     };
 
-    console.log("🔧 [Cart] Final merged data:", {
+    console.log(" [Cart] Final merged data:", {
       productName: merged.name,
-      sugarLevel: merged.sugarLevel, // 🎯 Kiểm tra giá trị
+      sugarLevel: merged.sugarLevel, //  Kiểm tra giá trị
       availableToppings: merged.availableToppings?.length,
       selectedToppings: merged.toppings?.length,
       hasSizeOptions: merged.sizeOptions?.length > 0,
@@ -314,14 +324,14 @@ const Cart = () => {
     try {
       const merged = editingItem.merged || {};
 
-      console.log("🔄 [Cart] Starting BULK update process...", {
+      console.log("[Cart] Starting BULK update process...", {
         oldItem: editingItem.oldItem,
         newValues: values,
-        oldSugarLevel: editingItem.oldItem.sugarLevel, // 🎯 THÊM
-        newSugarLevel: values.sugarLevel, // 🎯 THÊM
+        oldSugarLevel: editingItem.oldItem.sugarLevel, //  THÊM
+        newSugarLevel: values.sugarLevel, //  THÊM
       });
 
-      // 🎯 SỬA: CHUẨN HÓA sugarLevel trước khi gửi
+      //  SỬA: CHUẨN HÓA sugarLevel trước khi gửi
       const normalizedSugarLevel = values.sugarLevel?.includes("%")
         ? values.sugarLevel
         : `${values.sugarLevel || "100"}%`;
@@ -345,26 +355,26 @@ const Cart = () => {
         quantity: values.quantity,
         sizeOption: values.sizeOption,
         sizeOptionPrice: sizePrice,
-        sugarLevel: normalizedSugarLevel, // 🎯 SỬA: Dùng giá trị đã chuẩn hóa
+        sugarLevel: normalizedSugarLevel, //  SỬA: Dùng giá trị đã chuẩn hóa
         iceOption: values.iceOption,
         toppings: values.toppings,
         price: newUnitPrice,
       };
 
-      console.log("💰 [Cart] Sending bulk update with:", {
+      console.log(" [Cart] Sending bulk update with:", {
         unitPrice: updatedItem.price,
         quantity: updatedItem.quantity,
-        sugarLevel: updatedItem.sugarLevel, // 🎯 THÊM
+        sugarLevel: updatedItem.sugarLevel, //  THÊM
       });
 
-      // ✅ Gọi updateCartItem với logic mới
+      //  Gọi updateCartItem với logic mới
       await updateCartItem(editingItem.oldItem, updatedItem);
 
-      console.log("✅ [Cart] Bulk update completed, closing modal");
+      console.log(" [Cart] Bulk update completed, closing modal");
       setEditingItem(null);
       toast.success("Cập nhật sản phẩm thành công!");
     } catch (error) {
-      console.error("❌ [Cart] Error in bulk update:", error);
+      console.error(" [Cart] Error in bulk update:", error);
       toast.error(
         "Có lỗi khi cập nhật sản phẩm: " + (error.message || "Unknown error")
       );
@@ -747,6 +757,52 @@ const Cart = () => {
         </div>
       </div>
       <Footer />
+      {/* Modal xác nhận xóa giỏ hàng */}
+      {showClearCartModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4">
+            {/* Header */}
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <Trash2 className="w-5 h-5 text-red-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Xóa giỏ hàng
+                </h3>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              <p className="text-gray-600 mb-2">
+                Bạn có chắc muốn xóa tất cả sản phẩm khỏi giỏ hàng?
+              </p>
+              <p className="text-sm text-gray-500">
+                Thao tác này không thể hoàn tác. Tất cả {getTotalItems()} sản
+                phẩm sẽ bị xóa vĩnh viễn.
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
+              <button
+                onClick={cancelClearCart}
+                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg font-medium transition-colors"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={confirmClearCart}
+                className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg font-medium transition-colors flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Xóa tất cả
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {editingItem && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
@@ -754,14 +810,8 @@ const Cart = () => {
             const merged = editingItem.merged || {};
             const allToppings = merged.availableToppings || [];
 
-            console.log(
-              "🎭 [Modal] All available toppings:",
-              allToppings.length
-            );
-            console.log(
-              "🎭 [Modal] Current selected toppings:",
-              merged.toppings
-            );
+            console.log(" [Modal] All available toppings:", allToppings.length);
+            console.log(" [Modal] Current selected toppings:", merged.toppings);
 
             return (
               <Formik
@@ -777,7 +827,7 @@ const Cart = () => {
                 onSubmit={handleEditSubmit}
               >
                 {({ values, setFieldValue, isSubmitting }) => {
-                  // ✅ THÊM: Tính toán giá real-time
+                  //  THÊM: Tính toán giá real-time
                   const calculateTotalPrice = () => {
                     // Tìm giá size được chọn
                     const selectedSize = (merged.sizeOptions || []).find(

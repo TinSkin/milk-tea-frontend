@@ -169,14 +169,14 @@ export const useAuthStore = create((set, get) => ({
                 isLoading: false // Đặt loading thành false
             });
 
-            // 🛒 Sau khi đăng nhập thành công, merge giỏ hàng local (Zustand) với giỏ hàng backend
+            //  Sau khi đăng nhập thành công, merge giỏ hàng local (Zustand) với giỏ hàng backend
 try {
     const { useCartStore } = await import("./cartStore.js"); // import động để tránh vòng lặp giữa store
     const cartStore = useCartStore.getState();
     const localItems = cartStore.items || [];
 
     if (localItems.length > 0) {
-        console.log("🔄 Merge local cart với backend sau khi đăng nhập...");
+        console.log("Merge local cart với backend sau khi đăng nhập...");
         await api.put("/cart/merge", { items: localItems });
         await cartStore.fetchCart(); // đồng bộ lại từ backend
     } else {

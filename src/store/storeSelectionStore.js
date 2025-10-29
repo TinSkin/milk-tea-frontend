@@ -86,7 +86,7 @@ export const useStoreSelectionStore = create(
                     
                     // Nếu đổi store, clear cart local và load cart mới
                     if (previousStore && previousStore._id !== store._id) {
-                        console.log("🔄 [StoreSelection] Store changed, switching cart...");
+                        console.log("[StoreSelection] Store changed, switching cart...");
                         await cartStore.switchStore(store._id);
                     } else {
                         // Lần đầu chọn store
@@ -94,7 +94,7 @@ export const useStoreSelectionStore = create(
                         console.log("🆕 [StoreSelection] Initial store selection, cart store updated");
                     }
                 } catch (error) {
-                    console.error("❌ [StoreSelection] Error syncing cart store:", error);
+                    console.error(" [StoreSelection] Error syncing cart store:", error);
                 }
 
                 // Verify state change

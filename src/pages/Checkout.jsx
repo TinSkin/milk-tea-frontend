@@ -17,6 +17,7 @@ import { useCartStore } from "../store/cartStore";
 import { useAuthStore } from "../store/authStore";
 import { useAddressStore } from "../store/addressStore";
 import { useStoreSelectionStore } from "../store/storeSelectionStore";
+import Notification from "../components/ui/Notification";
 import api from "../api/axios";
 
 import AddressSelector from "../components/features/logistic/address/AddressSelector";
@@ -112,7 +113,8 @@ const CheckoutPage = () => {
     if (validateForm()) {
       setModalOpen(true); // mở modal nếu form hợp lệ
     } else {
-      toast.error("Vui lòng điền đầy đủ thông tin nhận hàng"); // hoặc dùng alert()
+      // Thay thế toast.error bằng Notification
+      Notification.error("Vui lòng điền đầy đủ thông tin nhận hàng");
     }
   };
 
@@ -136,7 +138,6 @@ const CheckoutPage = () => {
       icon: Shield,
     },
   ];
-
   //! Xử lí khi xác nhận đặt hàng trong modal
   const handleConfirm = async () => {
     setModalOpen(false);
@@ -169,39 +170,59 @@ const CheckoutPage = () => {
     };
 
     try {
-      // Gọi API và lấy newOrder
-      const res = await api.post("/orders", orderData);
-      const newOrder = res.data.order;
+      // Sử dụng Notification.promise để hiển thị trạng thái loading/success/error
+      await Notification.promise(
+        async () => {
+          const res = await api.post("/orders", orderData);
+          const newOrder = res.data.order;
 
-      alert("Đặt hàng thành công!");
+          // ===============================
+          // Xóa các sản phẩm đã chọn khỏi giỏ
+          // ===============================
+          const { items, selectedItems, removeFromCart, setSelectedItems } =
+            useCartStore.getState();
+          const getItemKey = (item) =>
+            `${item.id}__${item.sizeOption || "M"}__${JSON.stringify(
+              item.toppings || []
+            )}`;
 
-      // ===============================
-      // Xóa các sản phẩm đã chọn khỏi giỏ
-      // ===============================
-      const { items, selectedItems, removeFromCart, setSelectedItems } =
-        useCartStore.getState();
-      const getItemKey = (item) =>
-        `${item.id}__${item.sizeOption || "M"}__${JSON.stringify(
-          item.toppings || []
-        )}`;
-
-      items.forEach((item) => {
-        if (selectedItems.includes(getItemKey(item))) {
-          removeFromCart(item.id, {
-            sizeOption: item.sizeOption,
-            sugarLevel: item.sugarLevel,
-            iceOption: item.iceOption,
-            toppings: item.toppings,
+          items.forEach((item) => {
+            if (selectedItems.includes(getItemKey(item))) {
+              removeFromCart(item.id, {
+                sizeOption: item.sizeOption,
+                sugarLevel: item.sugarLevel,
+                iceOption: item.iceOption,
+                toppings: item.toppings,
+              });
+            }
           });
-        }
-      });
 
-      console.log("newOrder:", newOrder);
-      // Clear selectedItems sau khi xóa
-      navigate(`/order-tracking/${newOrder._id}`);
+          console.log("newOrder:", newOrder);
+
+          // Hiển thị thông báo thành công với thông tin chi tiết
+          Notification.success(
+            "Đặt hàng thành công!",
+            `Đơn hàng #${
+              newOrder.orderNumber || newOrder._id
+            } đã được tạo. Bạn sẽ được chuyển đến trang theo dõi đơn hàng.`
+          );
+
+          // Chuyển hướng sau 2 giây
+          setTimeout(() => {
+            navigate(`/order-tracking/${newOrder._id}`);
+          }, 2000);
+
+          return newOrder;
+        },
+        {
+          loading: "Đang xử lý đơn hàng...",
+          success: "Đặt hàng thành công!",
+          error: "Đặt hàng thất bại, vui lòng thử lại!",
+        }
+      );
     } catch (error) {
       console.error(error);
-      alert("Đặt hàng thất bại, vui lòng thử lại!");
+      // Lỗi đã được xử lý trong Notification.promise nên không cần thông báo lại
     } finally {
       setIsProcessing(false);
     }
@@ -459,7 +480,7 @@ const CheckoutPage = () => {
                   {checkoutItems.map((item) => (
                     <div
                       key={item._id || item.id}
-                      className="flex justify-between"
+                      className="flex justify-between items-start"
                     >
                       <div className="flex-1">
                         <p className="font-medium text-white truncate">
@@ -469,7 +490,7 @@ const CheckoutPage = () => {
                           Số lượng: {item.quantity}
                         </p>
                       </div>
-                      <p className="font-medium text-white">
+                      <p className="font-medium text-white ml-4">
                         {formatPrice(item.price * item.quantity)}
                       </p>
                     </div>
@@ -479,28 +500,47 @@ const CheckoutPage = () => {
                 <div className="space-y-3 border-t border-gray-200 pt-4">
                   <div className="flex justify-between text-white">
                     <span>Tạm tính</span>
-                    <span>{formatPrice(getSelectedTotal())}</span>
+                    <span>
+                      {getSelectedTotal() > 0
+                        ? formatPrice(getSelectedTotal())
+                        : formatPrice(
+                            checkoutItems.reduce(
+                              (sum, item) => sum + item.price * item.quantity,
+                              0
+                            )
+                          )}
+                    </span>
                   </div>
 
                   <div className="flex justify-between text-white">
                     <span>Phí vận chuyển</span>
-                    <span className="text-green-600 font-bold"></span>
+                    <span className="text-green-600 font-bold">Miễn phí</span>
                   </div>
+
                   <div className="flex justify-between text-lg font-bold text-white border-t border-gray-200 pt-3">
                     <span>Tổng cộng</span>
                     <span className="text-green-600">
-                      {formatPrice(getSelectedTotal())}
+                      {getSelectedTotal() > 0
+                        ? formatPrice(getSelectedTotal())
+                        : formatPrice(
+                            checkoutItems.reduce(
+                              (sum, item) => sum + item.price * item.quantity,
+                              0
+                            )
+                          )}
                     </span>
                   </div>
                 </div>
 
                 <button
                   type="button"
-                  disabled={isProcessing}
+                  disabled={isProcessing || checkoutItems.length === 0}
                   onClick={handleCheckoutClick}
-                  className="w-full bg-[#044c5c] text-white hover:scale-105 font-medium py-4 rounded-lg transition-colors flex items-center justify-center gap-2 mt-4"
+                  className="w-full bg-[#044c5c] text-white hover:scale-105 font-medium py-4 rounded-lg transition-colors flex items-center justify-center gap-2 mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isProcessing ? "Đang xử lý..." : "Đặt hàng"}
+                  {isProcessing
+                    ? "Đang xử lý..."
+                    : `Đặt hàng (${checkoutItems.length} sản phẩm)`}
                 </button>
               </motion.div>
             </div>
@@ -509,14 +549,30 @@ const CheckoutPage = () => {
       </div>
 
       {/* Thanh toán Modal */}
+      {/* Thanh toán Modal */}
       <CheckoutModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        onConfirm={handleConfirm} // <-- đây
+        onConfirm={handleConfirm}
         orderInfo={{
           ...formData,
-          items: checkoutItems,
-          total: getSelectedTotal(),
+          items: checkoutItems, // Đảm bảo đây là mảng có dữ liệu
+          total:
+            getSelectedTotal() > 0
+              ? getSelectedTotal()
+              : checkoutItems.reduce(
+                  (sum, item) => sum + item.price * item.quantity,
+                  0
+                ),
+          address: `${street || ""}, ${selectedWard?.name || ""}, ${
+            selectedDistrict?.name || ""
+          }, ${selectedProvince?.name || ""}`
+            .replace(/, ,/g, ",")
+            .replace(/^, /, ""),
+          paymentMethod:
+            formData.paymentMethod === "cod"
+              ? "Thanh toán khi nhận hàng (COD)"
+              : formData.paymentMethod,
         }}
       />
     </>

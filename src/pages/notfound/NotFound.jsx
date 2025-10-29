@@ -13,10 +13,10 @@ const NotFound = () => {
           <span>404</span>
         </h1>
         <Link
-          to={"/"}
+           to="/admin/products" 
           className="bg-dark_blue hover:bg-logo_color px-8 py-4 mt-9 text-logo_color hover:text-dark_blue z-10 font-semibold rounded-md border-solid border-4 border-logo_color text-lg focus:outline-none"
         >
-          <span className="">Trở về trang chủ</span>
+          <span className="">  Trở về trang quản lý sản phẩm</span>
         </Link>
       </div>
     </>

@@ -33,7 +33,7 @@ export const useStoreStore = create((set, get) => ({
 
             const response = await api.get(`${API_ENDPOINT}?${queryParams}`);
             
-            // ✅ SỬA: Truy cập đúng cấu trúc response từ backend
+            //  SỬA: Truy cập đúng cấu trúc response từ backend
             set({
                 stores: response.data.data?.stores || [],
                 pagination: response.data.data?.pagination || {},
@@ -56,7 +56,7 @@ export const useStoreStore = create((set, get) => ({
         try {
             const response = await api.get(`${API_ENDPOINT}/city?city=${cityName}`);
             
-            // ✅ SỬA: Truy cập đúng cấu trúc response và endpoint từ backend
+            //  SỬA: Truy cập đúng cấu trúc response và endpoint từ backend
             set({
                 stores: response.data.data?.stores || [],
                 isLoading: false,
@@ -99,7 +99,7 @@ export const useStoreStore = create((set, get) => ({
         try {
             const response = await api.post(API_ENDPOINT, storeData);
             
-            // ✅ SỬA: Truy cập đúng cấu trúc response từ backend
+            //  SỬA: Truy cập đúng cấu trúc response từ backend
             // Thêm cửa hàng mới vào danh sách hiện tại
             const { stores } = get();
             set({
@@ -124,7 +124,7 @@ export const useStoreStore = create((set, get) => ({
         try {
             const response = await api.put(`${API_ENDPOINT}/${storeId}`, updateData);
             
-            // ✅ SỬA: Truy cập đúng cấu trúc response từ backend
+            //  SỬA: Truy cập đúng cấu trúc response từ backend
             // Cập nhật cửa hàng trong danh sách
             const { stores } = get();
             const updatedStores = stores.map(store => 
@@ -196,7 +196,7 @@ export const useStoreStore = create((set, get) => ({
         try {
             const response = await api.put(`${API_ENDPOINT}/${storeId}/products`, { products: productIds });
             
-            // ✅ SỬA: Truy cập đúng cấu trúc response từ backend
+            //  SỬA: Truy cập đúng cấu trúc response từ backend
             // Cập nhật cửa hàng hiện tại nếu trùng khớp
             const { currentStore } = get();
             if (currentStore && currentStore._id === storeId) {

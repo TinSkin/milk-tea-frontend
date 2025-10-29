@@ -484,7 +484,7 @@ function Menu() {
               </FadeInOnScroll>
 
               {/* Search and Sort Controls */}
-              <div className="flex-1">
+              <div className="flex-1 mb-10">
                 <div className="flex gap-4 mb-5">
                   {/* Search */}
                   <div className="relative">

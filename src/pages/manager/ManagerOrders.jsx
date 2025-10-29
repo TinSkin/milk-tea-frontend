@@ -106,16 +106,16 @@ const ManagerOrders = () => {
         sortBy,
       };
 
-      console.log("📤 Sending request with params:", params);
+      console.log(" Sending request with params:", params);
       
       const result = await fetchMyStoreOrders(params);
-      console.log("📦 Orders loaded successfully:", result?.data?.orders?.length || 0);
+      console.log(" Orders loaded successfully:", result?.data?.orders?.length || 0);
       
       if (result?.success) {
         setCurrentPage(page);
       }
     } catch (err) {
-      console.error("❌ Error loading orders:", err);
+      console.error(" Error loading orders:", err);
       if (err.response?.status === 401) {
         Notification.error("Phiên đăng nhập hết hạn", "Vui lòng đăng nhập lại");
       } else {
@@ -127,7 +127,7 @@ const ManagerOrders = () => {
   // Load orders khi component mount
   useEffect(() => {
     if (!isInitLoaded.current) {
-      console.log("🚀 Initial load orders");
+      console.log(" Initial load orders");
       isInitLoaded.current = true;
       loadOrders(1);
     }
@@ -136,7 +136,7 @@ const ManagerOrders = () => {
   // Load orders khi filters thay đổi
   useEffect(() => {
     if (isInitLoaded.current) {
-      console.log("🔍 Filters changed, reloading orders...");
+      console.log(" Filters changed, reloading orders...");
       loadOrders(1);
     }
   }, [statusFilter, sortBy, itemsPerPage]);

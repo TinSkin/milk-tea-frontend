@@ -2,9 +2,10 @@ import axios from "axios";
 import { useAuthStore } from "../store/authStore";
 
 // Base API URLs - Sử dụng environment variables có sẵn
-const BASE_URL = import.meta.env.MODE === "development"
-  ? `${import.meta.env.VITE_API_BASE}/api`
-  : `${import.meta.env.VITE_API_BASE_PROD}/api`;
+const BASE_URL =
+  import.meta.env.MODE === "development"
+    ? `${import.meta.env.VITE_API_BASE}/api`
+    : `${import.meta.env.VITE_API_BASE_PROD}/api`;
 
 // Debug logging để kiểm tra environment variables
 console.log("API Configuration Debug:");
@@ -16,7 +17,7 @@ console.log("Final BASE_URL:", BASE_URL);
 // Tạo instance axios với cấu hình chung
 const api = axios.create({
   baseURL: BASE_URL,
-  withCredentials: true // Gửi cookie cùng request (nếu cần)
+  withCredentials: true, // Gửi cookie cùng request (nếu cần)
 });
 
 // Request interceptor để tự động gắn token vào header Authorization
@@ -33,7 +34,7 @@ api.interceptors.request.use(
         // đảm bảo giữ các headers khác
         config.headers = {
           ...config.headers,
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         };
       }
     } catch (e) {
@@ -48,14 +49,14 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => {
     // Chỉ log success khi không phải check-auth
-    if (!response.config.url?.includes('/check-auth')) {
+    if (!response.config.url?.includes("/check-auth")) {
       // console.log("API Response success:", response.config.url);
     }
     return response;
   },
   (error) => {
     // Không log lỗi 401 cho check-auth vì đó là behavior bình thường
-    const isCheckAuth = error.config?.url?.includes('/check-auth');
+    const isCheckAuth = error.config?.url?.includes("/check-auth");
     const is401 = error.response?.status === 401;
 
     if (!isCheckAuth || !is401) {
@@ -67,17 +68,22 @@ api.interceptors.response.use(
       console.log("Token expired, auto logout from shared axios interceptor");
 
       // Show notification
-      import("../components/ui/Notification").then((module) => {
-        module.default.warning("Phiên đăng nhập hết hạn", "Vui lòng đăng nhập lại");
-      }).catch(() => {
-        console.log("Notification not available");
-      });
+      import("../components/ui/Notification")
+        .then((module) => {
+          module.default.warning(
+            "Phiên đăng nhập hết hạn",
+            "Vui lòng đăng nhập lại"
+          );
+        })
+        .catch(() => {
+          console.log("Notification not available");
+        });
 
       // Clear auth store
       useAuthStore.setState({
         user: null,
         isAuthenticated: false,
-        error: "Phiên đăng nhập đã hết hạn"
+        error: "Phiên đăng nhập đã hết hạn",
       });
 
       console.log("Store state cleared by shared interceptor");
@@ -89,27 +95,27 @@ api.interceptors.response.use(
 // Tạo API instances cho các endpoint khác nhau
 export const authAPI = axios.create({
   baseURL: `${BASE_URL}/auth`,
-  withCredentials: true
+  withCredentials: true,
 });
 
 export const productAPI = axios.create({
   baseURL: `${BASE_URL}/products`,
-  withCredentials: true
+  withCredentials: true,
 });
 
 export const userAPI = axios.create({
   baseURL: `${BASE_URL}/users`,
-  withCredentials: true
+  withCredentials: true,
 });
 
 export const categoryAPI = axios.create({
   baseURL: `${BASE_URL}/categories`,
-  withCredentials: true
+  withCredentials: true,
 });
 
 export const toppingAPI = axios.create({
   baseURL: `${BASE_URL}/toppings`,
-  withCredentials: true
+  withCredentials: true,
 });
 
 export default api;
