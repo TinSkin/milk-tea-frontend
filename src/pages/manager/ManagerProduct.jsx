@@ -170,7 +170,9 @@ const ManagerProduct = () => {
 
   //! Xử lý xem toppings
   const handleViewToppings = (toppings) => {
+    // console.log(toppings)
     setViewingToppings(toppings);
+    console.log("DEBUGGGGGGGGGG", viewingToppings)
     setShowToppingModal(true);
   };
 

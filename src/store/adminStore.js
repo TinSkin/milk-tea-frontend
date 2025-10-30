@@ -1,37 +1,26 @@
 // store/adminStore.js
 import { create } from "zustand";
-
+import api from "../api/axios";
 export const useAdminOrderStore = create((set, get) => ({
   orders: [],
   stores: [],
-  currentOrder: null, // THÊM: order đang xem chi tiết
-  orderHistory: [], // THÊM: lịch sử đơn hàng
+  currentOrder: null,
+  orderHistory: [],
   pagination: {},
   isLoading: false,
-  isDetailLoading: false, // THÊM: loading cho chi tiết
+  isDetailLoading: false,
   error: null,
 
+  //  Lấy danh sách đơn hàng
   fetchOrders: async (params = {}) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await fetch(
-        `/api/orders?${new URLSearchParams(params)}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+      const response = await api.get("/orders", { params });
+      const data = response.data;
 
-      if (!response.ok) throw new Error("Failed to fetch orders");
-
-      const data = await response.json();
-
-      // Xử lý dữ liệu orders
       const processedOrders = data.orders
         ? data.orders.map((order) => ({
             ...order,
-            // Đảm bảo các trường số được convert đúng
             totalAmount: Number(order.totalAmount) || 0,
             shippingFee: Number(order.shippingFee) || 0,
             discountAmount: Number(order.discountAmount) || 0,
@@ -47,24 +36,20 @@ export const useAdminOrderStore = create((set, get) => ({
 
       return { success: true, data };
     } catch (error) {
-      set({ error: error.message, isLoading: false });
+      set({
+        error: error.response?.data?.message || error.message,
+        isLoading: false,
+      });
       return { success: false, error };
     }
   },
 
-  // THÊM: Fetch chi tiết đơn hàng
+  //  Lấy chi tiết đơn hàng
   fetchOrderDetail: async (orderId) => {
     set({ isDetailLoading: true, error: null });
     try {
-      const response = await fetch(`/api/orders/${orderId}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-
-      if (!response.ok) throw new Error("Failed to fetch order detail");
-
-      const data = await response.json();
+      const response = await api.get(`/orders/${orderId}`);
+      const data = response.data;
 
       set({
         currentOrder: data.order || data.data,
@@ -73,38 +58,20 @@ export const useAdminOrderStore = create((set, get) => ({
 
       return { success: true, data };
     } catch (error) {
-      set({ error: error.message, isDetailLoading: false });
+      set({
+        error: error.response?.data?.message || error.message,
+        isDetailLoading: false,
+      });
       return { success: false, error };
     }
   },
 
-  // THÊM: Fetch lịch sử đơn hàng
+  //  Lấy lịch sử trạng thái đơn hàng
   fetchOrderStatusHistory: async (orderId) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await fetch(`/api/orders/${orderId}/history`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-
-      if (!response.ok) {
-        // Nếu API history chưa tồn tại, sử dụng statusHistory từ currentOrder
-        const { currentOrder } = get();
-        if (currentOrder?.statusHistory) {
-          set({
-            orderHistory: currentOrder.statusHistory,
-            isLoading: false,
-          });
-          return {
-            success: true,
-            data: { history: currentOrder.statusHistory },
-          };
-        }
-        throw new Error("Failed to fetch order history");
-      }
-
-      const data = await response.json();
+      const response = await api.get(`/orders/${orderId}/history`);
+      const data = response.data;
 
       set({
         orderHistory: data.history || data.data || [],
@@ -113,37 +80,35 @@ export const useAdminOrderStore = create((set, get) => ({
 
       return { success: true, data };
     } catch (error) {
-      // Fallback: sử dụng statusHistory từ currentOrder
+      // fallback nếu không có API history
       const { currentOrder } = get();
       if (currentOrder?.statusHistory) {
         set({
           orderHistory: currentOrder.statusHistory,
           isLoading: false,
         });
-        return { success: true, data: { history: currentOrder.statusHistory } };
+        return {
+          success: true,
+          data: { history: currentOrder.statusHistory },
+        };
       }
 
-      set({ error: error.message, isLoading: false });
+      set({
+        error: error.response?.data?.message || error.message,
+        isLoading: false,
+      });
       return { success: false, error };
     }
   },
 
+  //  Lấy danh sách cửa hàng
   fetchStores: async () => {
     try {
-      const response = await fetch("/api/stores", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      const response = await api.get("/stores");
+      const data = response.data;
 
-      if (response.ok) {
-        const data = await response.json();
-        // Xử lý cấu trúc response khác nhau
-        const stores = data.data?.stores || data.stores || data.data || [];
-        set({ stores });
-      } else {
-        set({ stores: [] });
-      }
+      const stores = data.data?.stores || data.stores || data.data || [];
+      set({ stores });
     } catch (error) {
       console.error("Error fetching stores:", error);
       set({ stores: [] });
