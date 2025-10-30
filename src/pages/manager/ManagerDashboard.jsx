@@ -59,7 +59,12 @@ const ManagerDashboard = () => {
     try {
       console.log("Fetching dashboard data for store:", selectedStore._id);
       
-      const apiUrl = `/api/stores/my-store/dashboard?period=${timeRange}`;
+      const BASE_URL = import.meta.env.MODE === "development"
+      ? import.meta.env.VITE_API_BASE
+      : import.meta.env.VITE_API_BASE_PROD;
+    
+    const apiUrl = `${BASE_URL}/api/stores/my-store/dashboard?period=${timeRange}`;
+    
       console.log("🌐 Calling API:", apiUrl);
       
       const response = await fetch(apiUrl, {
