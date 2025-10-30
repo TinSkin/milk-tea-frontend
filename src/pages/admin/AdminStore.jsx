@@ -318,12 +318,18 @@ const AdminStore = () => {
 
   //! Hàm xử lý đóng cửa hàng được chọn (thay vì xóa)
   const handleCloseSelectedStores = async () => {
+    // TODO: Chức năng đang được phát triển
+    Notification.info("Đang phát triển", "Chức năng đóng cửa hàng hàng loạt");
+    return;
+
+    /* Code cũ - sẽ implement sau
     if (!hasSelection) {
       Notification.warning("Vui lòng chọn ít nhất một cửa hàng để đóng cửa");
       return;
     }
 
     setShowBulkDeleteModal(true);
+    */
   };
 
   //! Xác nhận đóng cửa bulk stores (STATUS UPDATE)
@@ -361,6 +367,11 @@ const AdminStore = () => {
 
   //! Hàm tạm ngừng cửa hàng
   const handleSuspendStore = (store) => {
+    // TODO: Chức năng đang được phát triển
+    Notification.info("Đang phát triển", "Chức năng tạm ngừng cửa hàng");
+    return;
+
+    /* Code cũ - sẽ implement sau
     setDeleteModalConfig({
       type: "suspend",
       storeId: store._id,
@@ -368,10 +379,16 @@ const AdminStore = () => {
       action: () => handleConfirmSuspend(store._id),
     });
     setShowDeleteModal(true);
+    */
   };
 
   //! Hàm đóng cửa vĩnh viễn
   const handleCloseStore = (store) => {
+    // TODO: Chức năng đang được phát triển
+    Notification.info("Đang phát triển", "Chức năng đóng cửa vĩnh viễn");
+    return;
+
+    /* Code cũ - sẽ implement sau
     setDeleteModalConfig({
       type: "close",
       storeId: store._id,
@@ -379,10 +396,16 @@ const AdminStore = () => {
       action: () => handleConfirmClose(store._id),
     });
     setShowDeleteModal(true);
+    */
   };
 
   //! Hàm xóa hẳn (CHỈ Super Admin)
   const handleDeleteStore = (store) => {
+    // TODO: Chức năng đang được phát triển
+    Notification.info("Đang phát triển", "Chức năng xóa cửa hàng");
+    return;
+
+    /* Code cũ - sẽ implement sau
     // Kiểm tra quyền Super Admin
     const isSupperAdmin = true;
 
@@ -398,10 +421,16 @@ const AdminStore = () => {
       action: () => handleConfirmDelete(store._id),
     });
     setShowDeleteModal(true);
+    */
   };
 
   //! Hàm kích hoạt lại cửa hàng
   const handleReactivateStore = (store) => {
+    // TODO: Chức năng đang được phát triển
+    Notification.info("Đang phát triển", "Chức năng kích hoạt lại cửa hàng");
+    return;
+
+    /* Code cũ - sẽ implement sau
     setDeleteModalConfig({
       type: "reactivate",
       storeId: store._id,
@@ -409,6 +438,7 @@ const AdminStore = () => {
       action: () => handleConfirmReactivate(store._id),
     });
     setShowDeleteModal(true);
+    */
   };
 
   //! Xác nhận kích hoạt lại

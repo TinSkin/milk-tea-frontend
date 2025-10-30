@@ -254,7 +254,7 @@ const ManagerDashboard = () => {
             <div className="flex items-center gap-3 flex-1 pl-3">
               <BarChart3 className="w-5 h-5" />
               <h1 className="text-md font-montserrat font-semibold capitalize tracking-tight pb-1 border-b-2 border-camel inline-block">
-                Dashboard KPI
+                Quản lý KPI
               </h1>
             </div>
 
