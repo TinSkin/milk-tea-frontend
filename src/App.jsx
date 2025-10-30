@@ -226,6 +226,8 @@ function App() {
                 <Route path="orders" element={<AdminOrders />} />
                 <Route path="stores" element={<AdminStore />} />
                 <Route path="requests" element={<AdminRequest />} />
+                <Route path="system/settings" element={<Navigate to="/comingsoon" replace />} />
+                <Route path="system/permissions" element={<Navigate to="/comingsoon" replace />} />
               </Route>
             </Route>
             <Route path="/comingsoon" element={<ComingSoon />} />

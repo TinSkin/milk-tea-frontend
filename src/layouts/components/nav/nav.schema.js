@@ -26,7 +26,6 @@ export const navSchema = [
         roles: ["admin", "storeManager"],
         children: [
             { title: "Danh sách sản phẩm", path: "/products" },
-            { title: "Thêm sản phẩm", path: "/products/add", roles: ["admin", "storeManager"] },
         ],
     },
     {
