@@ -65,7 +65,7 @@ const ManagerDashboard = () => {
     
     const apiUrl = `${BASE_URL}/api/stores/my-store/dashboard?period=${timeRange}`;
     
-      console.log("🌐 Calling API:", apiUrl);
+      console.log(" Calling API:", apiUrl);
       
       const response = await fetch(apiUrl, {
         credentials: "include",

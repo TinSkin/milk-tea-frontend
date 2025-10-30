@@ -254,6 +254,7 @@ const AdminProduct = () => {
 
   //! Xử lý xem toppings
   const handleViewToppings = (toppings) => {
+    console.log("Viewing toppings:", toppings);
     setViewingToppings(toppings);
     setShowToppingModal(true);
   };
