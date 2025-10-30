@@ -1,4 +1,4 @@
-import { useRef, useEffect, Suspense, lazy } from "react";
+import { useRef, useEffect, useState, Suspense, lazy } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -14,6 +14,7 @@ import EmailRoute from "./routes/EmailRoute";
 import GuestRoute from "./routes/GuestRoute";
 import StoreGuard from "./routes/StoreGuard";
 
+import AdminOrderDetailModal from "./components/features/admin/OrderDetailModal";
 // Loading component
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -64,6 +65,7 @@ const ChatbotWrapper = lazy(() =>
 // Error Pages
 const NotFound = lazy(() => import("./pages/notfound/NotFound"));
 const Unauthorized = lazy(() => import("./pages/unauthorized/Unauthorized"));
+const ComingSoon = lazy(() => import("./pages/comingsoon/Comingsoon"));
 
 // Admin Pages
 const AdminProduct = lazy(() => import("./pages/admin/AdminProduct"));
@@ -72,6 +74,7 @@ const AdminTopping = lazy(() => import("./pages/admin/AdminTopping"));
 const AdminAccount = lazy(() => import("./pages/admin/AdminAccount"));
 const AdminStore = lazy(() => import("./pages/admin/AdminStore"));
 const AdminRequest = lazy(() => import("./pages/admin/AdminRequest"));
+const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
 
 // Manager Pages
 const ManagerDashboard = lazy(() => import("./pages/manager/ManagerDashboard"));
@@ -88,6 +91,8 @@ import "./App.css";
 
 function App() {
   const { user, checkAuth } = useAuthStore();
+  const [isOrderModalOpen, setOrderModalOpen] = useState(false);
+  const [orderId, setOrderId] = useState(null);
 
   //! Kiểm tra xác thực chỉ một lần khi mount
   const didInit = useRef(false);
@@ -210,19 +215,31 @@ function App() {
                   index
                   element={<Navigate to="/admin/products" replace />}
                 />
+                <Route
+                  path="dashboard"
+                  element={<Navigate to="/comingsoon" replace />}
+                />
                 <Route path="products" element={<AdminProduct />} />
                 <Route path="categories" element={<AdminCategory />} />
                 <Route path="toppings" element={<AdminTopping />} />
                 <Route path="accounts" element={<AdminAccount />} />
+                <Route path="orders" element={<AdminOrders />} />
                 <Route path="stores" element={<AdminStore />} />
                 <Route path="requests" element={<AdminRequest />} />
               </Route>
             </Route>
-
+            <Route path="/comingsoon" element={<ComingSoon />} />
             {/* 404 - Must be last route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
+        {/* {isOrderModalOpen && (
+            <AdminOrderDetailModal
+              orderId={orderId}
+              isOpen={isOrderModalOpen}
+              onClose={() => setOrderModalOpen(false)}
+            />
+          )} */}
       </Router>
     </ErrorBoundary>
   );

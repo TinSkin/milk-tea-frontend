@@ -1256,7 +1256,7 @@ const ManagerProduct = () => {
                           )}
                           {product.status === "out_of_stock" && (
                             <span className="text-xs text-orange-600 text-center">
-                              📦 Hệ thống hết hàng
+                               Hệ thống hết hàng
                             </span>
                           )}
                         </div>

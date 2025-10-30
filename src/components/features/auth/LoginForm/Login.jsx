@@ -56,7 +56,7 @@ const Login = ({ handleRegisterClick }) => {
       // 🧩 3️⃣ Merge logic
       if (cartStore.items.length > 0) {
         if (!backendCart?.items?.length) {
-          console.log("🔄 Backend trống → đẩy local cart lên...");
+          console.log("Backend trống → đẩy local cart lên...");
           await cartStore.syncCartToBackend();
         } else {
           console.log("🧩 Merge local cart vào backend cart...");
@@ -87,9 +87,9 @@ const Login = ({ handleRegisterClick }) => {
       }
 
       await cartStore.fetchCart();
-      console.log("✅ [Login] Merge hoàn tất!");
+      console.log(" [Login] Merge hoàn tất!");
     } catch (error) {
-      console.error("❌ [Login] handleLoginSuccess error:", error);
+      console.error(" [Login] handleLoginSuccess error:", error);
     }
   };
 

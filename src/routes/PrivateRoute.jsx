@@ -39,7 +39,7 @@ const PrivateRoute = ({ permittedRole }) => {
         //  Dùng store đang được chọn nếu currentStoreId chưa có
         if (!effectiveStoreId && selectedStore?._id) {
           effectiveStoreId = selectedStore._id;
-          console.log("🔄 [PrivateRoute] Using selected store:", effectiveStoreId);
+          console.log("[PrivateRoute] Using selected store:", effectiveStoreId);
         }
 
         //  Nếu vẫn chưa có storeId thì bỏ qua
@@ -48,7 +48,7 @@ const PrivateRoute = ({ permittedRole }) => {
           return;
         }
 
-        console.log("🔄 [PrivateRoute] Loading cart from backend...", {
+        console.log("[PrivateRoute] Loading cart from backend...", {
           storeId: effectiveStoreId,
           userId: user._id,
         });
@@ -58,7 +58,7 @@ const PrivateRoute = ({ permittedRole }) => {
 
         console.log(" [PrivateRoute] Cart loaded successfully");
       } catch (error) {
-        console.error("❌ [PrivateRoute] Error loading cart:", error);
+        console.error(" [PrivateRoute] Error loading cart:", error);
       }
     };
 

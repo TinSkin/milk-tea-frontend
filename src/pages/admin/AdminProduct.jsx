@@ -411,7 +411,7 @@ const AdminProduct = () => {
   //! Load initial data on component mount (với protection)
   useEffect(() => {
     if (!isInitLoaded.current) {
-      console.log("🚀 First load products - Using loadProductsInit");
+      console.log(" First load products - Using loadProductsInit");
       loadProductsInit(); // Gọi hàm loadProductsInit để tải danh sách sản phẩm với notification
       loadFormData(); // Load categories và toppings
       isInitLoaded.current = true;
@@ -468,7 +468,9 @@ const AdminProduct = () => {
     try {
       await Promise.all([
         getAllCategories({ status: "available" }),
-        getAllToppings({ status: "available" }),
+        getAllToppings({ status: "available", 
+          limit: 100, 
+          page: 1  }),
       ]);
     } catch (error) {
       console.error("Error loading form data:", error);

@@ -64,10 +64,10 @@ const LazyComponent = lazy(() => import("./Component"));
 
 ```jsx
 // Thay vì import trực tiếp
-import AdminPanel from "./AdminPanel"; // ❌ Load ngay lập tức
+import AdminPanel from "./AdminPanel"; //  Load ngay lập tức
 
 // Sử dụng lazy loading
-const AdminPanel = lazy(() => import("./AdminPanel")); // ✅ Load khi cần
+const AdminPanel = lazy(() => import("./AdminPanel")); //  Load khi cần
 
 // Sử dụng với Suspense
 <Suspense fallback={<Loading />}>

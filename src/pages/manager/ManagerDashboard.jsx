@@ -57,7 +57,7 @@ const ManagerDashboard = () => {
     
     setLoading(true);
     try {
-      console.log("🔄 Fetching dashboard data for store:", selectedStore._id);
+      console.log("Fetching dashboard data for store:", selectedStore._id);
       
       const apiUrl = `/api/stores/my-store/dashboard?period=${timeRange}`;
       console.log("🌐 Calling API:", apiUrl);
@@ -77,12 +77,12 @@ const ManagerDashboard = () => {
 
       if (data.success) {
         setDashboardData(data.data);
-        console.log("✅ Dashboard data set successfully");
+        console.log(" Dashboard data set successfully");
       } else {
         showToast(data.message || "Lỗi khi tải dữ liệu", "error");
       }
     } catch (error) {
-      console.error("❌ Error fetching dashboard data:", error);
+      console.error(" Error fetching dashboard data:", error);
       showToast("Không thể tải dữ liệu dashboard", "error");
     } finally {
       setLoading(false);
@@ -183,7 +183,7 @@ const ManagerDashboard = () => {
   const handleExportReport = async (reportType = "overview") => {
     setExporting(true);
     try {
-      console.log("📤 Exporting report:", reportType);
+      console.log(" Exporting report:", reportType);
       
       const apiUrl = `/api/stores/my-store/dashboard/export?period=${timeRange}&reportType=${reportType}`;
       
@@ -212,7 +212,7 @@ const ManagerDashboard = () => {
       showToast("Xuất báo cáo thành công!");
 
     } catch (error) {
-      console.error("❌ Error exporting report:", error);
+      console.error(" Error exporting report:", error);
       showToast("Lỗi khi xuất báo cáo", "error");
     } finally {
       setExporting(false);
@@ -330,7 +330,7 @@ const ManagerDashboard = () => {
                   onClick={() => handleExportReport("orders")}
                   className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                 >
-                  📦 Danh sách đơn hàng
+                   Danh sách đơn hàng
                 </button>
                 <button
                   onClick={() => handleExportReport("products")}

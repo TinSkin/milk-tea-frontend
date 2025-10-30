@@ -3,7 +3,13 @@ import { useNavigate } from "react-router-dom";
 import Header from "../components/layout/Header";
 import Footer from "../components/layout/Footer";
 import { motion } from "framer-motion";
-import { Package, Calendar, CreditCard, Eye } from "lucide-react";
+import {
+  Package,
+  Calendar,
+  CreditCard,
+  Eye,
+  ClipboardList,
+} from "lucide-react";
 import api from "../api/axios";
 
 export default function OrderHistory() {
@@ -18,7 +24,7 @@ export default function OrderHistory() {
         setLoading(true);
         setError(null);
         const res = await api.get("/orders/my-orders"); // backend cần route này
-        // ✅ THÊM DEBUG
+        //  THÊM DEBUG
         console.log("API Response:", res);
         console.log("res.data:", res.data);
         console.log("Type of res.data:", typeof res.data);
@@ -104,7 +110,7 @@ export default function OrderHistory() {
                       </div>
 
                       <div className="flex items-center gap-3 mb-3">
-                        <Package className="h-5 w-5 text-[#e2cda2]" />
+                        <ClipboardList className="h-5 w-5 text-[#e2cda2]" />
                         <span className="text-white font-semibold">
                           Trạng thái:{" "}
                           <span
@@ -122,8 +128,8 @@ export default function OrderHistory() {
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-white mb-3">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-[#e2cda2]" />
+                        <div className="flex items-center gap-3 mb-3">
+                          <Calendar className="h-5 w-5 text-[#e2cda2]" />
                           <span>
                             Ngày đặt:{" "}
                             {new Date(order.createdAt).toLocaleDateString(
@@ -131,8 +137,8 @@ export default function OrderHistory() {
                             )}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <CreditCard className="h-4 w-4 text-[#e2cda2]" />
+                        <div className="flex items-center gap-3 mb-3">
+                          <CreditCard className="h-5 w-5 text-[#e2cda2]" />
                           <span>
                             Thanh toán:{" "}
                             {order.paymentMethod === "cod"
@@ -140,8 +146,8 @@ export default function OrderHistory() {
                               : order.paymentMethod || "Chưa xác định"}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Package className="h-4 w-4 text-[#e2cda2]" />
+                        <div className="flex items-center gap-3 mb-3">
+                          <Package className="h-5 w-5 text-[#e2cda2]" />
                           <span>{order.items?.length || 0} sản phẩm</span>
                         </div>
                       </div>

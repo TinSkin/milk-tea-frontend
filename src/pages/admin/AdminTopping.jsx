@@ -414,7 +414,7 @@ const AdminTopping = () => {
   //! Load data lần đầu khi component mount (với protection)
   useEffect(() => {
     if (!isInitLoaded.current) {
-      console.log("🚀 First load only - Using loadToppingsInit");
+      console.log(" First load only - Using loadToppingsInit");
       loadToppingsInit(1);
       isInitLoaded.current = true;
     } else {
