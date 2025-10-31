@@ -366,7 +366,7 @@ const AdminOrders = () => {
 
     return (
       <span
-        className={`px-2 py-1 text-sm rounded font-semibold ${config.class}`}
+        className={`px-2 py-1 text-sm  rounded font-semibold ${config.class}`}
       >
         {config.text}
       </span>
@@ -375,10 +375,10 @@ const AdminOrders = () => {
 
   const getPaymentStatusBadge = (paymentStatus) => {
     const paymentConfig = {
-      paid: { text: "Đã thanh toán", class: "font-semibold text-green-700 bg-green-100" },
+      paid: { text: "Đã thanh toán", class: "text-green-700 bg-green-100" },
       pending: {
         text: "Chờ thanh toán",
-        class: "font-semibold text-yellow-700 bg-yellow-100",
+        class: "text-yellow-700 bg-yellow-100",
       },
       failed: { text: "Thất bại", class: "text-red-700 bg-red-100" },
       refunded: { text: "Đã hoàn tiền", class: "text-blue-700 bg-blue-100" },
@@ -390,7 +390,7 @@ const AdminOrders = () => {
     };
 
     return (
-      <span className={`px-2 py-1 text-xs rounded font-medium ${config.class}`}>
+      <span className={`px-2 py-1 text-sm rounded font-semibold ${config.class}`}>
         {config.text}
       </span>
     );

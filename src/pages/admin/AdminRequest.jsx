@@ -479,7 +479,7 @@ function AdminRequest() {
 
     return (
       <span
-        className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${config.className}`}
+        className={`inline-flex items-center gap-1 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${config.className}`}
       >
         <Icon className="w-4 h-4" />
         {config.text}
@@ -672,7 +672,7 @@ function AdminRequest() {
           <h2 className="text-lg font-semibold text-gray-900">Bộ lọc</h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4">
           {/* Search */}
           <div className="lg:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -753,16 +753,23 @@ function AdminRequest() {
               isSearchable={false}
             />
           </div>
+
+          {/* Reset Button */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Hành động
+            </label>
+            <button
+              onClick={handleResetFilters}
+              className="flex items-center gap-2 px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors w-full justify-center"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Đặt lại
+            </button>
+          </div>
         </div>
 
-        <div className="flex justify-between items-center mt-4">
-          <button
-            onClick={handleResetFilters}
-            className="flex items-center gap-2 px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-          >
-            <RotateCcw className="w-4 h-4" />
-            Đặt lại bộ lọc
-          </button>
+        <div className="flex justify-end items-center mt-4">
 
           {selectedItems.length > 0 && (
             <div className="flex items-center gap-2">
@@ -886,16 +893,16 @@ function AdminRequest() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex flex-col">
+                        <div className="flex flex-col max-w-[200px]">
                           <div className="flex items-center gap-2">
-                            <Store className="w-4 h-4 text-gray-400" />
-                            <span className="text-sm text-gray-900">
+                            <Store className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            <span className="text-sm text-gray-900 truncate">
                               {request.storeId?.storeName || "N/A"}
                             </span>
                           </div>
                           <div className="flex items-center gap-2 mt-1">
-                            <User className="w-4 h-4 text-gray-400" />
-                            <span className="text-xs text-gray-500">
+                            <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            <span className="text-xs text-gray-500 truncate">
                               {request.userId?.userName || "N/A"}
                             </span>
                           </div>
