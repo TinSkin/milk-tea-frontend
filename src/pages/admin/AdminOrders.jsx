@@ -375,10 +375,10 @@ const AdminOrders = () => {
 
   const getPaymentStatusBadge = (paymentStatus) => {
     const paymentConfig = {
-      paid: { text: "Đã thanh toán", class: "text-green-700 bg-green-100" },
+      paid: { text: "Đã thanh toán", class: "font-semibold text-green-700 bg-green-100" },
       pending: {
         text: "Chờ thanh toán",
-        class: "text-yellow-700 bg-yellow-100",
+        class: "font-semibold text-yellow-700 bg-yellow-100",
       },
       failed: { text: "Thất bại", class: "text-red-700 bg-red-100" },
       refunded: { text: "Đã hoàn tiền", class: "text-blue-700 bg-blue-100" },
