@@ -255,6 +255,30 @@ const ManagerAccount = () => {
     setShowViewModal(true);
   };
 
+  //! Xử lý thay đổi vai trò người dùng
+  const handleToggleRole = (user) => {
+    Notification.info(
+      "Đang phát triển",
+      "Chức năng thay đổi vai trò người dùng đang được phát triển."
+    );
+  };
+
+  //! Xử lý thay đổi trạng thái người dùng
+  const handleToggleStatus = (user) => {
+    Notification.info(
+      "Đang phát triển",
+      "Chức năng thay đổi trạng thái người dùng đang được phát triển."
+    );
+  };
+
+  //! Xử lý reset mật khẩu người dùng
+  const handleResetPassword = (user) => {
+    Notification.info(
+      "Đang phát triển",
+      "Chức năng reset mật khẩu người dùng đang được phát triển."
+    );
+  };
+
   // Trạng thái lọc
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");

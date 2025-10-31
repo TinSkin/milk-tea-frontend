@@ -1,4 +1,4 @@
-{/* Nút filter 2 - AdminProduct.jsx */ }
+{/* Nút filter 2 - AdminProduct.jsx - ManagerProduct.jsx*/ }
 {/* <div className="flex flex-wrap gap-4 items-center justify-between">
     <div className="relative" ref={filterRef2}>
         <button

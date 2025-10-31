@@ -69,12 +69,12 @@ export const useAuthStore = create((set, get) => ({
         try {
             console.log(`Frontend: Sending POST request to: ${API_ENDPOINT}/resend-otp`);
             console.log("Frontend: Request payload:", { email });
-            
+
             // Gửi request POST đến endpoint gửi lại OTP với email
             const response = await api.post(`${API_ENDPOINT}/resend-otp`, { email });
 
             console.log("Frontend: Resend OTP response:", response.data);
-            
+
             // Nếu thành công, cập nhật trạng thái message
             set({
                 message: response.data.message || "Gửi lại email OTP xác minh thành công",
@@ -170,21 +170,21 @@ export const useAuthStore = create((set, get) => ({
             });
 
             //  Sau khi đăng nhập thành công, merge giỏ hàng local (Zustand) với giỏ hàng backend
-try {
-    const { useCartStore } = await import("./cartStore.js"); // import động để tránh vòng lặp giữa store
-    const cartStore = useCartStore.getState();
-    const localItems = cartStore.items || [];
+            try {
+                const { useCartStore } = await import("./cartStore.js"); // import động để tránh vòng lặp giữa store
+                const cartStore = useCartStore.getState();
+                const localItems = cartStore.items || [];
 
-    if (localItems.length > 0) {
-        console.log("Merge local cart với backend sau khi đăng nhập...");
-        await api.put("/cart/merge", { items: localItems });
-        await cartStore.fetchCart(); // đồng bộ lại từ backend
-    } else {
-        await cartStore.fetchCart(); // tải giỏ hàng backend nếu local trống
-    }
-} catch (err) {
-    console.error("⚠️ Lỗi khi merge giỏ hàng sau đăng nhập:", err);
-}
+                if (localItems.length > 0) {
+                    console.log("Merge local cart với backend sau khi đăng nhập...");
+                    await api.put("/cart/merge", { items: localItems });
+                    await cartStore.fetchCart(); // đồng bộ lại từ backend
+                } else {
+                    await cartStore.fetchCart(); // tải giỏ hàng backend nếu local trống
+                }
+            } catch (err) {
+                console.error("⚠️ Lỗi khi merge giỏ hàng sau đăng nhập:", err);
+            }
 
 
             // Nếu user là Quản lý cửa hàng và có assignedStoreId, lưu vào localStorage
