@@ -81,7 +81,7 @@ function Cart() {
               <li key={index} className="border-b pb-2">
                 <div className="flex items-center gap-2">
                   <img
-                    src={item.images}
+                    src={item.images[0]}
                     alt={item.productName}
                     className="w-10 h-10 object-cover rounded"
                   />

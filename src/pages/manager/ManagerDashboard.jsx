@@ -18,7 +18,7 @@ import {
   Clock,
   Truck
 } from "lucide-react";
-import { useStoreSelectionStore } from "../../store/storeSelectionStore";
+import { useAuthStore } from "../../store/authStore";
 import {
   LineChart,
   Line,
@@ -38,7 +38,8 @@ import {
 } from "recharts";
 
 const ManagerDashboard = () => {
-  const { selectedStore } = useStoreSelectionStore();
+  const { user } = useAuthStore();
+  const [storeInfo, setStoreInfo] = useState(null);
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState("30d");
@@ -51,13 +52,41 @@ const ManagerDashboard = () => {
     setTimeout(() => setNotification(null), 3000);
   };
 
+  // Fetch thông tin cửa hàng của manager
+  const fetchStoreInfo = async () => {
+    if (!user?.assignedStoreId) return;
+    
+    try {
+      const BASE_URL = import.meta.env.MODE === "development"
+        ? import.meta.env.VITE_API_BASE
+        : import.meta.env.VITE_API_BASE_PROD;
+      
+      const response = await fetch(`${BASE_URL}/api/stores/my-store`, {
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setStoreInfo(data.data);
+        console.log("Store info loaded:", data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching store info:", error);
+      showToast("Không thể tải thông tin cửa hàng", "error");
+    }
+  };
+
   // Fetch dashboard data
   const fetchDashboardData = async () => {
-    if (!selectedStore) return;
+    if (!user?.assignedStoreId) return;
     
     setLoading(true);
     try {
-      console.log("Fetching dashboard data for store:", selectedStore._id);
+      console.log("Fetching dashboard data for store:", user.assignedStoreId);
       
       const BASE_URL = import.meta.env.MODE === "development"
       ? import.meta.env.VITE_API_BASE
@@ -102,8 +131,9 @@ const ManagerDashboard = () => {
 
   // Effects
   useEffect(() => {
+    fetchStoreInfo();
     fetchDashboardData();
-  }, [timeRange, selectedStore]);
+  }, [timeRange, user?.assignedStoreId]);
 
   // Format helpers
   const formatCurrency = (amount) => {
@@ -206,7 +236,7 @@ const ManagerDashboard = () => {
       const link = document.createElement('a');
       link.href = url;
       
-      const fileName = `bao_cao_${selectedStore.storeCode}_${new Date().toISOString().split('T')[0]}.xlsx`;
+      const fileName = `bao_cao_${storeInfo?.storeCode || 'store'}_${new Date().toISOString().split('T')[0]}.xlsx`;
       link.download = fileName;
       
       document.body.appendChild(link);
@@ -224,16 +254,16 @@ const ManagerDashboard = () => {
     }
   };
 
-  if (!selectedStore) {
+  if (!user || user.role !== 'storeManager' || !user.assignedStoreId) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
           <Store className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">
-            Vui lòng chọn cửa hàng
+            Không có quyền truy cập
           </h3>
           <p className="text-gray-600">
-            Chọn một cửa hàng để xem dashboard
+            Bạn không phải là Store Manager hoặc chưa được phân công cửa hàng
           </p>
         </div>
       </div>
@@ -252,7 +282,7 @@ const ManagerDashboard = () => {
       )}
 
       {/* Thông tin cửa hàng */}
-      {selectedStore && (
+      {storeInfo && (
         <div className="bg-green_starbuck/80 text-white px-5 py-4 shadow-md -mt-6 -mx-6 mb-6">
           <div className="max-w-[110rem] mx-auto flex">
             {/* Title */}
@@ -271,14 +301,14 @@ const ManagerDashboard = () => {
               <Store className="w-5 h-5" />
               <div className="pl-2">
                 <h3 className="font-semibold">
-                  {selectedStore.storeName || selectedStore.name}
+                  {storeInfo.storeName || storeInfo.name}
                 </h3>
                 <p className="text-sm opacity-90 flex items-center gap-1">
                   <MapPin className="w-3 h-3" />
-                  {selectedStore.address &&
-                  typeof selectedStore.address === "object"
-                    ? `${selectedStore.address.street}, ${selectedStore.address.district}, ${selectedStore.address.city}`
-                    : selectedStore.address || "Địa chỉ không có sẵn"}
+                  {storeInfo.address &&
+                  typeof storeInfo.address === "object"
+                    ? `${storeInfo.address.street}, ${storeInfo.address.district}, ${storeInfo.address.city}`
+                    : storeInfo.address || "Địa chỉ không có sẵn"}
                 </p>
               </div>
             </div>
