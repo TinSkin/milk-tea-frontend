@@ -168,11 +168,16 @@ const ManagerProduct = () => {
   const [showToppingModal, setShowToppingModal] = useState(false);
   const [viewingToppings, setViewingToppings] = useState([]);
 
-  //! Xử lý xem toppings
-  const handleViewToppings = (toppings) => {
-    // console.log(toppings)
-    setViewingToppings(toppings);
-    console.log("DEBUGGGGGGGGGG", viewingToppings)
+  //! Xử lý xem toppings - Map từ array ID sang object đầy đủ
+  const handleViewToppings = (toppingIds) => {
+    // Map từ array ID sang array object đầy đủ
+    const fullToppings = toppingIds
+      .map((toppingId) => 
+        toppings.find((topping) => topping._id === toppingId)
+      )
+      .filter(Boolean); // Loại bỏ các topping không tìm thấy
+
+    setViewingToppings(fullToppings);
     setShowToppingModal(true);
   };
 
@@ -493,51 +498,58 @@ const ManagerProduct = () => {
 
   //! Gửi yêu cầu tới Admin để thay đổi system status
   const handleRequestSystemStatusChange = async (product) => {
-    // Xác định loại request dựa trên system status hiện tại
-    let requestType = "";
-    let requestReason = "";
-    let newSystemStatus = "available"; // Default target status
+    // TODO: Implement request system status change logic
+    // // Xác định loại request dựa trên system status hiện tại
+    // let requestType = "";
+    // let requestReason = "";
+    // let newSystemStatus = "available"; // Default target status
 
-    if (product.status === "unavailable") {
-      requestType = "Yêu cầu mở lại sản phẩm";
-      requestReason =
-        "Sản phẩm đang bị khóa bởi Admin, cửa hàng muốn bán lại sản phẩm này.";
-      newSystemStatus = "available";
-    } else if (product.status === "paused") {
-      requestType = "Yêu cầu tiếp tục bán sản phẩm";
-      requestReason =
-        "Sản phẩm đang bị tạm dừng bởi Admin, cửa hàng muốn tiếp tục bán sản phẩm này.";
-      newSystemStatus = "available";
-    } else if (product.status === "out_of_stock") {
-      requestType = "Yêu cầu nhập hàng";
-      requestReason =
-        "Sản phẩm đang hết hàng toàn hệ thống, cửa hàng muốn Admin nhập thêm hàng.";
-      newSystemStatus = "available";
-    }
+    // if (product.status === "unavailable") {
+    //   requestType = "Yêu cầu mở lại sản phẩm";
+    //   requestReason =
+    //     "Sản phẩm đang bị khóa bởi Admin, cửa hàng muốn bán lại sản phẩm này.";
+    //   newSystemStatus = "available";
+    // } else if (product.status === "paused") {
+    //   requestType = "Yêu cầu tiếp tục bán sản phẩm";
+    //   requestReason =
+    //     "Sản phẩm đang bị tạm dừng bởi Admin, cửa hàng muốn tiếp tục bán sản phẩm này.";
+    //   newSystemStatus = "available";
+    // } else if (product.status === "out_of_stock") {
+    //   requestType = "Yêu cầu nhập hàng";
+    //   requestReason =
+    //     "Sản phẩm đang hết hàng toàn hệ thống, cửa hàng muốn Admin nhập thêm hàng.";
+    //   newSystemStatus = "available";
+    // }
 
-    try {
-      const requestData = {
-        productId: product._id,
-        productName: product.name,
-        currentSystemStatus: product.status,
-        requestedSystemStatus: newSystemStatus,
-        requestType,
-        note: requestReason,
-      };
+    // try {
+    //   const requestData = {
+    //     productId: product._id,
+    //     productName: product.name,
+    //     currentSystemStatus: product.status,
+    //     requestedSystemStatus: newSystemStatus,
+    //     requestType,
+    //     note: requestReason,
+    //   };
 
-      await submitUpdateRequest("product", product._id, requestData);
+    //   await submitUpdateRequest("product", product._id, requestData);
 
-      Notification.success(
-        "Gửi yêu cầu thành công!",
-        `Đã gửi "${requestType}" cho sản phẩm "${product.name}" tới Admin. Yêu cầu sẽ được xem xét sớm nhất có thể.`
-      );
-    } catch (error) {
-      console.error("Error submitting system status change request:", error);
-      Notification.error(
-        "Gửi yêu cầu thất bại",
-        error.message || "Đã xảy ra lỗi khi gửi yêu cầu tới Admin"
-      );
-    }
+    //   Notification.success(
+    //     "Gửi yêu cầu thành công!",
+    //     `Đã gửi "${requestType}" cho sản phẩm "${product.name}" tới Admin. Yêu cầu sẽ được xem xét sớm nhất có thể.`
+    //   );
+    // } catch (error) {
+    //   console.error("Error submitting system status change request:", error);
+    //   Notification.error(
+    //     "Gửi yêu cầu thất bại",
+    //     error.message || "Đã xảy ra lỗi khi gửi yêu cầu tới Admin"
+    //   );
+    // }
+
+    // Temporary notification for development
+    Notification.info(
+      "Đang phát triển",
+      "Chức năng gửi yêu cầu thay đổi trạng thái sản phẩm đang được phát triển."
+    );
   };
 
   //! Xử lý chuyển trạng thái sản phẩm TẠI CỬA HÀNG (storeStatus)
@@ -680,120 +692,6 @@ const ManagerProduct = () => {
                 <Package className="w-4 h-4" />
                 Thêm sản phẩm
               </button>
-              {/* Nút filter 2 */}
-              <div className="flex flex-wrap gap-4 items-center justify-between">
-                {/* Bộ lọc thứ 2 */}
-                <div className="relative" ref={filterRef2}>
-                  <button
-                    onClick={() => setShowFilter2(!showFilter2)}
-                    className="flex items-center gap-2 px-4 py-2 border border-green-500 rounded-lg hover:bg-green-50 transition-colors bg-green-50"
-                  >
-                    <Filter className="w-4 h-4 text-green-600" />
-                    Bộ lọc
-                    <ChevronDown
-                      className={`w-4 h-4 text-green-600 transition-transform ${
-                        showFilter2 ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
-
-                  {/* Dropdown Bộ lọc 2 */}
-                  {showFilter2 && (
-                    <div className="absolute right-0 top-full mt-2 w-96 bg-white border border-green-200 rounded-lg shadow-lg z-50 p-4">
-                      <div className="grid grid-cols-1 gap-4">
-                        {/* Tìm kiếm */}
-                        <div>
-                          <label className="block text-sm font-medium text-green-700 mb-2">
-                            Tìm kiếm
-                          </label>
-                          <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-400" />
-                            <input
-                              type="text"
-                              placeholder="Tìm kiếm tên sản phẩm..."
-                              value={searchTerm2}
-                              onChange={(e) => setSearchTerm2(e.target.value)}
-                              className="w-full pl-10 pr-4 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Bộ lọc trạng thái */}
-                        <div>
-                          <label className="block text-sm font-medium text-green-700 mb-2">
-                            Trạng thái
-                          </label>
-                          <select
-                            value={statusFilter2}
-                            onChange={(e) => setStatusFilter2(e.target.value)}
-                            className="w-full px-3 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                          >
-                            <option value="all">Tất cả trạng thái</option>
-                            <option value="available">Đang bán</option>
-                            <option value="unavailable">Ngừng bán</option>
-                          </select>
-                        </div>
-
-                        {/* Bộ lọc danh mục */}
-                        <div>
-                          <label className="block text-sm font-medium text-green-700 mb-2">
-                            Danh mục
-                          </label>
-                          <select
-                            value={categoryFilter2}
-                            onChange={(e) => setCategoryFilter2(e.target.value)}
-                            className="w-full px-3 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                          >
-                            <option value="all">Tất cả danh mục</option>
-                            {availableCategories.map((category) => (
-                              <option key={category._id} value={category._id}>
-                                {category.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {/* Tùy chọn sắp xếp */}
-                        <div>
-                          <label className="block text-sm font-medium text-green-700 mb-2">
-                            Sắp xếp
-                          </label>
-                          <select
-                            value={sortOption2}
-                            onChange={(e) => setSortOption2(e.target.value)}
-                            className="w-full px-3 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                          >
-                            <option value="">Không sắp xếp</option>
-                            <option value="price-asc">Giá: Tăng dần</option>
-                            <option value="price-desc">Giá: Giảm dần</option>
-                            <option value="date-asc">Ngày: Cũ nhất</option>
-                            <option value="date-desc">Ngày: Mới nhất</option>
-                          </select>
-                        </div>
-
-                        {/* Số lượng mỗi trang */}
-                        <div>
-                          <label className="block text-sm font-medium text-green-700 mb-2">
-                            Hiển thị mỗi trang
-                          </label>
-                          <select
-                            value={itemsPerPage2}
-                            onChange={(e) =>
-                              setItemsPerPage2(parseInt(e.target.value))
-                            }
-                            className="w-full px-3 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                          >
-                            <option value="5">5 sản phẩm / trang</option>
-                            <option value="10">10 sản phẩm / trang</option>
-                            <option value="15">15 sản phẩm / trang</option>
-                            <option value="20">20 sản phẩm / trang</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
             </div>
           </div>
 
@@ -1033,12 +931,12 @@ const ManagerProduct = () => {
                     <th className="p-3 text-md text-start font-semibold text-green_starbuck">
                       Kích cỡ : Giá
                     </th>
-                    <th className="p-3 text-md text-start font-semibold text-green_starbuck">
+                    <th className="p-3 text-md text-center font-semibold text-green_starbuck">
                       Topping
                     </th>
-                    <th className="p-3 text-md font-semibold text-green_starbuck">
+                    {/* <th className="p-3 text-md font-semibold text-green_starbuck">
                       Hệ thống
-                    </th>
+                    </th> */}
                     <th className="p-3 text-md font-semibold text-green_starbuck">
                       Cửa hàng
                     </th>
@@ -1074,7 +972,7 @@ const ManagerProduct = () => {
                         </button>
                       </td>
                       {/* Hiển thị ảnh sản phẩm */}
-                      <td className="p-3 flex items-center space-x-3">
+                      <td className="p-2 flex items-center space-x-3">
                         <div className="w-12 h-12">
                           {/* Container ảnh */}
                           {product.images && product.images.length > 0 ? (
@@ -1112,7 +1010,7 @@ const ManagerProduct = () => {
                         </span>
                       </td>
                       {/* Hiển thị ngày */}
-                      <td className="p-3 text-md text-dark_blue">
+                      <td className="p-2 text-md text-start text-dark_blue">
                         {formatNiceDate(product.createdAt)}
                       </td>
                       {/* Hiển thị mô tả sản phẩm */}
@@ -1168,16 +1066,18 @@ const ManagerProduct = () => {
                         )}
                       </td>
                       {/* Hiển thị topping sản phẩm */}
-                      <td className="p-2 text-lg text-gray-900 text-center">
+                      <td className="p-2 text-lg text-gray-900">
                         {Array.isArray(product.toppings) &&
                         product.toppings.length > 0 ? (
-                          <button
-                            className="flex items-center justify-center mx-auto p-2 rounded hover:bg-blue-50 transition"
-                            title={`Xem ${product.toppings.length} topping`}
-                            onClick={() => handleViewToppings(product.toppings)}
-                          >
-                            <Eye className="w-5 h-5 text-blue-600" />
-                          </button>
+                          <div className="flex justify-center">
+                            <button
+                              className="flex p-2 rounded hover:bg-blue-50 transition"
+                              title={`Xem ${product.toppings.length} topping`}
+                              onClick={() => handleViewToppings(product.toppings)}
+                            >
+                              <Eye className="w-5 h-5 text-blue-600" />
+                            </button>
+                          </div>
                         ) : (
                           <span className="text-gray-500">
                             Không có topping
@@ -1185,7 +1085,7 @@ const ManagerProduct = () => {
                         )}
                       </td>
                       {/* Trạng thái hệ thống (chỉ xem, không sửa được) */}
-                      <td className="p-3 min-w-[140px]">
+                      {/* <td className="p-3 min-w-[140px]">
                         <div className="flex flex-col gap-1">
                           <span
                             className={`px-2 py-1 text-sm rounded font-semibold text-center ${
@@ -1216,7 +1116,7 @@ const ManagerProduct = () => {
                             </span>
                           )}
                         </div>
-                      </td>
+                      </td> */}
                       {/* Trạng thái cửa hàng (CHT có thể thay đổi) */}
                       <td className="p-3 min-w-[140px]">
                         <div className="flex flex-col gap-1">
@@ -1258,7 +1158,7 @@ const ManagerProduct = () => {
                           )}
                           {product.status === "out_of_stock" && (
                             <span className="text-xs text-orange-600 text-center">
-                               Hệ thống hết hàng
+                              Hệ thống hết hàng
                             </span>
                           )}
                         </div>

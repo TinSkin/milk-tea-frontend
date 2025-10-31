@@ -14,6 +14,9 @@ const CreateProductRequestModal = ({ isOpen, onClose, onSuccess }) => {
   // Chuyển đổi giữa tab
   const [activeTab, setActiveTab] = useState("existing");
 
+  // State để ẩn/hiện overlay Coming Soon cho demo UI
+  const [showOverlay, setShowOverlay] = useState(true);
+
   // Quản lí state và store dữ liệu
   const { submitCreateRequest } = useRequestManagerStore();
   const {
@@ -324,17 +327,56 @@ const CreateProductRequestModal = ({ isOpen, onClose, onSuccess }) => {
         <div className="p-6 max-h-[60vh] overflow-y-auto">
           {activeTab === "existing" ? (
             // Tab thêm sản phẩm có sẵn
-            <Formik
-              initialValues={existingProductInitialValues}
-              validationSchema={addProductRequestSchema}
-              onSubmit={handleSubmitExistingProduct}
-            >
-              {({ values, setFieldValue, isSubmitting }) => (
-                <Form className="space-y-6">
-                  <div className="text-sm text-gray-600 bg-blue-50 p-4 rounded-lg">
-                    <strong>Hướng dẫn:</strong> Chọn sản phẩm từ hệ thống mà cửa
-                    hàng bạn chưa có để gửi yêu cầu thêm vào menu.
+            <div className="relative">
+              {/* Coming Soon Overlay - có thể ẩn để xem UI */}
+              {showOverlay && (
+                <div className="absolute inset-0 bg-gray-100 bg-opacity-90 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
+                  <div className="text-center p-8">
+                    <div className="text-6xl mb-4">🚧</div>
+                    <h3 className="text-2xl font-bold text-gray-700 mb-2">Coming Soon</h3>
+                    <p className="text-gray-600 mb-4">
+                      Chức năng thêm sản phẩm có sẵn đang được phát triển
+                    </p>
+                    <div className="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-sm font-medium mb-4">
+                      <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse mr-2"></span>
+                      Đang hoàn thiện...
+                    </div>
+                    <div className="mt-4">
+                      <button
+                        onClick={() => setShowOverlay(false)}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                      >
+                        👁️ Xem trước UI/UX
+                      </button>
+                    </div>
                   </div>
+                </div>
+              )}
+
+              {/* Nút để hiện lại overlay khi đang xem UI */}
+              {!showOverlay && (
+                <div className="absolute top-4 right-4 z-20">
+                  <button
+                    onClick={() => setShowOverlay(true)}
+                    className="px-3 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors text-sm font-medium shadow-lg"
+                    title="Hiện lại thông báo Coming Soon"
+                  >
+                    🚧 Demo Mode
+                  </button>
+                </div>
+              )}
+
+              <Formik
+                initialValues={existingProductInitialValues}
+                validationSchema={addProductRequestSchema}
+                onSubmit={handleSubmitExistingProduct}
+              >
+                {({ values, setFieldValue, isSubmitting }) => (
+                  <Form className="space-y-6">
+                    <div className="text-sm text-gray-600 bg-blue-50 p-4 rounded-lg">
+                      <strong>Hướng dẫn:</strong> Chọn sản phẩm từ hệ thống mà cửa
+                      hàng bạn chưa có để gửi yêu cầu thêm vào menu.
+                    </div>
 
                   {/* Tìm kiếm */}
                   <div className="relative">
@@ -463,6 +505,7 @@ const CreateProductRequestModal = ({ isOpen, onClose, onSuccess }) => {
                 </Form>
               )}
             </Formik>
+            </div>
           ) : (
             // Tab đề xuất sản phẩm mới
             <Formik
