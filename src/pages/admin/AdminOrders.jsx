@@ -415,9 +415,9 @@ const AdminOrders = () => {
           <span className="flex items-center gap-2">
             <MapPin className="w-4 h-4 text-blue-500" />
             {store.name || store.storeName || "Không xác định"}
-            <span className="text-xs text-gray-500">
+            {/* <span className="text-xs text-gray-500">
               ({store.city || "Chưa có thành phố"})
-            </span>
+            </span> */}
           </span>
         ),
       })),

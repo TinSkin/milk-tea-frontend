@@ -3,6 +3,8 @@ import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { X, Store, MapPin, Phone, Mail, User, Clock } from 'lucide-react';
 
+import Notification from '../../../ui/Notification';
+
 const AddStoreModal = ({ onAdd, onClose, isLoading }) => {
     const validationSchema = Yup.object({
         storeName: Yup.string()
@@ -74,6 +76,16 @@ const AddStoreModal = ({ onAdd, onClose, isLoading }) => {
 
     const handleSubmit = async (values, { setSubmitting, resetForm }) => {
         try {
+            Notification.info(
+                'Đang phát triển',
+                'Chức năng thêm cửa hàng mới đang được phát triển'
+            );
+            
+            // Close modal after showing notification
+            onClose();
+            
+            // Commented out for development
+            /*
             const storeData = {
                 storeName: values.storeName.trim(),
                 storeCode: values.storeCode.trim().toUpperCase(),
@@ -92,6 +104,7 @@ const AddStoreModal = ({ onAdd, onClose, isLoading }) => {
 
             await onAdd(storeData);
             resetForm();
+            */
         } catch (error) {
             console.error('Error adding store:', error);
         } finally {
@@ -134,7 +147,7 @@ const AddStoreModal = ({ onAdd, onClose, isLoading }) => {
                 {/* Form */}
                 <Formik
                     initialValues={initialValues}
-                    validationSchema={validationSchema}
+                    // validationSchema={validationSchema} // Commented out for development
                     onSubmit={handleSubmit}
                 >
                     {({ isSubmitting, values, errors, touched }) => (

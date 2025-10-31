@@ -59,7 +59,12 @@ const ManagerDashboard = () => {
     try {
       console.log("Fetching dashboard data for store:", selectedStore._id);
       
-      const apiUrl = `/api/stores/my-store/dashboard?period=${timeRange}`;
+      const BASE_URL = import.meta.env.MODE === "development"
+      ? import.meta.env.VITE_API_BASE
+      : import.meta.env.VITE_API_BASE_PROD;
+    
+    const apiUrl = `${BASE_URL}/api/stores/my-store/dashboard?period=${timeRange}`;
+    
       console.log("🌐 Calling API:", apiUrl);
       
       const response = await fetch(apiUrl, {
@@ -254,7 +259,7 @@ const ManagerDashboard = () => {
             <div className="flex items-center gap-3 flex-1 pl-3">
               <BarChart3 className="w-5 h-5" />
               <h1 className="text-md font-montserrat font-semibold capitalize tracking-tight pb-1 border-b-2 border-camel inline-block">
-                Dashboard KPI
+                Quản lý KPI
               </h1>
             </div>
 

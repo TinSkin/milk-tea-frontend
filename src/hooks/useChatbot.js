@@ -110,11 +110,14 @@ export function useChatbot() {
   const generateBotResponse = async (history) => {
     const updateHistory = (text, isError = false) => {
       setChatHistory((prev) => [
-        ...prev.filter((msg) => msg.text !== "Thinking..."),
+        ...prev.filter((chatMessage) => chatMessage.text !== "Thinking..."),
         { role: "model", text, isError },
       ]);
     };
-    history = history.map(({ role, text }) => ({ role, parts: [{ text }] }));
+    history = history.map(({ role, text }) => ({ 
+      role: role === "user" ? "user" : "model", 
+      parts: [{ text }] 
+    }));
     const requestOptions = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -146,6 +149,7 @@ export function useChatbot() {
   //! Fetch data chỉ khi chatbot được mở lần đầu
   useEffect(() => {
     if (showChatbot && products.length === 0) {
+      console.log("🚀 Chatbot: Fetching data from MongoDB...");
       getAllProducts();
       getAllCategories();
       getAllToppings();
@@ -154,9 +158,88 @@ export function useChatbot() {
 
   useEffect(() => {
     if (products.length > 0) {
-      setProductText(getProductText());
+      console.log("Chatbot Debug - Products data:", products);
+      console.log("Total products:", products.length);
+      console.log("First product:", products[0]);
+      
+      const newProductText = getProductText();
+      setProductText(newProductText);
+      
+      // Update chatHistory với data thực từ MongoDB
+      setChatHistory(prev => {
+        // Đảm bảo companyInfo luôn ở vị trí đầu tiên
+        const companyContext = prev.find(msg => msg.text === companyInfo);
+        const otherContexts = prev.filter(msg => msg.text !== companyInfo && !msg.text.startsWith("Sản phẩm có sẵn:"));
+        
+        return [
+          // Giữ nguyên companyInfo ở đầu
+          companyContext || {
+            hideInChat: true,
+            role: "model",
+            text: companyInfo
+          },
+          // Thêm context sản phẩm từ MongoDB
+          {
+            hideInChat: true,
+            role: "model",
+            text: `Sản phẩm có sẵn:\n${newProductText}`
+          },
+          // Giữ lại các context khác
+          ...otherContexts.filter(msg => !msg.text.startsWith("Sản phẩm có sẵn:"))
+        ];
+      });
+      
+      console.log("Updated chatHistory with MongoDB products (keeping companyInfo)");
     }
   }, [products]);
+
+  // Update context khi có categories từ MongoDB
+  useEffect(() => {
+    if (categories.length > 0) {
+      console.log("🔍 Categories loaded:", categories.length);
+      const categoryText = getCategoryText();
+      
+      setChatHistory(prev => {
+        // Lọc bỏ context categories cũ nhưng giữ companyInfo
+        const filteredHistory = prev.filter(msg => !msg.text.startsWith("Danh mục có sẵn:"));
+        
+        return [
+          ...filteredHistory,
+          {
+            hideInChat: true,
+            role: "model",
+            text: `Danh mục có sẵn:\n${categoryText}`
+          }
+        ];
+      });
+      
+      console.log("Updated categories context (keeping companyInfo)");
+    }
+  }, [categories]);
+
+  // Update context khi có toppings từ MongoDB  
+  useEffect(() => {
+    if (toppings.length > 0) {
+      console.log("Toppings loaded:", toppings.length);
+      const toppingText = getToppingText();
+      
+      setChatHistory(prev => {
+        // Lọc bỏ context toppings cũ nhưng giữ companyInfo  
+        const filteredHistory = prev.filter(msg => !msg.text.startsWith("Topping có sẵn:"));
+        
+        return [
+          ...filteredHistory,
+          {
+            hideInChat: true,
+            role: "model", 
+            text: `Topping có sẵn:\n${toppingText}`
+          }
+        ];
+      });
+      
+      console.log("Updated toppings context (keeping companyInfo)");
+    }
+  }, [toppings]);
 
   return {
     chatBodyRef,

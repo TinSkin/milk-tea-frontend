@@ -264,6 +264,11 @@ const AdminAccount = () => {
 
   //! Xử lý thay đổi vai trò người dùng
   const handleToggleRole = async (user) => {
+    // TODO: Chức năng đang được phát triển
+    Notification.info("Đang phát triển", "Chức năng thay đổi vai trò");
+    return;
+
+    /* Code cũ - sẽ implement sau
     try {
       // Logic thay đổi role: customer -> staff -> storeManager -> admin -> customer
       let newRole;
@@ -299,10 +304,16 @@ const AdminAccount = () => {
     } catch (error) {
       Notification.error("Cập nhật vai trò thất bại", error.message);
     }
+    */
   };
 
   //! Xử lý khóa/mở khóa tài khoản
   const handleToggleStatus = async (user) => {
+    // TODO: Chức năng đang được phát triển
+    Notification.info("Đang phát triển", "Chức năng khóa/mở tài khoản");
+    return;
+
+    /* Code cũ - sẽ implement sau
     try {
       const newStatus = user.status === "active" ? "inactive" : "active";
       const action = newStatus === "active" ? "mở khóa" : "khóa";
@@ -314,10 +325,16 @@ const AdminAccount = () => {
     } catch (error) {
       Notification.error("Cập nhật trạng thái thất bại", error.message);
     }
+    */
   };
 
   //! Xử lý reset mật khẩu
   const handleResetPassword = async (user) => {
+    // TODO: Chức năng đang được phát triển
+    Notification.info("Đang phát triển", "Chức năng reset mật khẩu");
+    return;
+
+    /* Code cũ - sẽ implement sau
     try {
       // TODO: Call API to reset password
       // await resetUserPassword(user._id);
@@ -325,6 +342,7 @@ const AdminAccount = () => {
     } catch (error) {
       Notification.error("Reset mật khẩu thất bại", error.message);
     }
+    */
   };
 
   //! Xử lý xóa tài khoản

@@ -11,11 +11,11 @@ function SocialIcon() {
   const hasGoogleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   
   // DEBUG: Log environment variables
-  console.log("=== DEBUG OAuth ===");
-  console.log("VITE_GOOGLE_CLIENT_ID:", import.meta.env.VITE_GOOGLE_CLIENT_ID);
-  console.log("VITE_API_BASE:", import.meta.env.VITE_API_BASE);
-  console.log("Current URL:", window.location.href);
-  console.log("==================");
+  // console.log("=== DEBUG OAuth ===");
+  // console.log("VITE_GOOGLE_CLIENT_ID:", import.meta.env.VITE_GOOGLE_CLIENT_ID);
+  // console.log("VITE_API_BASE:", import.meta.env.VITE_API_BASE);
+  // console.log("Current URL:", window.location.href);
+  // console.log("==================");
 
   // Hiển thị nút Google nếu có GOOGLE_CLIENT_ID (cho cả dev và production)
   const shouldShowGoogleButton = hasGoogleClientId;
