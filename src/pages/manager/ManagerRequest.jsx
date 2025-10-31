@@ -312,7 +312,9 @@ function ManagerRequest() {
         description: createForm.description,
         payload: createForm.payload,
         tags: createForm.tags,
-        ...(createForm.action !== "create" && { targetId: createForm.targetId }),
+        ...(createForm.action !== "create" && {
+          targetId: createForm.targetId,
+        }),
       });
 
       Notification.success("Tạo request thành công");
@@ -533,7 +535,9 @@ function ManagerRequest() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Tổng số</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {stats.total}
+                </p>
               </div>
               <FileText className="w-8 h-8 text-gray-600" />
             </div>
@@ -913,14 +917,18 @@ function ManagerRequest() {
                 {createForm.action !== "create" && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      ID đối tượng cần {createForm.action === "update" ? "cập nhật" : "xóa"}
+                      ID đối tượng cần{" "}
+                      {createForm.action === "update" ? "cập nhật" : "xóa"}
                     </label>
                     <input
                       type="text"
                       placeholder="Nhập ID của đối tượng"
                       value={createForm.targetId}
                       onChange={(e) =>
-                        setCreateForm({ ...createForm, targetId: e.target.value })
+                        setCreateForm({
+                          ...createForm,
+                          targetId: e.target.value,
+                        })
                       }
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
@@ -953,7 +961,10 @@ function ManagerRequest() {
                     placeholder="Mô tả chi tiết về request này"
                     value={createForm.description}
                     onChange={(e) =>
-                      setCreateForm({ ...createForm, description: e.target.value })
+                      setCreateForm({
+                        ...createForm,
+                        description: e.target.value,
+                      })
                     }
                     rows={4}
                     className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -961,7 +972,7 @@ function ManagerRequest() {
                 </div>
 
                 {/* Payload (JSON) */}
-                <div>
+                {/* <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Dữ liệu (JSON)
                   </label>
@@ -982,7 +993,7 @@ function ManagerRequest() {
                   <p className="text-xs text-gray-500 mt-1">
                     Nhập dữ liệu dưới dạng JSON hợp lệ
                   </p>
-                </div>
+                </div> */}
 
                 {/* Tags */}
                 <div>
@@ -1132,14 +1143,14 @@ function ManagerRequest() {
                 )}
 
                 {/* Payload */}
-                {viewingRequest.payload && (
+                {/* {viewingRequest.payload && (
                   <div>
                     <h3 className="text-lg font-semibold mb-3">Dữ liệu</h3>
                     <pre className="bg-gray-100 p-4 rounded-lg text-sm overflow-x-auto">
                       {JSON.stringify(viewingRequest.payload, null, 2)}
                     </pre>
                   </div>
-                )}
+                )} */}
 
                 {/* Notes */}
                 {(viewingRequest.note || viewingRequest.approverNote) && (

@@ -690,9 +690,9 @@ const ManagerTopping = () => {
                     <th className="p-3 text-md text-start font-semibold text-green_starbuck">
                       Mô tả
                     </th>
-                    <th className="p-3 text-md font-semibold text-green_starbuck">
+                    {/* <th className="p-3 text-md font-semibold text-green_starbuck">
                       Hệ thống
-                    </th>
+                    </th> */}
                     <th className="p-3 text-md font-semibold text-green_starbuck">
                       Cửa hàng
                     </th>
@@ -767,7 +767,7 @@ const ManagerTopping = () => {
                       </td>
 
                       {/* Trạng thái (Admin) */}
-                      <td className="p-3 min-w-[140px]">
+                      {/* <td className="p-3 min-w-[140px]">
                         <span
                           className={`px-2 py-1 text-sm rounded font-semibold ${
                             topping.status === "available"
@@ -779,7 +779,7 @@ const ManagerTopping = () => {
                             ? "Đang sử dụng"
                             : "Ngừng sử dụng"}
                         </span>
-                      </td>
+                      </td> */}
 
                       {/* Trạng thái (Store Manager) */}
                       <td className="p-3 min-w-[140px]">
